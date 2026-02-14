@@ -11,9 +11,48 @@ import type { Product } from '../../types/product';
 export default function PriceDocumentEditor() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const isNew = id === 'new';
+    const [isEditing, setIsEditing] = useState(isNew);
 
-    const [document, setDocument] = useState<Partial<PriceDocument>>({
+    useEffect(() => {
+        setIsEditing(isNew);
+    }, [isNew]);
+    
+    // ... loadData ...
+
+    // ...
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                    <button onClick={() => navigate('/price-documents')} className="text-gray-500 hover:text-gray-700">
+                        <ArrowLeft className="h-6 w-6" />
+                    </button>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        {isNew ? 'New Price Document' : 'Edit Price Document'}
+                    </h1>
+                     {document.status === 'APPLIED' && (
+                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-bold">APPLIED</span>
+                    )}
+                </div>
+                <div className="flex space-x-3">
+                    {document.status !== 'APPLIED' && !isEditing && (
+                        <button
+                            onClick={() => setIsEditing(true)}
+                            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                        >
+                            Edit
+                        </button>
+                    )}
+                    {document.status !== 'APPLIED' && isEditing && (
+                        <>
+                            <button
+                                onClick={handleSave}
+                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                            >
+                                <Save className="h-4 w-4 mr-2" />
+                                Save Draft
+                            </button>
         date: Date.now(),
         status: 'DRAFT',
         inputMethod: 'MANUAL',
@@ -191,7 +230,7 @@ export default function PriceDocumentEditor() {
                             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             value={new Date(document.date || Date.now()).toISOString().split('T')[0]}
                             onChange={e => setDocument({...document, date: new Date(e.target.value).getTime()})}
-                            disabled={document.status === 'APPLIED'}
+                            disabled={!isEditing || document.status === 'APPLIED'}
                         />
                     </div>
 
@@ -201,7 +240,7 @@ export default function PriceDocumentEditor() {
                             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             value={document.targetPriceTypeId || ''}
                             onChange={e => setDocument({...document, targetPriceTypeId: e.target.value})}
-                            disabled={document.status === 'APPLIED'}
+                            disabled={!isEditing || document.status === 'APPLIED'}
                         >
                             <option value="">Select Price Type</option>
                             {priceTypes.map(pt => (
@@ -217,7 +256,7 @@ export default function PriceDocumentEditor() {
                             rows={3}
                             value={document.comment || ''}
                             onChange={e => setDocument({...document, comment: e.target.value})}
-                            disabled={document.status === 'APPLIED'}
+                            disabled={!isEditing || document.status === 'APPLIED'}
                         />
                     </div>
                 </div>
@@ -225,7 +264,7 @@ export default function PriceDocumentEditor() {
                 <div className="bg-white shadow rounded-lg p-6 space-y-4">
                     <h3 className="text-lg font-medium text-gray-900">Products & Prices</h3>
                     
-                    {document.status !== 'APPLIED' && (
+                    {document.status !== 'APPLIED' && isEditing && (
                         <div className="flex space-x-2">
                             <select
                                 className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -270,11 +309,11 @@ export default function PriceDocumentEditor() {
                                                 className="w-24 text-right border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm py-1"
                                                 value={item.price}
                                                 onChange={e => handleUpdateItemPrice(index, parseFloat(e.target.value))}
-                                                disabled={document.status === 'APPLIED'}
+                                                disabled={!isEditing || document.status === 'APPLIED'}
                                             />
                                         </td>
                                         <td className="px-4 py-2 text-center">
-                                            {document.status !== 'APPLIED' && (
+                                            {document.status !== 'APPLIED' && isEditing && (
                                                 <button onClick={() => handleRemoveItem(index)} className="text-red-600 hover:text-red-900">
                                                     <Trash className="h-4 w-4" />
                                                 </button>
