@@ -1,7 +1,7 @@
 // import { Fragment } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
-import { LogOut, LayoutDashboard, Package, ShoppingCart, User } from 'lucide-react';
+import { LogOut, LayoutDashboard, Package, ShoppingCart, User, FileText } from 'lucide-react';
 import { clsx } from 'clsx';
 
 interface LayoutProps {
@@ -21,6 +21,7 @@ export default function Layout({ children, title }: LayoutProps) {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Products', href: '/products', icon: Package },
+    { name: 'Price Settings', href: '/price-documents', icon: FileText },
     { name: 'Orders', href: '/orders', icon: ShoppingCart },
   ];
 
