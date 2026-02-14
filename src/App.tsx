@@ -1,17 +1,32 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-// import { useState } from 'react';
+import { useAuthStore } from './store/auth.store';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
 
-// Placeholder components
-const Login = () => <div className="p-4">Login Page</div>;
-const Dashboard = () => <div className="p-4">Dashboard</div>;
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   );
