@@ -193,7 +193,7 @@ export default function PriceDocumentEditor() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="space-y-6">
                 <div className="bg-white shadow rounded-lg p-6 space-y-4">
                     <h3 className="text-lg font-medium text-gray-900">Document Details</h3>
                     
@@ -204,23 +204,40 @@ export default function PriceDocumentEditor() {
                             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             value={new Date(document.date || Date.now()).toISOString().split('T')[0]}
                             onChange={e => setDocument({...document, date: new Date(e.target.value).getTime()})}
-                            disabled={!isEditing || document.status === 'APPLIED'}
+                            disabled={!isEditing}
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700">Target Price Type</label>
-                        <select
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                            value={document.targetPriceTypeId || ''}
-                            onChange={e => setDocument({...document, targetPriceTypeId: e.target.value})}
-                            disabled={!isEditing || document.status === 'APPLIED'}
-                        >
-                            <option value="">Select Price Type</option>
-                            {priceTypes.map(pt => (
-                                <option key={pt.id} value={pt.id}>{pt.name}</option>
-                            ))}
-                        </select>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                         <div>
+                            <label className="block text-sm font-medium text-gray-700">Target Price Type (To set)</label>
+                            <select
+                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                value={document.targetPriceTypeId || ''}
+                                onChange={e => setDocument({...document, targetPriceTypeId: e.target.value})}
+                                disabled={!isEditing}
+                            >
+                                <option value="">Select Target Price Type</option>
+                                {priceTypes.map(pt => (
+                                    <option key={pt.id} value={pt.id}>{pt.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Source Price Type (Base for calc)</label>
+                            <select
+                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                value={document.sourcePriceTypeId || ''}
+                                onChange={e => setDocument({...document, sourcePriceTypeId: e.target.value})}
+                                disabled={!isEditing}
+                            >
+                                <option value="">Select Source Price Type (Optional)</option>
+                                {priceTypes.map(pt => (
+                                    <option key={pt.id} value={pt.id}>{pt.name}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
 
                     <div>
@@ -230,7 +247,7 @@ export default function PriceDocumentEditor() {
                             rows={3}
                             value={document.comment || ''}
                             onChange={e => setDocument({...document, comment: e.target.value})}
-                            disabled={!isEditing || document.status === 'APPLIED'}
+                            disabled={!isEditing}
                         />
                     </div>
                 </div>
@@ -238,7 +255,7 @@ export default function PriceDocumentEditor() {
                 <div className="bg-white shadow rounded-lg p-6 space-y-4">
                     <h3 className="text-lg font-medium text-gray-900">Products & Prices</h3>
                     
-                    {document.status !== 'APPLIED' && isEditing && (
+                    {isEditing && (
                         <div className="flex space-x-2">
                             <select
                                 className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -283,11 +300,11 @@ export default function PriceDocumentEditor() {
                                                 className="w-24 text-right border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm py-1"
                                                 value={item.price}
                                                 onChange={e => handleUpdateItemPrice(index, parseFloat(e.target.value))}
-                                                disabled={!isEditing || document.status === 'APPLIED'}
+                                                disabled={!isEditing}
                                             />
                                         </td>
                                         <td className="px-4 py-2 text-center">
-                                            {document.status !== 'APPLIED' && isEditing && (
+                                            {isEditing && (
                                                 <button onClick={() => handleRemoveItem(index)} className="text-red-600 hover:text-red-900">
                                                     <Trash className="h-4 w-4" />
                                                 </button>
