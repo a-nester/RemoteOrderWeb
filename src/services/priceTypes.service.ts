@@ -19,7 +19,7 @@ export const PriceTypesService = {
             if (!Array.isArray(data)) return [];
 
             return data.map((item: any) => ({
-                id: item.id,
+                id: String(item.id),
                 name: item.name,
                 slug: item.slug,
                 createdAt: new Date(item.createdAt || Date.now()).getTime(),

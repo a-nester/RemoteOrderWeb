@@ -101,7 +101,7 @@ export default function PriceDocumentEditor() {
         if (!prod) return;
 
         const currentPriceObj = prod.prices as any;
-        const targetSlug = priceTypes.find(pt => pt.id === document.targetPriceTypeId)?.slug || 'standard';
+        const targetSlug = priceTypes.find(pt => String(pt.id) === String(document.targetPriceTypeId))?.slug || 'standard';
         
         // Use existing price if available, or just keeping manual entry
         // If we are in 'MANUAL' mode, user inputs price.
