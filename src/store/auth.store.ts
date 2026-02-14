@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { AuthService } from "../services/auth.service";
 
 export type Role = "admin" | "manager" | "client";
 
@@ -12,77 +13,49 @@ export type User = {
 
 type AuthState = {
     user: User | null;
+    token: string | null;
     isAuthenticated: boolean;
-    login: (email: string, password: string) => boolean;
+    login: (email: string, password: string) => Promise<boolean>;
     logout: () => void;
 };
-
-// Mock users from mobile app
-const USERS = [
-    { id: 1, email: "admin@test.com", password: "123456", role: "admin" },
-    {
-        id: 2,
-        email: "manager@test.com",
-        password: "123456",
-        role: "manager",
-        warehouseId: "1", // Main Warehouse
-    },
-    {
-        id: 3,
-        email: "client@test.com",
-        password: "123456",
-        role: "client",
-        warehouseId: "1", // Main Warehouse
-    },
-    {
-        id: 4,
-        email: "manager2@test.com",
-        password: "123456",
-        role: "manager",
-        warehouseId: "2", // Kyiv Branch
-    },
-    {
-        id: 5,
-        email: "client2@test.com",
-        password: "123456",
-        role: "client",
-        warehouseId: "2", // Kyiv Branch
-    },
-];
 
 export const useAuthStore = create<AuthState>()(
     persist(
         (set) => ({
             user: null,
+            token: null,
             isAuthenticated: false,
 
-            login: (email, password) => {
-                const found = USERS.find(
-                    (u) => u.email === email && u.password === password
-                );
+            login: async (email, password) => {
+                const result = await AuthService.login(email, password);
 
-                if (!found) return false;
+                if (result.success && result.user && result.token) {
+                    // Set token for axios requests
+                    // Ideally we should have an axios interceptor, but for now we can set it via header if we used a global instance
+                    // Or just rely on the token being in store and attaching it manually or via interceptor later.
 
-                set({
-                    user: {
-                        id: found.id,
-                        email: found.email,
-                        role: found.role as Role,
-                        warehouseId: found.warehouseId,
-                    },
-                    isAuthenticated: true,
-                });
+                    set({
+                        user: result.user,
+                        token: result.token,
+                        isAuthenticated: true,
+                    });
+                    return true;
+                }
 
-                return true;
+                return false;
             },
 
             logout: () => {
-                set({ user: null, isAuthenticated: false });
+                set({ user: null, token: null, isAuthenticated: false });
             },
         }),
         {
             name: "auth-storage",
-            partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+            partialize: (state) => ({
+                user: state.user,
+                token: state.token,
+                isAuthenticated: state.isAuthenticated
+            }),
         }
     )
 );

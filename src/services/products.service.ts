@@ -1,12 +1,18 @@
 import type { Product } from "../types/product";
-import { API_URL, ADMIN_SECRET } from "../constants/api";
+import { API_URL } from "../constants/api";
 import axios from "axios";
+
+import { useAuthStore } from "../store/auth.store";
 
 const PRODUCTS_API_URL = `${API_URL}/products`;
 const ADMIN_PRODUCTS_URL = `${API_URL}/admin/products`;
 
-// Configure axios instance if needed, but simple calls are fine for now.
-// We might want to add an interceptor for auth token later if we move away from hardcoded secret.
+const getAuthHeader = () => {
+    const token = useAuthStore.getState().token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// ...
 
 export const ProductsService = {
     /**
@@ -15,8 +21,10 @@ export const ProductsService = {
     async fetchProducts(since?: number): Promise<{ products: Product[], timestamp: number }> {
         try {
             const url = since ? `${PRODUCTS_API_URL}?since=${since}` : PRODUCTS_API_URL;
+            // Admin secret is no longer used, but if backend still requires it for legacy, we might have issues.
+            // But I updated backend to accept Bearer token.
             const response = await axios.get(url, {
-                headers: { "x-admin-secret": ADMIN_SECRET }
+                headers: getAuthHeader()
             });
 
             const rawData = response.data;
@@ -95,7 +103,7 @@ export const ProductsService = {
         await axios.post(ADMIN_PRODUCTS_URL, formData, {
             headers: {
                 "Content-Type": "multipart/form-data",
-                "x-admin-secret": ADMIN_SECRET,
+                ...getAuthHeader(),
             },
         });
     },
@@ -116,7 +124,7 @@ export const ProductsService = {
 
         await axios.put(`${ADMIN_PRODUCTS_URL}/${product.id}`, formData, {
             headers: {
-                "x-admin-secret": ADMIN_SECRET,
+                ...getAuthHeader(),
             },
         });
     },
@@ -126,9 +134,7 @@ export const ProductsService = {
      */
     async deleteProduct(id: string): Promise<void> {
         await axios.delete(`${ADMIN_PRODUCTS_URL}/${id}`, {
-            headers: {
-                "x-admin-secret": ADMIN_SECRET,
-            },
+            headers: getAuthHeader(),
         });
     }
 };
