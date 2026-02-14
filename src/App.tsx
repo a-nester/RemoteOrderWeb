@@ -4,6 +4,9 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import ProductForm from './pages/ProductForm';
+import PriceDocumentList from './pages/PriceDocuments';
+import PriceDocumentEditor from './pages/PriceDocuments/PriceDocumentEditor';
+import Layout from './components/Layout';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -53,6 +56,26 @@ function App() {
           } 
         />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route 
+          path="/price-documents" 
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <PriceDocumentList />
+              </Layout>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/price-documents/:id" 
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <PriceDocumentEditor />
+              </Layout>
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </BrowserRouter>
   );

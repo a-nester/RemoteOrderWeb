@@ -3,7 +3,7 @@ import { API_URL } from "../constants/api";
 import { useAuthStore } from "../store/auth.store";
 import type { PriceDocument } from "../types/priceDocument";
 
-const DOCS_API_URL = `${API_URL}/admin/price-documents`;
+const DOCS_API_URL = `${API_URL}/price-documents`;
 
 const getAuthHeader = () => {
     const token = useAuthStore.getState().token;
