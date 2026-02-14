@@ -145,11 +145,18 @@ export default function ProductForm() {
               <input
                 type="text"
                 id="category"
+                list="category-suggestions"
                 required
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                autoComplete="off"
               />
+              <datalist id="category-suggestions">
+                {Array.from(new Set(products.map(p => p.category).filter(Boolean))).sort().map((cat) => (
+                  <option key={cat} value={cat} />
+                ))}
+              </datalist>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
