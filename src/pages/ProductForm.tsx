@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useProductsStore } from '../store/products.store';
 import Layout from '../components/Layout';
-import { Save, ArrowLeft } from 'lucide-react';
+import { Save, ArrowLeft, Image as ImageIcon } from 'lucide-react';
+import { BASE_URL } from '../constants/api';
 
 export default function ProductForm() {
   const { id } = useParams<{ id: string }>();
@@ -37,6 +38,43 @@ export default function ProductForm() {
     }
   }, [isEditMode, id, products]);
 
+  // Image Upload Logic
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  useEffect(() => {
+     if (isEditMode && products.length > 0) {
+        const product = products.find((p) => p.id === id);
+        if (product && product.photos && product.photos.length > 0) {
+             const photoUrl = product.photos[0];
+             // If absolute URL, use as is. If relative, prepend BASE_URL (imported from api.ts)
+             if (photoUrl.startsWith('http')) {
+                 setImagePreview(photoUrl);
+             } else {
+                 setImagePreview(`${BASE_URL}${photoUrl}`);
+             }
+        }
+     }
+  }, [isEditMode, id, products]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const objectUrl = URL.createObjectURL(file);
+      setImagePreview(objectUrl);
+    }
+  };
+
+  // Cleanup object URL
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    }
+  }, [imagePreview]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -54,7 +92,7 @@ export default function ProductForm() {
           category: formData.category,
           prices,
           unit: formData.unit,
-        });
+        }, imageFile || undefined); // Pass imageFile
       } else {
         await addProduct({
           name: formData.name,
@@ -63,7 +101,7 @@ export default function ProductForm() {
           unit: formData.unit,
           photos: [], // Default empty
           isDeleted: false
-        });
+        }, imageFile || undefined); // Pass imageFile
       }
       navigate('/products');
     } catch (err) {
@@ -146,6 +184,43 @@ export default function ProductForm() {
                     <option value="пач">пач</option>
                   </select>
                 </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Product Image
+              </label>
+              <div className="flex items-center space-x-6">
+                <div className="shrink-0">
+                  {imagePreview ? (
+                    <img
+                      className="h-32 w-32 object-cover rounded-lg border border-gray-300"
+                      src={imagePreview}
+                      alt="Current product"
+                    />
+                  ) : (
+                    <div className="h-32 w-32 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 bg-gray-50">
+                      <ImageIcon className="h-10 w-10 opacity-50" />
+                    </div>
+                  )}
+                </div>
+                <label className="block">
+                  <span className="sr-only">Choose profile photo</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-full file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-indigo-50 file:text-indigo-700
+                      hover:file:bg-indigo-100
+                      cursor-pointer
+                    "
+                  />
+                </label>
+              </div>
             </div>
 
             <div className="flex justify-end pt-4">
