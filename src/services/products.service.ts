@@ -25,21 +25,51 @@ export const ProductsService = {
 
             console.log("Raw API response:", rawData); // Debug log
 
-            const products = items.map((item: any) => ({
-                id: item.id,
-                name: item.name,
-                // Robust price handling: default to { standard: 0 } if missing or invalid
-                prices: (item.prices && typeof item.prices === 'object')
-                    ? item.prices
-                    : { standard: parseFloat(item.price) || 0 },
-                unit: item.unit,
-                category: item.category,
-                photos: item.photos || [],
-                createdAt: new Date(item.createdAt).getTime(),
-                updatedAt: new Date(item.updatedAt).getTime(),
-                // Map 'deleted' from API to 'isDeleted'
-                isDeleted: item.deleted !== undefined ? item.deleted : (!!item.isDeleted),
-            }));
+            const products = items.map((item: any) => {
+                let standardPrice = 0;
+
+                // Try to extract price from 'prices' object or JSON string
+                if (item.prices) {
+                    let pricesObj = item.prices;
+                    if (typeof pricesObj === 'string') {
+                        try {
+                            pricesObj = JSON.parse(pricesObj);
+                        } catch (e) {
+                            console.warn("Failed to parse prices JSON:", item.prices);
+                            pricesObj = {};
+                        }
+                    }
+
+                    if (pricesObj && typeof pricesObj === 'object') {
+                        standardPrice = Number(pricesObj.standard);
+                    }
+                }
+
+                // Fallback to 'price' field
+                if (isNaN(standardPrice) || standardPrice === 0) {
+                    if (item.price) {
+                        standardPrice = Number(item.price);
+                    }
+                }
+
+                // Final safety check
+                if (isNaN(standardPrice)) {
+                    standardPrice = 0;
+                }
+
+                return {
+                    id: item.id,
+                    name: item.name,
+                    prices: { standard: standardPrice },
+                    unit: item.unit,
+                    category: item.category,
+                    photos: item.photos || [],
+                    createdAt: new Date(item.createdAt).getTime(),
+                    updatedAt: new Date(item.updatedAt).getTime(),
+                    // Map 'deleted' from API to 'isDeleted'
+                    isDeleted: item.deleted !== undefined ? item.deleted : (!!item.isDeleted),
+                };
+            });
 
             return { products, timestamp };
         } catch (error) {
