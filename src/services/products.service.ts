@@ -23,16 +23,22 @@ export const ProductsService = {
             const items = Array.isArray(rawData) ? rawData : (rawData.items || []);
             const timestamp = typeof rawData === 'object' && rawData.timestamp ? rawData.timestamp : Date.now();
 
+            console.log("Raw API response:", rawData); // Debug log
+
             const products = items.map((item: any) => ({
                 id: item.id,
                 name: item.name,
-                prices: item.prices || { standard: parseFloat(item.price) || 0 },
+                // Robust price handling: default to { standard: 0 } if missing or invalid
+                prices: (item.prices && typeof item.prices === 'object')
+                    ? item.prices
+                    : { standard: parseFloat(item.price) || 0 },
                 unit: item.unit,
                 category: item.category,
                 photos: item.photos || [],
                 createdAt: new Date(item.createdAt).getTime(),
                 updatedAt: new Date(item.updatedAt).getTime(),
-                isDeleted: !!item.isDeleted,
+                // Map 'deleted' from API to 'isDeleted'
+                isDeleted: item.deleted !== undefined ? item.deleted : (!!item.isDeleted),
             }));
 
             return { products, timestamp };

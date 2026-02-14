@@ -73,7 +73,11 @@ export default function Products() {
                   <div className="text-sm text-gray-900">{product.category}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{product.prices?.standard?.toFixed(2)}</div>
+                  <div className="text-sm text-gray-900">
+                    {product.prices?.standard != null 
+                        ? product.prices.standard.toFixed(2) 
+                        : '0.00'}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {product.unit}
