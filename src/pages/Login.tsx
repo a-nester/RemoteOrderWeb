@@ -92,7 +92,7 @@ export default function Login() {
           </div>
         </form>
         <div className="mt-4 text-center text-sm text-gray-500">
-            <p>Admin: admin@test.com / 123456</p>
+            <p>Admin: admin@test.com / secure-admin-password</p>
             <p>Manager: manager@test.com / 123456</p>
             <p>Client: client@test.com / 123456</p>
         </div>
