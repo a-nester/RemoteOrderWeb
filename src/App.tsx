@@ -3,6 +3,7 @@ import { useAuthStore } from './store/auth.store';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
+import ProductForm from './pages/ProductForm';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -32,6 +33,22 @@ function App() {
           element={
             <ProtectedRoute>
               <Products />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/products/new" 
+          element={
+            <ProtectedRoute>
+              <ProductForm />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/products/:id" 
+          element={
+            <ProtectedRoute>
+              <ProductForm />
             </ProtectedRoute>
           } 
         />
