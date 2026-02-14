@@ -31,10 +31,22 @@ export default function PriceDocumentEditor() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedProduct, setSelectedProduct] = useState<string>('');
+    const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
     useEffect(() => {
         loadData();
     }, [id]);
+
+    useEffect(() => {
+        if (notification) {
+            const timer = setTimeout(() => {
+                setNotification(null);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [notification]);
+
+    // ... loadData ...
 
     const loadData = async () => {
         setLoading(true);
@@ -53,6 +65,7 @@ export default function PriceDocumentEditor() {
             }
         } catch (error) {
             console.error("Error loading data", error);
+            setNotification({ type: 'error', message: 'Failed to load data' });
         } finally {
             setLoading(false);
         }
@@ -77,12 +90,13 @@ export default function PriceDocumentEditor() {
                 }));
                 await PriceDocumentsService.updateItems(docId, itemsToSave);
                 
-                alert('Document saved successfully');
+                setNotification({ type: 'success', message: 'Document saved successfully' });
+                setIsEditing(false); // Disable edit mode on success
                 if (isNew) navigate('/price-documents');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving document', error);
-            alert('Failed to save document');
+            setNotification({ type: 'error', message: error.message || 'Failed to save document' });
         }
     };
 
@@ -148,7 +162,12 @@ export default function PriceDocumentEditor() {
     if (loading) return <div>Loading...</div>;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 relative">
+            {notification && (
+                <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded shadow-lg text-white ${notification.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
+                    {notification.message}
+                </div>
+            )}
             <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                     <button onClick={() => navigate('/price-documents')} className="text-gray-500 hover:text-gray-700">
@@ -209,6 +228,19 @@ export default function PriceDocumentEditor() {
                     </div>
 
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Input Method</label>
+                            <select
+                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                value={document.inputMethod || 'MANUAL'}
+                                onChange={e => setDocument({...document, inputMethod: e.target.value as any})}
+                                disabled={!isEditing}
+                            >
+                                <option value="MANUAL">Manual Entry</option>
+                                <option value="FORMULA">Formula (Markup)</option>
+                            </select>
+                        </div>
+
                          <div>
                             <label className="block text-sm font-medium text-gray-700">Target Price Type (To set)</label>
                             <select
@@ -238,6 +270,20 @@ export default function PriceDocumentEditor() {
                                 ))}
                             </select>
                         </div>
+
+                        {document.inputMethod === 'FORMULA' && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Markup Percentage (%)</label>
+                                <input
+                                    type="number"
+                                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value={document.markupPercentage || ''}
+                                    onChange={e => setDocument({...document, markupPercentage: parseFloat(e.target.value)})}
+                                    disabled={!isEditing}
+                                    placeholder="e.g. 10 for 10% markup"
+                                />
+                            </div>
+                        )}
                     </div>
 
                     <div>
