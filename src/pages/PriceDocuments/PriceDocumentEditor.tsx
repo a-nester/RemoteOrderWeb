@@ -11,53 +11,19 @@ import type { Product } from '../../types/product';
 export default function PriceDocumentEditor() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const isNew = id === 'new';
     const [isEditing, setIsEditing] = useState(isNew);
 
-    useEffect(() => {
-        setIsEditing(isNew);
-    }, [isNew]);
-    
-    // ... loadData ...
-
-    // ...
-
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                    <button onClick={() => navigate('/price-documents')} className="text-gray-500 hover:text-gray-700">
-                        <ArrowLeft className="h-6 w-6" />
-                    </button>
-                    <h1 className="text-2xl font-bold text-gray-900">
-                        {isNew ? 'New Price Document' : 'Edit Price Document'}
-                    </h1>
-                     {document.status === 'APPLIED' && (
-                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-bold">APPLIED</span>
-                    )}
-                </div>
-                <div className="flex space-x-3">
-                    {document.status !== 'APPLIED' && !isEditing && (
-                        <button
-                            onClick={() => setIsEditing(true)}
-                            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                        >
-                            Edit
-                        </button>
-                    )}
-                    {document.status !== 'APPLIED' && isEditing && (
-                        <>
-                            <button
-                                onClick={handleSave}
-                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-                            >
-                                <Save className="h-4 w-4 mr-2" />
-                                Save Draft
-                            </button>
+    const [document, setDocument] = useState<Partial<PriceDocument>>({
         date: Date.now(),
         status: 'DRAFT',
         inputMethod: 'MANUAL',
         items: []
     });
+
+    useEffect(() => {
+        setIsEditing(isNew);
+    }, [isNew]);
 
     
     // Data Loading
