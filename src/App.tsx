@@ -11,6 +11,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import Settings from './pages/Settings';
 import PriceTypes from './pages/PriceTypes';
 import Counterparties from './pages/Counterparties';
+import Orders from './pages/Orders';
 import './i18n';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -108,6 +109,16 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <Counterparties />
+              </Layout>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/orders" 
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Orders />
               </Layout>
             </ProtectedRoute>
           } 

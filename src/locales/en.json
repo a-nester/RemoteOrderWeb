@@ -12,7 +12,11 @@
         "copy": "Copy",
         "confirm": "Confirm",
         "search": "Search...",
-        "actions": "Actions"
+        "actions": "Actions",
+        "date": "Date",
+        "sum": "Sum",
+        "status": "Status",
+        "noData": "No data found"
     },
     "menu": {
         "dashboard": "Dashboard",
@@ -52,5 +56,13 @@
         "targetPrice": "Target Price",
         "applyPrices": "Apply Prices",
         "applied": "APPLIED"
+    },
+    "order": {
+        "create": "New Order"
+    },
+    "status": {
+        "NEW": "New",
+        "ACCEPTED": "Accepted",
+        "COMPLETED": "Completed"
     }
 }
