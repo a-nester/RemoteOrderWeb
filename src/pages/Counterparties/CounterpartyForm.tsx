@@ -24,13 +24,6 @@ export default function CounterpartyForm({ counterparty, groups, onSave, onCance
     });
     const [priceTypes, setPriceTypes] = useState<PriceType[]>([]);
 
-    useEffect(() => {
-        if (counterparty) {
-            setFormData(counterparty);
-        }
-        loadPriceTypes();
-    }, [counterparty]);
-
     const loadPriceTypes = async () => {
         try {
             const types = await PriceTypesService.fetchPriceTypes();
@@ -40,9 +33,19 @@ export default function CounterpartyForm({ counterparty, groups, onSave, onCance
         }
     };
 
+    useEffect(() => {
+        if (counterparty) {
+            setFormData(counterparty);
+        }
+        loadPriceTypes();
+    }, [counterparty]);
+
+
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         // Sanitize: convert empty strings to null for optional foreign keys
+        const payload = {
             ...formData,
             priceTypeId: formData.priceTypeId || undefined,
             groupId: formData.groupId || undefined
