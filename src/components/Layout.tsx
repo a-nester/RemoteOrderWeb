@@ -110,8 +110,7 @@ export default function Layout({ children, title }: LayoutProps) {
                         </NavLink>
                     </div>
                 )}
-            </div>
-                )}
+
             </div>
 
             <NavLink
