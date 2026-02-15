@@ -76,23 +76,33 @@ export default function PriceDocumentEditor() {
             let savedDoc;
             if (isNew) {
                 savedDoc = await PriceDocumentsService.createDocument(document);
-                // navigate(`/price-documents/${savedDoc.id}`, { replace: true });
             } else if (id) {
+                // If existing, we update it
                 savedDoc = await PriceDocumentsService.updateDocument(id, document);
             }
             
             if (savedDoc) {
-                // Save items
                 const docId = savedDoc.id;
+                
+                // 1. Save items
                 const itemsToSave = (document.items || []).map(item => ({
                     productId: item.productId,
                     price: Number(item.price)
                 }));
                 await PriceDocumentsService.updateItems(docId, itemsToSave);
                 
-                setNotification({ type: 'success', message: 'Document saved successfully' });
-                setIsEditing(false); // Disable edit mode on success
-                if (isNew) navigate('/price-documents');
+                // 2. Apply Immediately (User Requirement: "Data of prices must be written to DB at the moment of saving")
+                await PriceDocumentsService.applyDocument(docId);
+                
+                setNotification({ type: 'success', message: 'Document saved and prices applied successfully' });
+                setIsEditing(false); 
+                
+                // Reload to get APPLIED status?
+                if (isNew) {
+                     navigate(`/price-documents/${docId}`, { replace: true });
+                } else {
+                     loadData();
+                }
             }
         } catch (error: any) {
             console.error('Error saving document', error);
