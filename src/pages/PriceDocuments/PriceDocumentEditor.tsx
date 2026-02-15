@@ -135,8 +135,15 @@ export default function PriceDocumentEditor() {
             if (!product) return item;
 
             const basePrice = (product.prices as any)[sourceSlug] || 0;
-            const newPrice = basePrice * (1 + markup / 100);
+            // 1. Calculate with markup
+            let newPrice = basePrice * (1 + markup / 100);
             
+            // 2. Apply rounding if set
+            const rounding = document.roundingValue;
+            if (rounding && rounding > 0) {
+                 newPrice = Math.round(newPrice / rounding) * rounding;
+            }
+
             return {
                 ...item,
                 price: parseFloat(newPrice.toFixed(2))
@@ -305,27 +312,45 @@ export default function PriceDocumentEditor() {
                         </div>
 
                         {document.inputMethod === 'FORMULA' && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Markup Percentage (%)</label>
-                                <div className="mt-1 flex rounded-md shadow-sm">
-                                    <input
-                                        type="number"
-                                        className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-l-md border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                        value={document.markupPercentage || ''}
-                                        onChange={e => setDocument({...document, markupPercentage: parseFloat(e.target.value)})}
-                                        disabled={!isEditing}
-                                        placeholder="e.g. 10"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={handleApplyFormula}
-                                        disabled={!isEditing}
-                                        className="inline-flex items-center px-4 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium"
-                                    >
-                                        Apply
-                                    </button>
+                            <>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Markup Percentage (%)</label>
+                                    <div className="mt-1">
+                                        <input
+                                            type="number"
+                                            className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                            value={document.markupPercentage || ''}
+                                            onChange={e => setDocument({...document, markupPercentage: parseFloat(e.target.value)})}
+                                            disabled={!isEditing}
+                                            placeholder="e.g. 10"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Rounding (0.01 - 10)</label>
+                                    <div className="mt-1 flex rounded-md shadow-sm">
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0.01"
+                                            max="10"
+                                            className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-l-md border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                            value={document.roundingValue || ''}
+                                            onChange={e => setDocument({...document, roundingValue: parseFloat(e.target.value)})}
+                                            disabled={!isEditing}
+                                            placeholder="e.g. 0.5"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleApplyFormula}
+                                            disabled={!isEditing}
+                                            className="inline-flex items-center px-4 py-2 border border-l-0 border-gray-300 rounded-r-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium"
+                                        >
+                                            Apply
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
                         )}
                     </div>
 
