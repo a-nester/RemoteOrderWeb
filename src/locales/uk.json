@@ -22,7 +22,9 @@
         "priceTypes": "Типи цін",
         "orders": "Замовлення",
         "settings": "Налаштування",
-        "signOut": "Вихід"
+        "signOut": "Вихід",
+        "counterparties": "Контрагенти",
+        "groups": "Групи"
     },
     "settings": {
         "title": "Налаштування",
