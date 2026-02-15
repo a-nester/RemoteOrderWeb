@@ -371,39 +371,61 @@ export default function PriceDocumentEditor() {
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Price</th>
-                                    <th className="px-4 py-2"></th>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase w-1/3">Product</th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                                        Source Price <br/>
+                                        <span className="text-[10px] normal-case">
+                                            ({document.sourcePriceTypeId ? priceTypes.find(pt => pt.id === document.sourcePriceTypeId)?.name : 'Standard'})
+                                        </span>
+                                    </th>
+                                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                                        Target Price <br/>
+                                        <span className="text-[10px] normal-case">
+                                            ({document.targetPriceTypeId ? priceTypes.find(pt => pt.id === document.targetPriceTypeId)?.name : 'Target'})
+                                        </span>
+                                    </th>
+                                    <th className="px-4 py-2 w-10"></th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {(document.items || []).map((item, index) => (
-                                    <tr key={index}>
-                                        <td className="px-4 py-2 text-sm text-gray-900">
-                                            {item.productName || products.find(p => p.id === item.productId)?.name || 'Unknown'}
-                                            <span className="text-gray-500 text-xs ml-1">({item.unit})</span>
-                                        </td>
-                                        <td className="px-4 py-2 text-sm text-right">
-                                            <input
-                                                type="number"
-                                                className="w-24 text-right border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm py-1"
-                                                value={item.price}
-                                                onChange={e => handleUpdateItemPrice(index, parseFloat(e.target.value))}
-                                                disabled={!isEditing}
-                                            />
-                                        </td>
-                                        <td className="px-4 py-2 text-center">
-                                            {isEditing && (
-                                                <button onClick={() => handleRemoveItem(index)} className="text-red-600 hover:text-red-900">
-                                                    <Trash className="h-4 w-4" />
-                                                </button>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
+                                {(document.items || []).map((item, index) => {
+                                    const product = products.find(p => p.id === item.productId);
+                                    const sourceSlug = document.sourcePriceTypeId 
+                                        ? priceTypes.find(pt => String(pt.id) === String(document.sourcePriceTypeId))?.slug 
+                                        : 'standard';
+                                    const basePrice = product ? (product.prices as any)[sourceSlug || 'standard'] : 0;
+
+                                    return (
+                                        <tr key={index}>
+                                            <td className="px-4 py-2 text-sm text-gray-900">
+                                                {item.productName || product?.name || 'Unknown'}
+                                                <span className="text-gray-500 text-xs ml-1">({item.unit})</span>
+                                            </td>
+                                            <td className="px-4 py-2 text-sm text-right text-gray-400">
+                                                {basePrice ? Number(basePrice).toFixed(2) : '-'}
+                                            </td>
+                                            <td className="px-4 py-2 text-sm text-right">
+                                                <input
+                                                    type="number"
+                                                    className="w-24 text-right border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm py-1"
+                                                    value={item.price}
+                                                    onChange={e => handleUpdateItemPrice(index, parseFloat(e.target.value))}
+                                                    disabled={!isEditing}
+                                                />
+                                            </td>
+                                            <td className="px-4 py-2 text-center">
+                                                {isEditing && (
+                                                    <button onClick={() => handleRemoveItem(index)} className="text-red-600 hover:text-red-900">
+                                                        <Trash className="h-4 w-4" />
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                                 {(document.items || []).length === 0 && (
                                     <tr>
-                                        <td colSpan={3} className="px-4 py-8 text-center text-gray-500 text-sm">
+                                        <td colSpan={4} className="px-4 py-8 text-center text-gray-500 text-sm">
                                             No products added yet.
                                         </td>
                                     </tr>

@@ -65,10 +65,25 @@ export const ProductsService = {
                     standardPrice = 0;
                 }
 
+                // Ensure pricesObj has standard price if missing, but preserve other keys
+                let finalPrices = typeof item.prices === 'string'
+                    ? JSON.parse(item.prices)
+                    : (item.prices || {});
+
+                // If parsing failed or valid object, ensure it's an object
+                if (typeof finalPrices !== 'object' || finalPrices === null) {
+                    finalPrices = {};
+                }
+
+                // Ensure standard price is set correctly for backward compatibility/display
+                if (!finalPrices.standard) {
+                    finalPrices.standard = standardPrice;
+                }
+
                 return {
                     id: item.id,
                     name: item.name,
-                    prices: { standard: standardPrice },
+                    prices: finalPrices,
                     unit: item.unit,
                     category: item.category,
                     photos: item.photos || [],
