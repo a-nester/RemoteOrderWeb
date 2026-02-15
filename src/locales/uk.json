@@ -1,0 +1,54 @@
+
+{
+    "common": {
+        "loading": "Завантаження...",
+        "error": "Помилка",
+        "save": "Зберегти",
+        "cancel": "Скасувати",
+        "delete": "Видалити",
+        "edit": "Редагувати",
+        "add": "Додати",
+        "apply": "Застосувати",
+        "copy": "Копіювати",
+        "confirm": "Підтвердити",
+        "search": "Пошук...",
+        "actions": "Дії"
+    },
+    "menu": {
+        "dashboard": "Дашборд",
+        "products": "Товари",
+        "priceEditor": "Редактор Цін",
+        "priceSettings": "Установка цін",
+        "priceTypes": "Типи цін",
+        "orders": "Замовлення",
+        "settings": "Налаштування",
+        "signOut": "Вихід"
+    },
+    "settings": {
+        "title": "Налаштування",
+        "language": "Мова",
+        "theme": "Тема",
+        "light": "Світла",
+        "dark": "Темна",
+        "system": "Системна"
+    },
+    "priceDocument": {
+        "titleNew": "Новий Ціновий Документ",
+        "titleEdit": "Редагування Цінового Документа",
+        "details": "Деталі Документа",
+        "date": "Дата",
+        "inputMethod": "Метод Введення",
+        "manual": "Ручне Введення",
+        "formula": "Формула (Націнка)",
+        "targetPriceType": "Тип Ціни (Встановити)",
+        "sourcePriceType": "Базова Ціна (Для розрахунку)",
+        "markup": "Відсоток Націнки (%)",
+        "rounding": "Округлення (0.01 - 10)",
+        "comment": "Коментар",
+        "productsPrices": "Товари та Ціни",
+        "sourcePrice": "Вхідна Ціна",
+        "targetPrice": "Вихідна Ціна",
+        "applyPrices": "Застосувати Ціни",
+        "applied": "ЗАСТОСОВАНО"
+    }
+}

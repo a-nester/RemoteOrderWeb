@@ -1,0 +1,54 @@
+
+{
+    "common": {
+        "loading": "Loading...",
+        "error": "Error",
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "edit": "Edit",
+        "add": "Add",
+        "apply": "Apply",
+        "copy": "Copy",
+        "confirm": "Confirm",
+        "search": "Search...",
+        "actions": "Actions"
+    },
+    "menu": {
+        "dashboard": "Dashboard",
+        "products": "Products",
+        "priceEditor": "Price Editor",
+        "priceSettings": "Price Settings",
+        "priceTypes": "Price Types",
+        "orders": "Orders",
+        "settings": "Settings",
+        "signOut": "Sign Out"
+    },
+    "settings": {
+        "title": "Settings",
+        "language": "Language",
+        "theme": "Theme",
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
+    },
+    "priceDocument": {
+        "titleNew": "New Price Document",
+        "titleEdit": "Edit Price Document",
+        "details": "Document Details",
+        "date": "Date",
+        "inputMethod": "Input Method",
+        "manual": "Manual Entry",
+        "formula": "Formula (Markup)",
+        "targetPriceType": "Target Price Type (To set)",
+        "sourcePriceType": "Source Price Type (Base for calc)",
+        "markup": "Markup Percentage (%)",
+        "rounding": "Rounding (0.01 - 10)",
+        "comment": "Comment",
+        "productsPrices": "Products & Prices",
+        "sourcePrice": "Source Price",
+        "targetPrice": "Target Price",
+        "applyPrices": "Apply Prices",
+        "applied": "APPLIED"
+    }
+}

@@ -7,6 +7,10 @@ import ProductForm from './pages/ProductForm';
 import PriceDocumentList from './pages/PriceDocuments';
 import PriceDocumentEditor from './pages/PriceDocuments/PriceDocumentEditor';
 import Layout from './components/Layout';
+import { ThemeProvider } from './context/ThemeContext';
+import Settings from './pages/Settings';
+import PriceTypes from './pages/PriceTypes';
+import './i18n';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -20,9 +24,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
+    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
         <Route 
           path="/dashboard" 
           element={
@@ -76,8 +81,29 @@ function App() {
             </ProtectedRoute>
           } 
         />
+        <Route 
+          path="/price-types" 
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <PriceTypes />
+              </Layout>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/settings" 
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <Settings />
+              </Layout>
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

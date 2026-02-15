@@ -1,8 +1,9 @@
-// import { Fragment } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
-import { LogOut, LayoutDashboard, Package, ShoppingCart, User, FileText } from 'lucide-react';
+import { LogOut, LayoutDashboard, Package, ShoppingCart, User, FileText, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useTranslation } from 'react-i18next';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,44 +13,135 @@ interface LayoutProps {
 export default function Layout({ children, title }: LayoutProps) {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { t } = useTranslation();
+  const [isPriceEditorOpen, setIsPriceEditorOpen] = useState(
+      location.pathname.startsWith('/price-documents') || location.pathname.startsWith('/price-types')
+  );
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Products', href: '/products', icon: Package },
-    { name: 'Price Settings', href: '/price-documents', icon: FileText },
-    { name: 'Orders', href: '/orders', icon: ShoppingCart },
-  ];
+  const togglePriceEditor = () => setIsPriceEditorOpen(!isPriceEditorOpen);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex transition-colors duration-200">
       {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-30 hidden md:block">
-        <div className="flex items-center justify-center h-16 border-b">
-          <h1 className="text-xl font-bold text-indigo-600">RemoteOrder</h1>
+      <div className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out z-30 hidden md:block">
+        <div className="flex items-center justify-center h-16 border-b dark:border-gray-700">
+          <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">RemoteOrder</h1>
         </div>
         <nav className="mt-6 px-4 space-y-2">
-          {navigation.map((item) => (
             <NavLink
-              key={item.name}
-              to={item.href}
+              to="/dashboard"
               className={({ isActive }) =>
                 clsx(
                   'flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors',
                   isActive
-                    ? 'bg-indigo-50 text-indigo-600'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                 )
               }
             >
-              <item.icon className="mr-3 h-5 w-5" />
-              {item.name}
+              <LayoutDashboard className="mr-3 h-5 w-5" />
+              {t('menu.dashboard')}
             </NavLink>
-          ))}
+
+            <NavLink
+              to="/products"
+              className={({ isActive }) =>
+                clsx(
+                  'flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors',
+                  isActive
+                    ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
+                )
+              }
+            >
+              <Package className="mr-3 h-5 w-5" />
+              {t('menu.products')}
+            </NavLink>
+
+            {/* Price Editor Group */}
+            <div>
+                <button
+                    onClick={togglePriceEditor}
+                    className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-md transition-colors"
+                >
+                    <div className="flex items-center">
+                        <FileText className="mr-3 h-5 w-5" />
+                        {t('menu.priceEditor')}
+                    </div>
+                    {isPriceEditorOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                </button>
+                
+                {isPriceEditorOpen && (
+                    <div className="ml-4 mt-1 space-y-1">
+                        <NavLink
+                            to="/price-documents"
+                            className={({ isActive }) =>
+                                clsx(
+                                'flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors',
+                                isActive
+                                    ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
+                                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
+                                )
+                            }
+                        >
+                            <span className="w-5 mr-3"></span> {/* Indent placeholder */}
+                            {t('menu.priceSettings')}
+                        </NavLink>
+                        {/* Price Types - Assuming route /price-types exists or will exist */}
+                        <NavLink
+                            to="/price-types" // TODO: Create this route if not exists
+                            className={({ isActive }) =>
+                                clsx(
+                                'flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors',
+                                isActive
+                                    ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
+                                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
+                                )
+                            }
+                        >
+                             <span className="w-5 mr-3"></span>
+                             {t('menu.priceTypes')}
+                        </NavLink>
+                    </div>
+                )}
+            </div>
+
+             <NavLink
+              to="/orders"
+              className={({ isActive }) =>
+                clsx(
+                  'flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors',
+                  isActive
+                    ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
+                )
+              }
+            >
+              <ShoppingCart className="mr-3 h-5 w-5" />
+              {t('menu.orders')}
+            </NavLink>
+             
+             <NavLink
+              to="/settings"
+              className={({ isActive }) =>
+                clsx(
+                  'flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors',
+                  isActive
+                    ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
+                )
+              }
+            >
+              <Settings className="mr-3 h-5 w-5" />
+              {t('menu.settings')}
+            </NavLink>
+
         </nav>
         <div className="absolute bottom-0 w-full p-4 border-t">
           <div className="flex items-center">
