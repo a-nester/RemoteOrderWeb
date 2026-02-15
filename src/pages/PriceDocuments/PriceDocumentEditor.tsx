@@ -114,6 +114,39 @@ export default function PriceDocumentEditor() {
         }
     };
 
+    const handleApplyFormula = () => {
+        const markup = document.markupPercentage;
+        if (markup === undefined || markup === null || isNaN(markup)) {
+            setNotification({ type: 'error', message: 'Please enter a valid markup percentage' });
+            return;
+        }
+
+        const sourceSlug = document.sourcePriceTypeId 
+            ? priceTypes.find(pt => String(pt.id) === String(document.sourcePriceTypeId))?.slug 
+            : 'standard'; 
+
+        if (!sourceSlug) {
+             setNotification({ type: 'error', message: 'Invalid source price type' });
+             return;
+        }
+
+        const updatedItems = (document.items || []).map(item => {
+            const product = products.find(p => p.id === item.productId);
+            if (!product) return item;
+
+            const basePrice = (product.prices as any)[sourceSlug] || 0;
+            const newPrice = basePrice * (1 + markup / 100);
+            
+            return {
+                ...item,
+                price: parseFloat(newPrice.toFixed(2))
+            };
+        });
+
+        setDocument(prev => ({ ...prev, items: updatedItems }));
+        setNotification({ type: 'success', message: 'Prices recalculated successfully' });
+    };
+
     const handleAddItem = () => {
         if (!selectedProduct) return;
         const prod = products.find(p => p.id === selectedProduct);
@@ -274,14 +307,24 @@ export default function PriceDocumentEditor() {
                         {document.inputMethod === 'FORMULA' && (
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Markup Percentage (%)</label>
-                                <input
-                                    type="number"
-                                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                    value={document.markupPercentage || ''}
-                                    onChange={e => setDocument({...document, markupPercentage: parseFloat(e.target.value)})}
-                                    disabled={!isEditing}
-                                    placeholder="e.g. 10 for 10% markup"
-                                />
+                                <div className="mt-1 flex rounded-md shadow-sm">
+                                    <input
+                                        type="number"
+                                        className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-l-md border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                        value={document.markupPercentage || ''}
+                                        onChange={e => setDocument({...document, markupPercentage: parseFloat(e.target.value)})}
+                                        disabled={!isEditing}
+                                        placeholder="e.g. 10"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleApplyFormula}
+                                        disabled={!isEditing}
+                                        className="inline-flex items-center px-4 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium"
+                                    >
+                                        Apply
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
