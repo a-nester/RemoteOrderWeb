@@ -73,7 +73,31 @@ export default function PriceDocumentList() {
                                         {doc.comment || '-'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button className="text-indigo-600 hover:text-indigo-900">View</button>
+                                        <button 
+                                            className="text-indigo-600 hover:text-indigo-900 mr-4"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate(`/price-documents/${doc.id}`);
+                                            }}
+                                        >
+                                            View
+                                        </button>
+                                        <button 
+                                            className="text-gray-600 hover:text-gray-900"
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                if (!confirm('Are you sure you want to copy this document?')) return;
+                                                try {
+                                                    const newDoc = await PriceDocumentsService.copyDocument(doc.id);
+                                                    navigate(`/price-documents/${newDoc.id}`);
+                                                } catch (error) {
+                                                    console.error('Failed to copy document', error);
+                                                    alert('Failed to copy document');
+                                                }
+                                            }}
+                                        >
+                                            Copy
+                                        </button>
                                     </td>
                                 </tr>
                             ))
