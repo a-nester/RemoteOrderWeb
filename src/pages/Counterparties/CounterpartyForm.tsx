@@ -42,7 +42,13 @@ export default function CounterpartyForm({ counterparty, groups, onSave, onCance
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        await onSave(formData);
+        // Sanitize: convert empty strings to null for optional foreign keys
+        const payload = {
+            ...formData,
+            priceTypeId: formData.priceTypeId || null,
+            groupId: formData.groupId || null
+        };
+        await onSave(payload);
     };
 
     return (
