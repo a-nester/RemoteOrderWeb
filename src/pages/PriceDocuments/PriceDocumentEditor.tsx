@@ -125,6 +125,9 @@ export default function PriceDocumentEditor() {
             ? priceTypes.find(pt => String(pt.id) === String(document.sourcePriceTypeId))?.slug 
             : 'standard'; 
 
+        console.log("Applying Formula. SourceTypeID:", document.sourcePriceTypeId, "Derived Slug:", sourceSlug);
+        console.log("All Price Types:", priceTypes);
+
         if (!sourceSlug) {
              setNotification({ type: 'error', message: 'Invalid source price type' });
              return;
@@ -135,6 +138,8 @@ export default function PriceDocumentEditor() {
             if (!product) return item;
 
             const basePrice = (product.prices as any)[sourceSlug] || 0;
+            console.log(`Product: ${product.name}, Slug: ${sourceSlug}, BasePrice: ${basePrice}, RawPrices:`, product.prices);
+
             // 1. Calculate with markup
             let newPrice = basePrice * (1 + markup / 100);
             
