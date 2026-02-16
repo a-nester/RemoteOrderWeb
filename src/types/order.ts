@@ -15,6 +15,7 @@ export interface Order {
     amount: number;
     status: OrderStatus;
     currency: string;
+    items?: any[];
 }
 
 export interface OrderFilter {

@@ -16,7 +16,7 @@ const mapOrder = (apiOrder: any): Order => {
         date: new Date(apiOrder.createdAt).toLocaleDateString(),
         counterpartyId: apiOrder.counterpartyId || apiOrder.userId,
         counterpartyName: apiOrder.counterpartyName || 'Unknown Client',
-        sum: Number(apiOrder.total || 0),
+        amount: Number(apiOrder.total || 0),
         status: apiOrder.status,
         currency: 'UAH',
         items: typeof apiOrder.items === 'string' ? JSON.parse(apiOrder.items) : (apiOrder.items || [])
