@@ -10,6 +10,19 @@ const getAuthHeader = () => {
     return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+const mapOrder = (apiOrder: any): Order => {
+    return {
+        id: apiOrder.id,
+        date: new Date(apiOrder.createdAt).toLocaleDateString(),
+        counterpartyId: apiOrder.counterpartyId || apiOrder.userId,
+        counterpartyName: apiOrder.counterpartyName || 'Unknown Client',
+        sum: Number(apiOrder.total || 0),
+        status: apiOrder.status,
+        currency: 'UAH',
+        items: typeof apiOrder.items === 'string' ? JSON.parse(apiOrder.items) : (apiOrder.items || [])
+    };
+};
+
 export const OrderService = {
     getOrders: async (filter: OrderFilter): Promise<Order[]> => {
         try {
@@ -23,24 +36,18 @@ export const OrderService = {
                 headers: getAuthHeader()
             });
 
-            return response.data.map((o: any) => {
-                // Parse items if string
-                let items = [];
-                return response.data.map((o: any) => mapOrder(o));
-            } catch (error) {
-                console.error("Failed to fetch orders", error);
-                throw error;
-            }
-        },
+            return response.data.map(mapOrder);
+        } catch (error) {
+            console.error("Failed to fetch orders", error);
+            throw error;
+        }
+    },
 
-        createOrder: async (_data: Partial<Order>): Promise<Order> => {
-            // Not implemented for Admin Web yet
-            throw new Error("Not implemented");
-        },
+    createOrder: async (_data: Partial<Order>): Promise<Order> => {
+        throw new Error("Not implemented");
+    },
 
-            updateOrder: async (_id: string, _data: Partial<Order>): Promise<Order> => {
-                // Implement status update if needed
-                // For now just return mock or throw
-                throw new Error("Not implemented");
-            }
-    };
+    updateOrder: async (_id: string, _data: Partial<Order>): Promise<Order> => {
+        throw new Error("Not implemented");
+    }
+};
