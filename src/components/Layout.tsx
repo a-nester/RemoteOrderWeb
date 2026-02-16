@@ -29,7 +29,7 @@ export default function Layout({ children, title }: LayoutProps) {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex transition-colors duration-200">
       {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out z-30 hidden md:block">
+      <div className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out z-30 hidden md:block print:hidden">
         <div className="flex items-center justify-center h-16 border-b dark:border-gray-700">
           <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">RemoteOrder</h1>
         </div>
@@ -182,7 +182,7 @@ export default function Layout({ children, title }: LayoutProps) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
-        <header className="bg-white shadow-sm h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
+        <header className="bg-white shadow-sm h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 print:hidden">
             <h2 className="text-xl font-semibold text-gray-800">{title || 'Dashboard'}</h2>
             {/* Mobile menu button could go here */}
         </header>

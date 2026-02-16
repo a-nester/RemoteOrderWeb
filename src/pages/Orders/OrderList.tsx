@@ -3,14 +3,16 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Order } from '../../types/order';
 import { OrderStatus } from '../../types/order';
-import { Edit } from 'lucide-react';
+import { Edit, Trash2, Eye } from 'lucide-react';
 
 interface OrderListProps {
     orders: Order[];
     onEdit: (order: Order) => void;
+    onDelete?: (order: Order) => void;
+    onView?: (order: Order) => void;
 }
 
-const OrderList: React.FC<OrderListProps> = ({ orders, onEdit }) => {
+const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, onView }) => {
     const { t } = useTranslation();
 
     const getStatusColor = (status: OrderStatus) => {
@@ -73,12 +75,33 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onEdit }) => {
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <button
-                                        onClick={() => onEdit(order)}
-                                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-                                    >
-                                        <Edit size={18} />
-                                    </button>
+                                    <div className="flex justify-end gap-2">
+                                        {onView && (
+                                            <button
+                                                onClick={() => onView(order)}
+                                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                                                title={t('common.view', 'View')}
+                                            >
+                                                <Eye size={18} />
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => onEdit(order)}
+                                            className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                                            title={t('common.edit', 'Edit')}
+                                        >
+                                            <Edit size={18} />
+                                        </button>
+                                        {onDelete && (
+                                             <button
+                                                onClick={() => onDelete(order)}
+                                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                                title={t('common.delete', 'Delete')}
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        )}
+                                    </div>
                                 </td>
                             </tr>
                         ))

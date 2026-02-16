@@ -44,11 +44,36 @@ export const OrderService = {
         }
     },
 
+    getOrder: async (id: string): Promise<Order> => {
+        try {
+            const response = await axios.get(`${ORDERS_API_URL}/${id}`, { headers: getAuthHeader() });
+            return mapOrder(response.data);
+        } catch (error) {
+            console.error("Failed to get order", error);
+            throw error;
+        }
+    },
+
     createOrder: async (_data: Partial<Order>): Promise<Order> => {
         throw new Error("Not implemented");
     },
 
-    updateOrder: async (_id: string, _data: Partial<Order>): Promise<Order> => {
-        throw new Error("Not implemented");
+    updateOrder: async (id: string, data: Partial<Order>): Promise<Order> => {
+        try {
+            const response = await axios.put(`${ORDERS_API_URL}/${id}`, data, { headers: getAuthHeader() });
+            return mapOrder(response.data);
+        } catch (error) {
+            console.error("Failed to update order", error);
+            throw error;
+        }
+    },
+
+    deleteOrder: async (id: string): Promise<void> => {
+        try {
+            await axios.delete(`${ORDERS_API_URL}/${id}`, { headers: getAuthHeader() });
+        } catch (error) {
+            console.error("Failed to delete order", error);
+            throw error;
+        }
     }
 };

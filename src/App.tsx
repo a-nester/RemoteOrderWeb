@@ -12,6 +12,8 @@ import Settings from './pages/Settings';
 import PriceTypes from './pages/PriceTypes';
 import Counterparties from './pages/Counterparties';
 import Orders from './pages/Orders';
+import OrderDetails from './pages/Orders/OrderDetails';
+import OrderEdit from './pages/Orders/OrderEdit';
 import './i18n';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -119,6 +121,26 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <Orders />
+              </Layout>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/orders/:id" 
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <OrderDetails />
+              </Layout>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/orders/:id/edit" 
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <OrderEdit />
               </Layout>
             </ProtectedRoute>
           } 

@@ -1,4 +1,5 @@
 
+import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, Search } from 'lucide-react';
@@ -8,6 +9,7 @@ import OrderList from './OrderList';
 
 export default function Orders() {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     
@@ -19,9 +21,6 @@ export default function Orders() {
     });
     const [endDate, setEndDate] = useState(() => {
         const date = new Date();
-        // Last day of current month... actually let's just default to today for end date or end of month?
-        // Requirement says "default range - current month".
-        // Let's set to end of current month
         return new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().split('T')[0];
     });
     const [searchTerm, setSearchTerm] = useState('');
@@ -48,13 +47,28 @@ export default function Orders() {
     };
 
     const handleCreateOrder = () => {
-        // Todo: Implement create order modal/page
+        // Todo: Implement create order logic
         alert("Create Order functionality to be implemented");
     };
 
+    const handleDeleteOrder = async (order: Order) => {
+        if (window.confirm(t('common.confirmDelete', 'Are you sure you want to delete this order?'))) {
+            try {
+                await OrderService.deleteOrder(order.id);
+                loadOrders();
+            } catch (error) {
+                console.error(error);
+                alert(t('common.error', 'An error occurred'));
+            }
+        }
+    };
+
+    const handleViewOrder = (order: Order) => {
+        navigate(`/orders/${order.id}`);
+    };
+
     const handleEditOrder = (order: Order) => {
-         // Todo: Implement edit order modal/page
-         alert(`Edit Order ${order.id} functionality to be implemented`);
+        navigate(`/orders/${order.id}/edit`);
     };
 
     return (
@@ -108,7 +122,12 @@ export default function Orders() {
             {loading ? (
                 <div className="text-center py-10">{t('common.loading', 'Loading...')}</div>
             ) : (
-                <OrderList orders={orders} onEdit={handleEditOrder} />
+                <OrderList 
+                    orders={orders} 
+                    onEdit={handleEditOrder} 
+                    onDelete={handleDeleteOrder}
+                    onView={handleViewOrder}
+                />
             )}
         </div>
     );
