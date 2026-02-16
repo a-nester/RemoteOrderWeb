@@ -11,10 +11,10 @@ const getAuthHeader = () => {
 };
 
 const mapOrder = (apiOrder: any): Order => {
-    const dateVal = apiOrder.createdAt || apiOrder.date;
+    const dateVal = apiOrder.createdAt || apiOrder.date || new Date().toISOString();
     return {
         id: apiOrder.id,
-        date: dateVal ? new Date(dateVal).toLocaleDateString() : 'N/A',
+        date: dateVal,
         counterpartyId: apiOrder.counterpartyId || apiOrder.userId,
         counterpartyName: apiOrder.counterpartyName || 'Unknown Client',
         amount: Number(apiOrder.total || 0),
