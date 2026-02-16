@@ -26,37 +26,21 @@ export const OrderService = {
             return response.data.map((o: any) => {
                 // Parse items if string
                 let items = [];
-                try {
-                    items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
-                } catch (e) {
-                    console.warn("Failed to parse order items", o.items);
-                }
+                return response.data.map((o: any) => mapOrder(o));
+            } catch (error) {
+                console.error("Failed to fetch orders", error);
+                throw error;
+            }
+        },
 
-                return {
-                    id: o.id,
-                    date: o.createdAt,
-                    counterpartyId: o.userId || 'unknown',
-                    counterpartyName: o.userId || 'Unknown', // TODO: Fetch real name
-                    amount: Number(o.total || 0),
-                    status: o.status,
-                    currency: 'UAH',
-                    items: items
-                };
-            });
-        } catch (error) {
-            console.error("Failed to fetch orders", error);
-            throw error;
-        }
-    },
+        createOrder: async (_data: Partial<Order>): Promise<Order> => {
+            // Not implemented for Admin Web yet
+            throw new Error("Not implemented");
+        },
 
-    createOrder: async (_data: Partial<Order>): Promise<Order> => {
-        // Not implemented for Admin Web yet
-        throw new Error("Not implemented");
-    },
-
-    updateOrder: async (_id: string, _data: Partial<Order>): Promise<Order> => {
-        // Implement status update if needed
-        // For now just return mock or throw
-        throw new Error("Not implemented");
-    }
-};
+            updateOrder: async (_id: string, _data: Partial<Order>): Promise<Order> => {
+                // Implement status update if needed
+                // For now just return mock or throw
+                throw new Error("Not implemented");
+            }
+    };
