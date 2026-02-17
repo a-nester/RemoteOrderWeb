@@ -121,13 +121,13 @@ export default function OrderDetails() {
                                     {getProductName(item.productId || item.id || 'unknown')} 
                                     <span className="text-sm text-gray-500 ml-2">x {item.quantity || item.count}</span>
                                 </td>
-                                <td className="py-2 text-right dark:text-gray-300">{((item.quantity || item.count || 0) * (item.price || 0)).toFixed(2)}</td>
+<td className="py-2 text-right dark:text-gray-300">{((Number(item.quantity || item.count || 0)) * (Number(item.price || 0))).toFixed(2)}</td>
                             </tr>
                          ))}
                     </tbody>
                 </table>
                 <div className="text-right font-bold text-xl dark:text-white">
-                    {order.amount.toFixed(2)} {order.currency}
+                    {Number(order.amount || 0).toFixed(2)} {order.currency}
                 </div>
             </div>
 
@@ -180,14 +180,14 @@ export default function OrderDetails() {
                                 <td className="border border-black p-1 text-left">{getProductName(item.productId || item.id || 'unknown')}</td>
                                 <td className="border border-black p-1 text-center">{item.unit || 'шт'}</td>
                                 <td className="border border-black p-1 text-right">{item.quantity || item.count}</td>
-                                <td className="border border-black p-1 text-right">{(item.price || 0).toFixed(2)}</td>
-                                <td className="border border-black p-1 text-right">{((item.quantity || item.count || 0) * (item.price || 0)).toFixed(2)}</td>
+                                <td className="border border-black p-1 text-right">{Number(item.price || 0).toFixed(2)}</td>
+                                <td className="border border-black p-1 text-right">{((Number(item.quantity || item.count || 0)) * (Number(item.price || 0))).toFixed(2)}</td>
                             </tr>
                         ))}
                         {/* Total Row in Table */}
                         <tr>
                             <td colSpan={5} className="border border-black p-1 text-right font-bold">{t('print.total', 'Total')}:</td>
-                            <td className="border border-black p-1 text-right font-bold">{order.amount.toFixed(2)}</td>
+                            <td className="border border-black p-1 text-right font-bold">{Number(order.amount || 0).toFixed(2)}</td>
                         </tr>
                     </tbody>
                 </table>

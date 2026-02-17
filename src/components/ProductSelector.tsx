@@ -92,7 +92,7 @@ export default function ProductSelector({ isOpen, onClose, products, onSelect }:
                                         {product.name}
                                     </h3>
                                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                                        {product.prices?.standard ? `${product.prices?.standard}` : '0'} 
+                                        {Number(product.prices?.standard || 0).toFixed(2)} 
                                         <span className="text-xs ml-1">UAH</span> 
                                         <span className="mx-1">/</span> 
                                         {product.unit}
