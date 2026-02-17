@@ -1,9 +1,26 @@
 
 {
+    "action": {
+        "selectClient": "Оберіть клієнта",
+        "addProduct": "Додати товар"
+    },
+    "status": {
+        "NEW": "Нове",
+        "ACCEPTED": "Прийнято",
+        "COMPLETED": "Виконано"
+    },
+    "print": {
+        "invoice": "НАКЛАДНА",
+        "orderNumber": "Замовлення #",
+        "billTo": "Платник",
+        "totalAmount": "До сплати"
+    },
     "common": {
         "loading": "Завантаження...",
         "error": "Помилка",
         "save": "Зберегти",
+        "saving": "Збереження...",
+        "saved": "Збережено",
         "cancel": "Скасувати",
         "delete": "Видалити",
         "edit": "Редагувати",
@@ -12,11 +29,20 @@
         "copy": "Копіювати",
         "confirm": "Підтвердити",
         "search": "Пошук...",
+        "back": "Назад",
+        "print": "Друк",
         "actions": "Дії",
         "date": "Дата",
         "sum": "Сума",
         "status": "Статус",
-        "noData": "Даних не знайдено"
+        "items": "Товари",
+        "product": "Товар",
+        "quantity": "К-сть",
+        "price": "Ціна",
+        "total": "Сума",
+        "comment": "Коментар",
+        "noData": "Даних не знайдено",
+        "noResults": "Нічого не знайдено"
     },
     "menu": {
         "dashboard": "Дашборд",
@@ -59,10 +85,5 @@
     },
     "order": {
         "create": "Нове Замовлення"
-    },
-    "status": {
-        "NEW": "Нове",
-        "ACCEPTED": "Прийнято",
-        "COMPLETED": "Проведено"
     }
 }

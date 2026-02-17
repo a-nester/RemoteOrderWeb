@@ -1,9 +1,26 @@
 
 {
+    "action": {
+        "selectClient": "Select Client",
+        "addProduct": "Add Product"
+    },
+    "status": {
+        "NEW": "New",
+        "ACCEPTED": "Accepted",
+        "COMPLETED": "Completed"
+    },
+    "print": {
+        "invoice": "INVOICE",
+        "orderNumber": "Order #",
+        "billTo": "Bill To",
+        "totalAmount": "Total Amount"
+    },
     "common": {
         "loading": "Loading...",
         "error": "Error",
         "save": "Save",
+        "saving": "Saving...",
+        "saved": "Saved",
         "cancel": "Cancel",
         "delete": "Delete",
         "edit": "Edit",
@@ -12,11 +29,20 @@
         "copy": "Copy",
         "confirm": "Confirm",
         "search": "Search...",
+        "back": "Back",
+        "print": "Print",
         "actions": "Actions",
         "date": "Date",
         "sum": "Sum",
         "status": "Status",
-        "noData": "No data found"
+        "items": "Items",
+        "product": "Product",
+        "quantity": "Qty",
+        "price": "Price",
+        "total": "Total",
+        "comment": "Comment",
+        "noData": "No data found",
+        "noResults": "No results found"
     },
     "menu": {
         "dashboard": "Dashboard",
@@ -59,10 +85,5 @@
     },
     "order": {
         "create": "New Order"
-    },
-    "status": {
-        "NEW": "New",
-        "ACCEPTED": "Accepted",
-        "COMPLETED": "Completed"
     }
 }

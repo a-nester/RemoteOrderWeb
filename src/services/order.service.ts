@@ -14,7 +14,11 @@ const mapOrder = (apiOrder: any): Order => {
     const dateVal = apiOrder.createdAt || apiOrder.date || new Date().toISOString();
     let items = [];
     try {
-        items = typeof apiOrder.items === 'string' ? JSON.parse(apiOrder.items) : (apiOrder.items || []);
+        if (typeof apiOrder.items === 'string') {
+            items = JSON.parse(apiOrder.items);
+        } else if (Array.isArray(apiOrder.items)) {
+            items = apiOrder.items;
+        }
     } catch (e) {
         console.warn("Failed to parse items", e);
     }
