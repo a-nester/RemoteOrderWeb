@@ -37,7 +37,7 @@ export default function OrderForm({ initialData, onSubmit, saving, title }: Orde
     const [status, setStatus] = useState<OrderStatus>(initialData?.status || OrderStatus.NEW);
     const [counterpartyId, setCounterpartyId] = useState<string>(initialData?.counterpartyId || '');
     const [comment, setComment] = useState(initialData?.comment || '');
-    const [items, setItems] = useState<OrderItem[]>(initialData?.items || []);
+    const [items, setItems] = useState<OrderItem[]>(Array.isArray(initialData?.items) ? initialData.items : []);
     
     // UI State
     const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
@@ -118,7 +118,7 @@ export default function OrderForm({ initialData, onSubmit, saving, title }: Orde
     }, [selectedCounterparty, priceTypes]);
 
     const totalAmount = useMemo(() => 
-        items.reduce((sum, item) => sum + item.total, 0),
+        items.reduce((sum, item) => sum + (Number(item.total) || 0), 0),
     [items]);
 
     // Handlers
