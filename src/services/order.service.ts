@@ -12,6 +12,13 @@ const getAuthHeader = () => {
 
 const mapOrder = (apiOrder: any): Order => {
     const dateVal = apiOrder.createdAt || apiOrder.date || new Date().toISOString();
+    let items = [];
+    try {
+        items = typeof apiOrder.items === 'string' ? JSON.parse(apiOrder.items) : (apiOrder.items || []);
+    } catch (e) {
+        console.warn("Failed to parse items", e);
+    }
+
     return {
         id: apiOrder.id,
         date: dateVal,
@@ -20,8 +27,9 @@ const mapOrder = (apiOrder: any): Order => {
         amount: Number(apiOrder.total || 0),
         status: apiOrder.status,
         currency: 'UAH',
-        items: typeof apiOrder.items === 'string' ? JSON.parse(apiOrder.items) : (apiOrder.items || []),
-        isDeleted: apiOrder.isDeleted
+        items: items,
+        isDeleted: apiOrder.isDeleted,
+        comment: apiOrder.comment
     };
 };
 
@@ -56,8 +64,14 @@ export const OrderService = {
         }
     },
 
-    createOrder: async (_data: Partial<Order>): Promise<Order> => {
-        throw new Error("Not implemented");
+    createOrder: async (data: Partial<Order>): Promise<Order> => {
+        try {
+            const response = await axios.post(ORDERS_API_URL, data, { headers: getAuthHeader() });
+            return mapOrder(response.data);
+        } catch (error) {
+            console.error("Failed to create order", error);
+            throw error;
+        }
     },
 
     updateOrder: async (id: string, data: Partial<Order>): Promise<Order> => {

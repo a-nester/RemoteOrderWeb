@@ -50,7 +50,7 @@ export default function OrderDetails() {
     if (!order) return <div className="p-8 text-center text-red-500">Order not found</div>;
 
     return (
-        <div className="max-w-4xl mx-auto p-4 md:p-8 bg-white dark:bg-gray-800 shadow-lg rounded-lg print:shadow-none print:w-full">
+        <div id="invoice-print-area" className="max-w-4xl mx-auto p-4 md:p-8 bg-white dark:bg-gray-800 shadow-lg rounded-lg print:shadow-none print:w-full print:absolute print:top-0 print:left-0">
             {/* Header / Actions - Hidden on Print */}
             <div className="flex justify-between items-center mb-8 print:hidden">
                 <button onClick={() => navigate(-1)} className="flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
@@ -71,7 +71,7 @@ export default function OrderDetails() {
                 <div className="border-b pb-6 mb-6 flex justify-between items-start">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">INVOICE</h1>
-                        <p className="text-gray-500">Order #{order.id.slice(0, 8)}</p> {/* Short ID for display */}
+                        <p className="text-gray-500">Order #{order.id.slice(0, 8)}</p>
                     </div>
                     <div className="text-right">
                         <p className="text-gray-600 dark:text-gray-300 font-medium">RemoteOrder Inc.</p>
@@ -96,11 +96,11 @@ export default function OrderDetails() {
                     <tbody>
                         {order.items && order.items.map((item: any, index: number) => (
                             <tr key={index} className="border-b border-gray-100 dark:border-gray-800">
-                                <td className="py-4 text-sm text-gray-900 dark:text-white">{getProductName(item.id)}</td>
-                                <td className="py-4 text-center text-sm text-gray-600 dark:text-gray-300">{item.count}</td>
+                                <td className="py-4 text-sm text-gray-900 dark:text-white">{getProductName(item.productId || item.id || 'unknown')}</td>
+                                <td className="py-4 text-center text-sm text-gray-600 dark:text-gray-300">{item.quantity || item.count}</td>
                                 <td className="py-4 text-right text-sm text-gray-600 dark:text-gray-300">{item.price}</td>
                                 <td className="py-4 text-right text-sm text-gray-900 dark:text-white font-medium">
-                                    {(item.count * item.price).toFixed(2)}
+                                    {((item.quantity || item.count || 0) * (item.price || 0)).toFixed(2)}
                                 </td>
                             </tr>
                         ))}
@@ -123,25 +123,23 @@ export default function OrderDetails() {
                         body * {
                             visibility: hidden;
                         }
+                        #invoice-print-area, #invoice-print-area * {
+                            visibility: visible;
+                        }
+                        #invoice-print-area {
+                            position: absolute;
+                            left: 0;
+                            top: 0;
+                            width: 100%;
+                            margin: 0;
+                            padding: 20px;
+                            background: white;
+                            color: black;
+                            z-index: 9999;
+                        }
                         .print\\:hidden {
                             display: none !important;
                         }
-                        .print\\:p-0 {
-                            padding: 0 !important;
-                        }
-                        /* Look for the main container and verify children visibility */
-                        /* Actually, easier approach: hide everything in body, show only the component */
-                        /* But React creates a root. Best is to use a specific print style class on the wrapper */
-                        
-                        #root > * {
-                             display: none; 
-                        }
-                        
-                        /* We need to portal or do something smart. 
-                           Or just simply: Use the print:hidden classes I added and assume the layout works. 
-                           Usually "body * { visibility: hidden }" technique is tricky with React.
-                           Better: 
-                        */
                     }
                 `}
             </style>
