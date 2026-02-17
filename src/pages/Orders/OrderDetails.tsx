@@ -43,9 +43,7 @@ export default function OrderDetails() {
         return p ? p.name : productId;
     };
 
-    const handlePrint = () => {
-        window.print();
-    };
+
 
     const [printType, setPrintType] = useState<'invoice' | 'order'>('invoice');
 
