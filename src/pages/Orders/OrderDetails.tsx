@@ -70,27 +70,27 @@ export default function OrderDetails() {
             <div className="print:p-0">
                 <div className="border-b pb-6 mb-6 flex justify-between items-start">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">INVOICE</h1>
-                        <p className="text-gray-500">Order #{order.id.slice(0, 8)}</p>
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('print.invoice', 'INVOICE')}</h1>
+                        <p className="text-gray-500">{t('print.orderNumber', 'Order #')}{order.id.slice(0, 8)}</p>
                     </div>
                     <div className="text-right">
                         <p className="text-gray-600 dark:text-gray-300 font-medium">RemoteOrder Inc.</p>
-                        <p className="text-sm text-gray-500">Date: {new Date(order.date).toLocaleDateString()}</p>
+                        <p className="text-sm text-gray-500">{t('common.date', 'Date')}: {new Date(order.date).toLocaleDateString()}</p>
                     </div>
                 </div>
 
                 <div className="mb-8">
-                    <h3 className="text-gray-500 uppercase text-xs font-semibold tracking-wider mb-2">Bill To</h3>
+                    <h3 className="text-gray-500 uppercase text-xs font-semibold tracking-wider mb-2">{t('print.billTo', 'Bill To')}</h3>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">{order.counterpartyName}</p>
                 </div>
 
                 <table className="min-w-full mb-8">
                     <thead>
                         <tr className="border-b border-gray-200 dark:border-gray-700">
-                            <th className="py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">Item</th>
-                            <th className="py-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-400">Qty</th>
-                            <th className="py-3 text-right text-sm font-semibold text-gray-600 dark:text-gray-400">Price</th>
-                            <th className="py-3 text-right text-sm font-semibold text-gray-600 dark:text-gray-400">Total</th>
+                            <th className="py-3 text-left text-sm font-semibold text-gray-600 dark:text-gray-400">{t('common.item', 'Item')}</th>
+                            <th className="py-3 text-center text-sm font-semibold text-gray-600 dark:text-gray-400">{t('common.quantity', 'Qty')}</th>
+                            <th className="py-3 text-right text-sm font-semibold text-gray-600 dark:text-gray-400">{t('common.price', 'Price')}</th>
+                            <th className="py-3 text-right text-sm font-semibold text-gray-600 dark:text-gray-400">{t('common.total', 'Total')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -109,7 +109,7 @@ export default function OrderDetails() {
 
                 <div className="flex justify-end border-t border-gray-200 dark:border-gray-700 pt-4">
                     <div className="text-right">
-                        <p className="text-gray-600 dark:text-gray-400 mb-2">Total Amount</p>
+                        <p className="text-gray-600 dark:text-gray-400 mb-2">{t('print.totalAmount', 'Total Amount')}</p>
                         <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
                             {order.amount.toFixed(2)} {order.currency}
                         </p>

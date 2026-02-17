@@ -47,13 +47,19 @@ export default function OrderForm({ initialData, onSubmit, saving, title }: Orde
     }, []);
 
     // Update form when initialData changes (for Edit mode)
+    // Update form when initialData changes (for Edit mode)
     useEffect(() => {
         if (initialData) {
-            setDate(initialData.date ? initialData.date.split('T')[0] : new Date().toISOString().split('T')[0]);
-            setStatus(initialData.status);
-            setCounterpartyId(initialData.counterpartyId);
-            setComment(initialData.comment || '');
-            setItems(initialData.items || []);
+            try {
+                const dateStr = initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+                setDate(dateStr);
+                setStatus(initialData.status || OrderStatus.NEW);
+                setCounterpartyId(initialData.counterpartyId || '');
+                setComment(initialData.comment || '');
+                setItems(Array.isArray(initialData.items) ? initialData.items : []);
+            } catch (e) {
+                console.error("Error setting initial data", e);
+            }
         }
     }, [initialData]);
 
