@@ -4,7 +4,7 @@ import { useProductsStore } from '../store/products.store';
 import Layout from '../components/Layout';
 import { Plus } from 'lucide-react';
 
-import ErrorBoundary from "../components/ErrorBoundary";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 
 export default function Products() {
   return (
