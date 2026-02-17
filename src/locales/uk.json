@@ -10,10 +10,27 @@
         "COMPLETED": "Виконано"
     },
     "print": {
-        "invoice": "НАКЛАДНА",
-        "orderNumber": "Замовлення #",
+        "invoice": "Видаткова накладна",
+        "order": "Замовлення",
+        "orderNumber": "Замовлення №",
+        "invoiceNumber": "Видаткова накладна №",
         "billTo": "Платник",
-        "totalAmount": "До сплати"
+        "totalAmount": "До сплати",
+        "supplier": "Постачальник",
+        "recipient": "Одержувач",
+        "saleCondition": "Умова продажу",
+        "cash": "Готівковий розрахунок",
+        "from": "від",
+        "itemNo": "№",
+        "item": "Товар",
+        "unit": "Од.",
+        "qty": "Кількість",
+        "price": "Ціна",
+        "sum": "Сума",
+        "total": "Всього",
+        "totalSum": "Всього на суму",
+        "fromSupplier": "Від постачальника",
+        "receivedBy": "Отримав(ла)"
     },
     "common": {
         "loading": "Завантаження...",

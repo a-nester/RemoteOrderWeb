@@ -11,9 +11,26 @@
     },
     "print": {
         "invoice": "INVOICE",
+        "order": "ORDER",
         "orderNumber": "Order #",
+        "invoiceNumber": "Invoice #",
         "billTo": "Bill To",
-        "totalAmount": "Total Amount"
+        "totalAmount": "Total Amount",
+        "supplier": "Supplier",
+        "recipient": "Recipient",
+        "saleCondition": "Sale Condition",
+        "cash": "Cash settlement",
+        "from": "from",
+        "itemNo": "No",
+        "item": "Item",
+        "unit": "Unit",
+        "qty": "Qty",
+        "price": "Price",
+        "sum": "Sum",
+        "total": "Total",
+        "totalSum": "Total for the sum",
+        "fromSupplier": "From supplier",
+        "receivedBy": "Received by"
     },
     "common": {
         "loading": "Loading...",
