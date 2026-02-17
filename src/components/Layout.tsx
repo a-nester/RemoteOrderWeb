@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
-import { LogOut, LayoutDashboard, Package, ShoppingCart, User, FileText, Settings, ChevronDown, ChevronRight } from 'lucide-react';
+import { LogOut, LayoutDashboard, Package, ShoppingCart, User, FileText, Settings, ChevronDown, ChevronRight, Archive } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
 
@@ -140,6 +140,21 @@ export default function Layout({ children, title }: LayoutProps) {
             >
               <ShoppingCart className="mr-3 h-5 w-5" />
               {t('menu.orders')}
+            </NavLink>
+
+            <NavLink
+              to="/orders/archive"
+              className={({ isActive }) =>
+                clsx(
+                  'flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors',
+                  isActive
+                    ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
+                )
+              }
+            >
+              <Archive className="mr-3 h-5 w-5" />
+              {t('menu.archive', 'Archive')}
             </NavLink>
              
              <NavLink

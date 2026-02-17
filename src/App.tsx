@@ -14,6 +14,7 @@ import Counterparties from './pages/Counterparties';
 import Orders from './pages/Orders';
 import OrderDetails from './pages/Orders/OrderDetails';
 import OrderEdit from './pages/Orders/OrderEdit';
+import OrdersArchive from './pages/Orders/OrdersArchive';
 import './i18n';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -111,6 +112,16 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <Counterparties />
+              </Layout>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/orders/archive" 
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <OrdersArchive />
               </Layout>
             </ProtectedRoute>
           } 

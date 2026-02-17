@@ -16,10 +16,12 @@ export interface Order {
     status: OrderStatus;
     currency: string;
     items?: any[];
+    isDeleted?: boolean;
 }
 
 export interface OrderFilter {
-    startDate: string;
-    endDate: string;
+    startDate?: string;
+    endDate?: string;
     search?: string;
+    includeDeleted?: boolean;
 }

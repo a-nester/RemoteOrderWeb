@@ -20,7 +20,8 @@ const mapOrder = (apiOrder: any): Order => {
         amount: Number(apiOrder.total || 0),
         status: apiOrder.status,
         currency: 'UAH',
-        items: typeof apiOrder.items === 'string' ? JSON.parse(apiOrder.items) : (apiOrder.items || [])
+        items: typeof apiOrder.items === 'string' ? JSON.parse(apiOrder.items) : (apiOrder.items || []),
+        isDeleted: apiOrder.isDeleted
     };
 };
 
@@ -31,6 +32,7 @@ export const OrderService = {
             if (filter.startDate) params.startDate = filter.startDate;
             if (filter.endDate) params.endDate = filter.endDate;
             if (filter.search) params.search = filter.search;
+            if (filter.includeDeleted) params.includeDeleted = 'true';
 
             const response = await axios.get(ORDERS_API_URL, {
                 params,
@@ -73,6 +75,15 @@ export const OrderService = {
             await axios.delete(`${ORDERS_API_URL}/${id}`, { headers: getAuthHeader() });
         } catch (error) {
             console.error("Failed to delete order", error);
+            throw error;
+        }
+    },
+
+    hardDeleteOrder: async (id: string): Promise<void> => {
+        try {
+            await axios.delete(`${ORDERS_API_URL}/${id}/hard`, { headers: getAuthHeader() });
+        } catch (error) {
+            console.error("Failed to hard delete order", error);
             throw error;
         }
     }
