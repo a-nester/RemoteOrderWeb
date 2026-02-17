@@ -48,15 +48,33 @@ export default function OrderForm({ initialData, onSubmit, saving, title }: Orde
 
     // Update form when initialData changes (for Edit mode)
     // Update form when initialData changes (for Edit mode)
+    // Update form when initialData changes (for Edit mode)
     useEffect(() => {
         if (initialData) {
             try {
-                const dateStr = initialData.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+                // Safe date parsing
+                let dateStr = new Date().toISOString().split('T')[0];
+                if (initialData.date) {
+                    const d = new Date(initialData.date);
+                    if (!isNaN(d.getTime())) {
+                        dateStr = d.toISOString().split('T')[0];
+                    }
+                }
                 setDate(dateStr);
+                
                 setStatus(initialData.status || OrderStatus.NEW);
                 setCounterpartyId(initialData.counterpartyId || '');
                 setComment(initialData.comment || '');
-                setItems(Array.isArray(initialData.items) ? initialData.items : []);
+                
+                // Safe items parsing
+                const rawItems = Array.isArray(initialData.items) ? initialData.items : [];
+                const safeItems = rawItems.map(item => ({
+                    ...item,
+                    quantity: Number(item.quantity) || 0,
+                    price: Number(item.price) || 0,
+                    total: Number(item.total) || (Number(item.quantity || 0) * Number(item.price || 0)) || 0
+                }));
+                setItems(safeItems);
             } catch (e) {
                 console.error("Error setting initial data", e);
             }

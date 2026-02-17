@@ -73,7 +73,7 @@ export default function OrderItemsTable({ items, currency, onUpdateItem, onRemov
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-500">
                                 {readonly ? (
-                                    <span>{item.price.toFixed(2)}</span>
+                                    <span>{Number(item.price || 0).toFixed(2)}</span>
                                 ) : (
                                     <input
                                         type="number"
@@ -86,7 +86,7 @@ export default function OrderItemsTable({ items, currency, onUpdateItem, onRemov
                                 )}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium text-gray-900 dark:text-white">
-                                {item.total.toFixed(2)}
+                                {Number(item.total || 0).toFixed(2)}
                             </td>
                             {!readonly && (
                                 <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
