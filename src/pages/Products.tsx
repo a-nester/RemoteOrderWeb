@@ -49,19 +49,19 @@ function ProductsContent() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[40%]">
                 Product
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Category
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Price (Standard)
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Unit
               </th>
-               <th scope="col" className="relative px-6 py-3">
+               <th scope="col" className="relative px-3 py-3">
                 <span className="sr-only">Edit</span>
               </th>
             </tr>
@@ -69,7 +69,7 @@ function ProductsContent() {
           <tbody className="bg-white divide-y divide-gray-200">
             {products.map((product) => (
               <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4">
+                <td className="px-3 py-4 max-w-[200px]">
                   <div className="flex items-center">
                     <div className="h-10 w-10 flex-shrink-0">
                       {product.photos && product.photos.length > 0 ? (
@@ -80,25 +80,25 @@ function ProductsContent() {
                          </div>
                       )}
                     </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                    <div className="ml-4 dropdown">
+                      <div className="text-sm font-medium text-gray-900 break-words">{product.name}</div>
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">{product.category}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
                     {product.prices?.standard != null 
                         ? Number(product.prices.standard).toFixed(2) 
                         : '0.00'}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                   {product.unit}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button 
                       onClick={() => navigate(`/products/${product.id}`)}
                       className="text-indigo-600 hover:text-indigo-900"
