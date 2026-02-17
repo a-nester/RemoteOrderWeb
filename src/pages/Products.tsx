@@ -69,7 +69,7 @@ function ProductsContent() {
           <tbody className="bg-white divide-y divide-gray-200">
             {products.map((product) => (
               <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 py-4">
                   <div className="flex items-center">
                     <div className="h-10 w-10 flex-shrink-0">
                       {product.photos && product.photos.length > 0 ? (
