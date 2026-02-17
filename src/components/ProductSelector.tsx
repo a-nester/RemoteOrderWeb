@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, X, Plus } from 'lucide-react';
-import type { Product } from '../../types/product';
+import type { Product } from '../types/product';
 
 interface ProductSelectorProps {
     isOpen: boolean;
