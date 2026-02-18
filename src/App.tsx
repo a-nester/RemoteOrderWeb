@@ -168,6 +168,7 @@ function App() {
               </Layout>
             </ProtectedRoute>
           } 
+        />
         <Route 
           path="/realizations" 
           element={
@@ -177,6 +178,7 @@ function App() {
               </Layout>
             </ProtectedRoute>
           } 
+        />
         <Route 
           path="/realizations/:id" 
           element={
