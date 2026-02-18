@@ -16,6 +16,7 @@ export interface GoodsReceipt {
     warehouseName?: string;
     providerId: string;
     providerName?: string;
+    priceTypeId?: string;
     status: 'SAVED' | 'POSTED';
     comment?: string;
     items?: GoodsReceiptItem[];

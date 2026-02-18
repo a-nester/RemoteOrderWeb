@@ -5,10 +5,12 @@ import { GoodsReceiptService } from '../../services/goodsReceipt.service';
 import { ProductsService } from '../../services/products.service';
 import { OrganizationService } from '../../services/organization.service';
 import { CounterpartyService } from '../../services/counterparty.service';
+import { PriceTypesService } from '../../services/priceTypes.service';
 import type { GoodsReceipt, GoodsReceiptItem } from '../../types/goodsReceipt';
 import type { Product } from '../../types/product';
 import type { Warehouse } from '../../types/organization';
 import type { Counterparty } from '../../types/counterparty';
+import type { PriceType } from '../../types/priceType';
 
 export default function GoodsReceiptEdit() {
     const { id } = useParams();
@@ -22,6 +24,7 @@ export default function GoodsReceiptEdit() {
     const [products, setProducts] = useState<Product[]>([]);
     const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
     const [providers, setProviders] = useState<Counterparty[]>([]);
+    const [priceTypes, setPriceTypes] = useState<PriceType[]>([]);
 
     // Form State
     const [doc, setDoc] = useState<Partial<GoodsReceipt>>({
@@ -38,14 +41,16 @@ export default function GoodsReceiptEdit() {
         setLoading(true);
         try {
             // Load types
-            const [prodsData, whs, cnts] = await Promise.all([
+            const [prodsData, whs, cnts, pts] = await Promise.all([
                 ProductsService.fetchProducts(), 
                 OrganizationService.getWarehouses(),
-                CounterpartyService.getAll() 
+                CounterpartyService.getAll(),
+                PriceTypesService.fetchPriceTypes()
             ]);
             setProducts(prodsData.products);
             setWarehouses(whs);
             setProviders(cnts);
+            setPriceTypes(pts);
 
             if (!isNew && id) {
                 const existing = await GoodsReceiptService.getById(id);
@@ -65,14 +70,47 @@ export default function GoodsReceiptEdit() {
         setDoc(prev => ({ ...prev, [field]: value }));
     };
 
+    const recalculatePrices = (priceTypeId: string, currentItems: GoodsReceiptItem[]) => {
+        const type = priceTypes.find(t => t.id === priceTypeId);
+        if (!type) return currentItems;
+
+        return currentItems.map(item => {
+            const product = products.find(p => p.id === item.productId);
+            if (!product || !product.prices) return item;
+            
+            const newPrice = Number(product.prices[type.slug]) || 0;
+            return {
+                ...item,
+                price: newPrice,
+                total: Number(item.quantity || 0) * newPrice
+            };
+        });
+    };
+
+    const handlePriceTypeChange = (newTypeId: string) => {
+        setDoc(prev => {
+            const newItems = recalculatePrices(newTypeId, prev.items || []);
+            return { ...prev, priceTypeId: newTypeId, items: newItems };
+        });
+    };
+
     const handleItemChange = (index: number, field: keyof GoodsReceiptItem, value: any) => {
         const newItems = [...(doc.items || [])];
         const item = { ...newItems[index], [field]: value };
         
-        // Recalculate total
-        if (field === 'quantity' || field === 'price') {
-            item.total = Number(item.quantity || 0) * Number(item.price || 0);
+        // Auto-set price if Product changed and PriceType selected
+        if (field === 'productId') {
+             const product = products.find(p => p.id === value);
+             if (product && doc.priceTypeId) {
+                 const type = priceTypes.find(t => t.id === doc.priceTypeId);
+                 if (type && product.prices) {
+                     item.price = Number(product.prices[type.slug]) || 0;
+                 }
+             }
         }
+
+        // Recalculate total always
+        item.total = Number(item.quantity || 0) * Number(item.price || 0);
         
         newItems[index] = item;
         setDoc(prev => ({ ...prev, items: newItems }));
@@ -222,6 +260,20 @@ export default function GoodsReceiptEdit() {
                         <option value="">Оберіть склад</option>
                         {warehouses.map(w => (
                             <option key={w.id} value={w.id}>{w.name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-1 dark:text-gray-300">Тип Ціни</label>
+                    <select
+                        value={doc.priceTypeId || ''}
+                        onChange={(e) => handlePriceTypeChange(e.target.value)}
+                        disabled={isPosted}
+                        className="w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    >
+                        <option value="">Без авто-ціни</option>
+                        {priceTypes.map(pt => (
+                            <option key={pt.id} value={pt.id}>{pt.name}</option>
                         ))}
                     </select>
                 </div>
