@@ -16,6 +16,7 @@ export interface Counterparty {
     isSeller: boolean;
     priceTypeId?: string;
     groupId?: string;
+    warehouseId?: string;
     // Expanded fields
     groupName?: string;
     priceTypeName?: string;

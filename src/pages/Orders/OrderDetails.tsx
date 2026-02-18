@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { OrderService } from '../../services/order.service';
 import { ProductsService } from '../../services/products.service';
+import { RealizationService } from '../../services/realization.service';
 import type { Order } from '../../types/order';
 import type { Product } from '../../types/product';
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft, Printer, FileText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { numberToWordsUk } from '../../utils/numberToWords';
 
@@ -46,6 +47,24 @@ export default function OrderDetails() {
 
 
     const [printType, setPrintType] = useState<'invoice' | 'order'>('invoice');
+    const [creatingWaybill, setCreatingWaybill] = useState(false);
+
+    const handleCreateWaybill = async () => {
+        if (!order) return;
+        // Simple confirm for now
+        if (!window.confirm(t('common.confirmCreateWaybill', 'Create waybill from this order?'))) return;
+        
+        setCreatingWaybill(true);
+        try {
+            const realization = await RealizationService.createFromOrder(order.id);
+            navigate(`/realizations`); 
+        } catch (error) {
+            console.error(error);
+            alert(t('common.error', 'Failed to create waybill'));
+        } finally {
+            setCreatingWaybill(false);
+        }
+    };
 
     const handlePrint = (type: 'invoice' | 'order') => {
         setPrintType(type);
@@ -71,6 +90,14 @@ export default function OrderDetails() {
                     {t('common.back', 'Back')}
                 </button>
                 <div className="flex gap-2">
+                    <button 
+                        onClick={handleCreateWaybill}
+                        disabled={creatingWaybill}
+                        className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                        <FileText className="mr-2" size={20} />
+                        {creatingWaybill ? t('common.processing', 'Processing...') : t('action.createWaybill', 'Create Waybill')}
+                    </button>
                     <button 
                         onClick={() => handlePrint('order')}
                         className="flex items-center px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"

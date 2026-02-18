@@ -1,0 +1,39 @@
+import axios from 'axios';
+import { API_URL } from '../constants/api';
+import { useAuthStore } from '../store/auth.store';
+import { Realization } from '../types/realization';
+
+const BASE_URL = `${API_URL}/realizations`;
+
+const getAuthHeader = () => {
+    const token = useAuthStore.getState().token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+export const RealizationService = {
+    getAll: async (): Promise<Realization[]> => {
+        const response = await axios.get(BASE_URL, { headers: getAuthHeader() });
+        return response.data;
+    },
+
+    getById: async (id: string): Promise<Realization> => {
+        const response = await axios.get(`${BASE_URL}/${id}`, { headers: getAuthHeader() });
+        return response.data;
+    },
+
+    createFromOrder: async (orderId: string): Promise<Realization> => {
+        const response = await axios.post(`${BASE_URL}/from-order/${orderId}`, {}, { headers: getAuthHeader() });
+        return response.data;
+    },
+
+    update: async (id: string, data: Partial<Realization>): Promise<Realization> => {
+        const response = await axios.put(`${BASE_URL}/${id}`, data, { headers: getAuthHeader() });
+        return response.data;
+    },
+
+    // Optional: post/conduct
+    postRealization: async (id: string): Promise<Realization> => {
+        // Assuming status update to POSTED
+        return RealizationService.update(id, { status: 'POSTED' });
+    }
+};

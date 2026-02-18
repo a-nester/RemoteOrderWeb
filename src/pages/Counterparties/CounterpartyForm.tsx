@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import type { Counterparty, CounterpartyGroup } from '../../types/counterparty';
 import type { PriceType } from '../../types/priceType';
 import { PriceTypesService } from '../../services/priceTypes.service';
+import { OrganizationService } from '../../services/organization.service';
+import type { Warehouse } from '../../types/organization';
 
 interface Props {
     counterparty?: Counterparty | null;
@@ -23,11 +25,16 @@ export default function CounterpartyForm({ counterparty, groups, onSave, onCance
         groupId: ''
     });
     const [priceTypes, setPriceTypes] = useState<PriceType[]>([]);
+    const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
 
-    const loadPriceTypes = async () => {
+    const loadData = async () => {
         try {
-            const types = await PriceTypesService.fetchPriceTypes();
+            const [types, whs] = await Promise.all([
+                PriceTypesService.fetchPriceTypes(),
+                OrganizationService.getWarehouses()
+            ]);
             setPriceTypes(types);
+            setWarehouses(whs);
         } catch (error) {
             console.error(error);
         }
@@ -37,7 +44,7 @@ export default function CounterpartyForm({ counterparty, groups, onSave, onCance
         if (counterparty) {
             setFormData(counterparty);
         }
-        loadPriceTypes();
+        loadData();
     }, [counterparty]);
 
 
@@ -48,7 +55,8 @@ export default function CounterpartyForm({ counterparty, groups, onSave, onCance
         const payload = {
             ...formData,
             priceTypeId: formData.priceTypeId || undefined,
-            groupId: formData.groupId || undefined
+            groupId: formData.groupId || undefined,
+            warehouseId: formData.warehouseId || undefined
         };
         await onSave(payload);
     };
@@ -121,6 +129,19 @@ export default function CounterpartyForm({ counterparty, groups, onSave, onCance
                                 <option value="">Select Price Type</option>
                                 {priceTypes.map(pt => (
                                     <option key={pt.id} value={pt.id}>{pt.name} ({pt.currency})</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Warehouse</label>
+                            <select
+                                value={formData.warehouseId || ''}
+                                onChange={(e) => setFormData({ ...formData, warehouseId: e.target.value })}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            >
+                                <option value="">No Warehouse</option>
+                                {warehouses.map(w => (
+                                    <option key={w.id} value={w.id}>{w.name}</option>
                                 ))}
                             </select>
                         </div>

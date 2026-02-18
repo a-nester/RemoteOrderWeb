@@ -11,7 +11,10 @@ import { ThemeProvider } from './context/ThemeContext';
 import Settings from './pages/Settings';
 import PriceTypes from './pages/PriceTypes';
 import Counterparties from './pages/Counterparties';
+import OrganizationSettings from './pages/OrganizationSettings';
 import Orders from './pages/Orders';
+import RealizationList from './pages/Realizations';
+import RealizationDetails from './pages/Realizations/RealizationDetails';
 import OrderDetails from './pages/Orders/OrderDetails';
 import OrderEdit from './pages/Orders/OrderEdit';
 import OrdersArchive from './pages/Orders/OrdersArchive';
@@ -107,6 +110,16 @@ function App() {
           } 
         />
         <Route 
+          path="/organization-settings" 
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <OrganizationSettings />
+              </Layout>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
           path="/counterparties" 
           element={
             <ProtectedRoute>
@@ -152,6 +165,24 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <OrderEdit />
+              </Layout>
+            </ProtectedRoute>
+          } 
+        <Route 
+          path="/realizations" 
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <RealizationList />
+              </Layout>
+            </ProtectedRoute>
+          } 
+        <Route 
+          path="/realizations/:id" 
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <RealizationDetails />
               </Layout>
             </ProtectedRoute>
           } 
