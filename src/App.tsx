@@ -18,6 +18,8 @@ import RealizationDetails from './pages/Realizations/RealizationDetails';
 import OrderDetails from './pages/Orders/OrderDetails';
 import OrderEdit from './pages/Orders/OrderEdit';
 import OrdersArchive from './pages/Orders/OrdersArchive';
+import GoodsReceiptList from './pages/GoodsReceipt';
+import GoodsReceiptEdit from './pages/GoodsReceipt/Edit';
 import './i18n';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -185,6 +187,26 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <RealizationDetails />
+              </Layout>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/goods-receipt" 
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <GoodsReceiptList />
+              </Layout>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/goods-receipt/:id" 
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <GoodsReceiptEdit />
               </Layout>
             </ProtectedRoute>
           } 
