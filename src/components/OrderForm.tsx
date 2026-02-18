@@ -175,6 +175,35 @@ export default function OrderForm({ initialData, onSubmit, saving, title }: Orde
         setItems(prev => prev.filter(item => item.id !== id));
     };
 
+    const handleCounterpartyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newClientId = e.target.value;
+        setCounterpartyId(newClientId);
+
+        if (!newClientId || items.length === 0) return;
+
+        const client = counterparties.find(c => c.id === newClientId);
+        const pt = priceTypes.find(p => p.id === client?.priceTypeId);
+        const newSlug = pt?.slug || 'standard';
+
+        setItems(prevItems => prevItems.map(item => {
+            const product = products.find(p => p.id === item.productId);
+            if (!product) return item;
+
+            let newPrice = 0;
+            if (product.prices && product.prices[newSlug]) {
+                newPrice = Number(product.prices[newSlug]);
+            } else if (product.prices && product.prices['standard']) {
+                newPrice = Number(product.prices['standard']);
+            }
+            
+            return {
+                ...item,
+                price: newPrice,
+                total: Number((newPrice * item.quantity).toFixed(2))
+            };
+        }));
+    };
+
     const handleSave = async () => {
         if (!counterpartyId) {
             alert(t('order.selectClient', 'Please select a client'));
@@ -234,7 +263,7 @@ export default function OrderForm({ initialData, onSubmit, saving, title }: Orde
                         </label>
                         <select
                             value={counterpartyId}
-                            onChange={(e) => setCounterpartyId(e.target.value)}
+                            onChange={handleCounterpartyChange}
                             className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                         >
                             <option value="">{t('action.selectClient', 'Select Client')}</option>
