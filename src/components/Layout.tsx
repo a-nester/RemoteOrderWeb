@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/auth.store';
-import { LogOut, LayoutDashboard, Package, ShoppingCart, User, FileText, Settings, ChevronDown, ChevronRight, Archive, Store } from 'lucide-react';
+import { LogOut, LayoutDashboard, Package, ShoppingCart, User, FileText, Settings, ChevronDown, ChevronRight, Archive, Store, Menu, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useTranslation } from 'react-i18next';
 
@@ -18,6 +18,11 @@ export default function Layout({ children, title }: LayoutProps) {
   const [isPriceEditorOpen, setIsPriceEditorOpen] = useState(
       location.pathname.startsWith('/price-documents') || location.pathname.startsWith('/price-types')
   );
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location]);
 
   const handleLogout = () => {
     logout();
@@ -28,10 +33,25 @@ export default function Layout({ children, title }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex transition-colors duration-200">
+      
+      {/* Mobile Backdrop */}
+      {isSidebarOpen && (
+        <div 
+            className="fixed inset-0 bg-black/50 z-30 md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out z-30 hidden md:block print:hidden">
-        <div className="flex items-center justify-center h-16 border-b dark:border-gray-700">
+      <div className={clsx(
+          "fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out z-40 print:hidden",
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      )}>
+        <div className="flex items-center justify-between px-4 h-16 border-b dark:border-gray-700">
           <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">RemoteOrder</h1>
+          <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400">
+             <X size={24} />
+          </button>
         </div>
         <nav className="mt-6 px-4 space-y-2">
             <NavLink
@@ -243,8 +263,15 @@ export default function Layout({ children, title }: LayoutProps) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
         <header className="bg-white shadow-sm h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 print:hidden">
-            <h2 className="text-xl font-semibold text-gray-800">{title || 'Dashboard'}</h2>
-            {/* Mobile menu button could go here */}
+            <div className="flex items-center">
+                <button 
+                    onClick={() => setIsSidebarOpen(true)}
+                    className="mr-4 md:hidden text-gray-500 hover:text-gray-700 focus:outline-none"
+                >
+                    <Menu size={24} />
+                </button>
+                <h2 className="text-xl font-semibold text-gray-800">{title || 'Dashboard'}</h2>
+            </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
