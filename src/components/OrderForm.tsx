@@ -69,7 +69,7 @@ export default function OrderForm({ initialData, onSubmit, saving, title }: Orde
                 
                 // Safe items parsing with enrichment
                 const rawItems = Array.isArray(initialData.items) ? initialData.items : [];
-                const safeItems = rawItems.map(item => {
+                const safeItems = rawItems.map((item: any) => {
                     const productId = item.productId || item.id; // Fallback
                     let productName = item.productName || item.name || '';
                     
