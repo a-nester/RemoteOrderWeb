@@ -71,7 +71,9 @@
         "settings": "Налаштування",
         "signOut": "Вихід",
         "counterparties": "Контрагенти",
-        "groups": "Групи"
+        "groups": "Групи",
+        "organizationSettings": "Організація",
+        "realizations": "Реалізації"
     },
     "settings": {
         "title": "Налаштування",
@@ -102,5 +104,26 @@
     },
     "order": {
         "create": "Нове Замовлення"
+    },
+    "organization": {
+        "title": "Налаштування Організації",
+        "details": "Деталі Організації",
+        "name": "Назва",
+        "warehouses": "Склади"
+    },
+    "warehouse": {
+        "add": "Додати Склад",
+        "edit": "Редагувати Склад",
+        "select": "Виберіть Склад"
+    },
+    "realization": {
+        "title": "Реалізації",
+        "list": "Список Накладних",
+        "create": "Створити Накладну",
+        "details": "Деталі Накладної",
+        "status": "Статус",
+        "posted": "Проведено",
+        "draft": "Чорновик",
+        "canceled": "Скасовано"
     }
 }
