@@ -1,5 +1,3 @@
-import { Counterparty } from "./counterparty";
-import { Warehouse } from "./organization";
 
 export type RealizationStatus = 'DRAFT' | 'POSTED' | 'CANCELED';
 

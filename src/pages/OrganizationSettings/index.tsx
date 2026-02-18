@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Save, Plus, Store, Edit, Trash2 } from 'lucide-react';
+import { Save, Plus, Store, Edit } from 'lucide-react';
 import { OrganizationService } from '../../services/organization.service';
 import type { Organization, Warehouse } from '../../types/organization';
 

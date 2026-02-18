@@ -56,7 +56,7 @@ export default function OrderDetails() {
         
         setCreatingWaybill(true);
         try {
-            const realization = await RealizationService.createFromOrder(order.id);
+            await RealizationService.createFromOrder(order.id);
             navigate(`/realizations`); 
         } catch (error) {
             console.error(error);

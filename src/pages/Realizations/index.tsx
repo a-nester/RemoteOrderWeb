@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Plus, Eye } from 'lucide-react';
+import { FileText, Eye } from 'lucide-react';
 import { RealizationService } from '../../services/realization.service';
 import type { Realization } from '../../types/realization';
 

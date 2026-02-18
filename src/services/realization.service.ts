@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { API_URL } from '../constants/api';
 import { useAuthStore } from '../store/auth.store';
-import { Realization } from '../types/realization';
+import type { Realization } from '../types/realization';
 
 const BASE_URL = `${API_URL}/realizations`;
 
