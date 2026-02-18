@@ -49,6 +49,7 @@ export default function OrderForm({ initialData, onSubmit, saving, title }: Orde
     // Update form when initialData changes (for Edit mode)
     // Update form when initialData changes (for Edit mode)
     // Update form when initialData changes (for Edit mode)
+    // Update form when initialData or products changes (to enrich items)
     useEffect(() => {
         if (initialData) {
             try {
@@ -66,20 +67,33 @@ export default function OrderForm({ initialData, onSubmit, saving, title }: Orde
                 setCounterpartyId(initialData.counterpartyId || '');
                 setComment(initialData.comment || '');
                 
-                // Safe items parsing
+                // Safe items parsing with enrichment
                 const rawItems = Array.isArray(initialData.items) ? initialData.items : [];
-                const safeItems = rawItems.map(item => ({
-                    ...item,
-                    quantity: Number(item.quantity) || 0,
-                    price: Number(item.price) || 0,
-                    total: Number(item.total) || (Number(item.quantity || 0) * Number(item.price || 0)) || 0
-                }));
+                const safeItems = rawItems.map(item => {
+                    const productId = item.productId || item.id; // Fallback
+                    let productName = item.productName || item.name || '';
+                    
+                    // Try to find name in products list if missing
+                    if (!productName && products.length > 0 && productId) {
+                         const foundProduct = products.find(p => p.id === productId);
+                         if (foundProduct) productName = foundProduct.name;
+                    }
+
+                    return {
+                        ...item,
+                        productId,
+                        productName,
+                        quantity: Number(item.quantity ?? item.count ?? 0),
+                        price: Number(item.price ?? 0),
+                        total: Number(item.total ?? 0) || (Number(item.quantity ?? item.count ?? 0) * Number(item.price ?? 0)) || 0
+                    };
+                });
                 setItems(safeItems);
             } catch (e) {
                 console.error("Error setting initial data", e);
             }
         }
-    }, [initialData]);
+    }, [initialData, products]);
 
     const loadData = async () => {
         setLoading(true);
