@@ -176,7 +176,7 @@ export default function GoodsReceiptEdit() {
     return (
         <div className="p-6 max-w-7xl mx-auto">
             {/* Header Toolbar */}
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                 <div className="flex items-center">
                     <button onClick={() => navigate('/goods-receipt')} className="mr-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
                         <ArrowLeft size={24} />
@@ -189,7 +189,7 @@ export default function GoodsReceiptEdit() {
                         {doc.status === 'POSTED' ? 'Проведено' : 'Збережено'}
                     </span>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full sm:w-auto justify-end">
                     {!isPosted && (
                         <>
                             <button
@@ -198,7 +198,7 @@ export default function GoodsReceiptEdit() {
                                 className="flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white"
                             >
                                 <Save className="mr-2" size={18} />
-                                Зберегти
+                                <span className="hidden sm:inline">Зберегти</span>
                             </button>
                             <button
                                 onClick={() => save(true)}
@@ -206,7 +206,7 @@ export default function GoodsReceiptEdit() {
                                 className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
                             >
                                 <CheckCircle className="mr-2" size={18} />
-                                Провести
+                                <span className="hidden sm:inline">Провести</span>
                             </button>
                         </>
                     )}
@@ -291,77 +291,79 @@ export default function GoodsReceiptEdit() {
 
             {/* Items Table */}
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-900">
-                        <tr>
-                            <th className="px-4 py-3 text-left w-10">#</th>
-                            <th className="px-4 py-3 text-left">Товар</th>
-                            <th className="px-4 py-3 text-right w-32">Кількість</th>
-                            <th className="px-4 py-3 text-right w-32">Ціна (Закуп)</th>
-                            <th className="px-4 py-3 text-right w-32">Сума</th>
-                            <th className="px-4 py-3 w-16"></th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                        {doc.items?.map((item, index) => (
-                            <tr key={index}>
-                                <td className="px-4 py-2 text-center text-gray-500">{index + 1}</td>
-                                <td className="px-4 py-2">
-                                    <select
-                                        value={item.productId}
-                                        onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
-                                        disabled={isPosted}
-                                        className="w-full rounded border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                    >
-                                        <option value="">Оберіть товар</option>
-                                        {products.map(p => (
-                                            <option key={p.id} value={p.id}>{p.name}</option>
-                                        ))}
-                                    </select>
-                                </td>
-                                <td className="px-4 py-2">
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.001"
-                                        value={item.quantity}
-                                        onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                                        disabled={isPosted}
-                                        className="w-full rounded border-gray-300 text-sm text-right dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                    />
-                                </td>
-                                <td className="px-4 py-2">
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={item.price}
-                                        onChange={(e) => handleItemChange(index, 'price', e.target.value)}
-                                        disabled={isPosted}
-                                        className="w-full rounded border-gray-300 text-sm text-right dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                    />
-                                </td>
-                                <td className="px-4 py-2 text-right font-medium dark:text-white">
-                                    {Number(item.total).toFixed(2)}
-                                </td>
-                                <td className="px-4 py-2 text-center">
-                                    {!isPosted && (
-                                        <button onClick={() => removeItem(index)} className="text-red-500 hover:text-red-700">
-                                            <Trash2 size={18} />
-                                        </button>
-                                    )}
-                                </td>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-50 dark:bg-gray-900">
+                            <tr>
+                                <th className="px-4 py-3 text-left w-10">#</th>
+                                <th className="px-4 py-3 text-left min-w-[200px]">Товар</th>
+                                <th className="px-4 py-3 text-right w-32 min-w-[100px]">Кількість</th>
+                                <th className="px-4 py-3 text-right w-32 min-w-[100px]">Ціна</th>
+                                <th className="px-4 py-3 text-right w-32 min-w-[100px]">Сума</th>
+                                <th className="px-4 py-3 w-16"></th>
                             </tr>
-                        ))}
-                    </tbody>
-                    <tfoot className="bg-gray-50 dark:bg-gray-900 font-bold">
-                        <tr>
-                            <td colSpan={4} className="px-4 py-3 text-right dark:text-white">Всього:</td>
-                            <td className="px-4 py-3 text-right dark:text-white">{totalAmount.toFixed(2)}</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                            {doc.items?.map((item, index) => (
+                                <tr key={index}>
+                                    <td className="px-4 py-2 text-center text-gray-500">{index + 1}</td>
+                                    <td className="px-4 py-2">
+                                        <select
+                                            value={item.productId}
+                                            onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
+                                            disabled={isPosted}
+                                            className="w-full rounded border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                        >
+                                            <option value="">Оберіть товар</option>
+                                            {products.map(p => (
+                                                <option key={p.id} value={p.id}>{p.name}</option>
+                                            ))}
+                                        </select>
+                                    </td>
+                                    <td className="px-4 py-2">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.001"
+                                            value={item.quantity}
+                                            onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                                            disabled={isPosted}
+                                            className="w-full rounded border-gray-300 text-sm text-right dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2">
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            value={item.price}
+                                            onChange={(e) => handleItemChange(index, 'price', e.target.value)}
+                                            disabled={isPosted}
+                                            className="w-full rounded border-gray-300 text-sm text-right dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-right font-medium dark:text-white">
+                                        {Number(item.total).toFixed(2)}
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        {!isPosted && (
+                                            <button onClick={() => removeItem(index)} className="text-red-500 hover:text-red-700">
+                                                <Trash2 size={18} />
+                                            </button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                        <tfoot className="bg-gray-50 dark:bg-gray-900 font-bold">
+                            <tr>
+                                <td colSpan={4} className="px-4 py-3 text-right dark:text-white">Всього:</td>
+                                <td className="px-4 py-3 text-right dark:text-white">{totalAmount.toFixed(2)}</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
                 {!isPosted && (
                     <div className="p-4 border-t border-gray-200 dark:border-gray-700">
                         <button
