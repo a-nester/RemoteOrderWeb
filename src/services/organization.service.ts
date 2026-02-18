@@ -3,7 +3,7 @@ import { API_URL } from '../constants/api';
 import { useAuthStore } from '../store/auth.store';
 import type { Organization, Warehouse } from '../types/organization';
 
-const BASE_URL = `${API_URL}/admin/organization`;
+const BASE_URL = `${API_URL}/organization`;
 
 const getAuthHeader = () => {
     const token = useAuthStore.getState().token;
