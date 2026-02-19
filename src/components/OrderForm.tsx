@@ -358,6 +358,7 @@ export default function OrderForm({ initialData, onSubmit, saving, title }: Orde
                 onClose={() => setIsProductSelectorOpen(false)}
                 products={products}
                 onSelect={handleAddProduct}
+                priceSlug={priceSlug}
             />
         </div>
     );

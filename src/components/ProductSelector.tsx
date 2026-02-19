@@ -9,9 +9,10 @@ interface ProductSelectorProps {
     onClose: () => void;
     products: Product[];
     onSelect: (product: Product) => void;
+    priceSlug: string;
 }
 
-export default function ProductSelector({ isOpen, onClose, products, onSelect }: ProductSelectorProps) {
+export default function ProductSelector({ isOpen, onClose, products, onSelect, priceSlug }: ProductSelectorProps) {
     const { t } = useTranslation();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -105,7 +106,7 @@ export default function ProductSelector({ isOpen, onClose, products, onSelect }:
                                         <div className="text-xs text-gray-500 dark:text-gray-400">{product.unit}</div>
                                     </td>
                                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
-                                        {Number(product.prices?.standard || 0).toFixed(2)}
+                                        {Number(product.prices?.[priceSlug] || product.prices?.standard || 0).toFixed(2)}
                                     </td>
                                     <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
                                         <button 
