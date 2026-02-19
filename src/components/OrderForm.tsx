@@ -186,25 +186,38 @@ export default function OrderForm({ initialData, onSubmit, saving, title }: Orde
 
     const handleCounterpartyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newClientId = e.target.value;
+        console.log('OrderForm: Client changed to', newClientId);
         setCounterpartyId(newClientId);
 
-        if (!newClientId || items.length === 0) return;
+        if (!newClientId) return;
 
         const client = counterparties.find(c => c.id === newClientId);
-        const pt = priceTypes.find(p => p.id === client?.priceTypeId);
+        const pt = priceTypes.find(p => String(p.id) === String(client?.priceTypeId));
         const newSlug = pt?.slug || 'standard';
+
+        console.log('OrderForm: New Price Type Slug:', newSlug, 'Client:', client, 'PT Object:', pt);
+
+        if (items.length === 0) return;
 
         setItems(prevItems => prevItems.map(item => {
             const product = products.find(p => p.id === item.productId);
-            if (!product) return item;
+            if (!product) {
+                 console.warn('OrderForm: Product not found for item', item);
+                 return item;
+            }
 
             let newPrice = 0;
-            if (product.prices && product.prices[newSlug]) {
+            // Check specific price type first, then standard, then price property fallback
+            if (product.prices && product.prices[newSlug] !== undefined) {
                 newPrice = Number(product.prices[newSlug]);
-            } else if (product.prices && product.prices['standard']) {
+            } else if (product.prices && product.prices['standard'] !== undefined) {
                 newPrice = Number(product.prices['standard']);
+            } else if ((product as any).price) {
+                newPrice = Number((product as any).price);
             }
             
+            console.log(`OrderForm: Updating item ${product.name} price to ${newPrice} (${newSlug})`);
+
             return {
                 ...item,
                 price: newPrice,
@@ -214,6 +227,8 @@ export default function OrderForm({ initialData, onSubmit, saving, title }: Orde
     };
 
     const handleSave = async () => {
+        console.log('OrderForm: handleSave called');
+
         if (!counterpartyId) {
             alert(t('order.selectClient', 'Please select a client'));
             return;
@@ -225,6 +240,7 @@ export default function OrderForm({ initialData, onSubmit, saving, title }: Orde
         }
 
         const orderData = {
+            // Ensure date is a valid full ISO string
             date: new Date(date).toISOString(),
             counterpartyId,
             status,
@@ -234,7 +250,15 @@ export default function OrderForm({ initialData, onSubmit, saving, title }: Orde
             currency
         };
         
-        await onSubmit(orderData);
+        console.log('OrderForm: Saving order data:', orderData);
+        
+        try {
+            await onSubmit(orderData);
+        } catch (err) {
+            console.error('OrderForm: onSubmit failed', err);
+            // Re-throw or handle? onSubmit in parent (OrderCreate) catches checking there.
+            throw err;
+        }
     };
 
     if (loading && !initialData && !counterparties.length) return <div className="p-8 text-center">{t('common.loading', 'Loading...')}</div>;
