@@ -126,8 +126,17 @@ export default function OrderForm({ initialData, onSubmit, saving, title }: Orde
     }, [selectedCounterparty, priceTypes]);
 
     const priceSlug = useMemo(() => {
-        if (!selectedCounterparty?.priceTypeId) return 'standard';
-        const pt = priceTypes.find(p => p.id === selectedCounterparty.priceTypeId);
+        console.log('OrderForm: Recalculating priceSlug');
+        console.log('OrderForm: selectedCounterparty:', selectedCounterparty);
+        
+        if (!selectedCounterparty?.priceTypeId) {
+            console.log('OrderForm: Lookup failed - No priceTypeId on client');
+            return 'standard';
+        }
+        
+        // Ensure ID comparison is safe (string vs string)
+        const pt = priceTypes.find(p => String(p.id) === String(selectedCounterparty.priceTypeId));
+        console.log('OrderForm: Found PriceType:', pt);
         return pt?.slug || 'standard';
     }, [selectedCounterparty, priceTypes]);
 
