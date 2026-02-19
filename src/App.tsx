@@ -17,6 +17,7 @@ import RealizationList from './pages/Realizations';
 import RealizationDetails from './pages/Realizations/RealizationDetails';
 import OrderDetails from './pages/Orders/OrderDetails';
 import OrderEdit from './pages/Orders/OrderEdit';
+import OrderCreate from './pages/Orders/OrderCreate';
 import OrdersArchive from './pages/Orders/OrdersArchive';
 import GoodsReceiptList from './pages/GoodsReceipt';
 import GoodsReceiptEdit from './pages/GoodsReceipt/Edit';
@@ -147,6 +148,16 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <Orders />
+              </Layout>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/orders/create" 
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <OrderCreate />
               </Layout>
             </ProtectedRoute>
           } 

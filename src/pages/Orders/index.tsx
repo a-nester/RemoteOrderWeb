@@ -47,8 +47,7 @@ export default function Orders() {
     };
 
     const handleCreateOrder = () => {
-        // Todo: Implement create order logic
-        alert("Create Order functionality to be implemented");
+        navigate('/orders/create');
     };
 
     const handleDeleteOrder = async (order: Order) => {
