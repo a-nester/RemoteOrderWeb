@@ -82,7 +82,7 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, onView 
                                     <div className="flex justify-end gap-2">
                                         {onView && (
                                             <button
-                                                onClick={() => onView(order)}
+                                                onClick={(e) => { e.stopPropagation(); onView(order); }}
                                                 className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                                                 title={t('common.view', 'View')}
                                             >
@@ -90,7 +90,7 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, onView 
                                             </button>
                                         )}
                                         <button
-                                            onClick={() => onEdit(order)}
+                                            onClick={(e) => { e.stopPropagation(); onEdit(order); }}
                                             className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
                                             title={t('common.edit', 'Edit')}
                                         >
@@ -98,7 +98,7 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, onView 
                                         </button>
                                         {onDelete && (
                                              <button
-                                                onClick={() => onDelete(order)}
+                                                onClick={(e) => { e.stopPropagation(); onDelete(order); }}
                                                 className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                                                 title={t('common.delete', 'Delete')}
                                             >

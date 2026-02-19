@@ -56,7 +56,7 @@ export default function OrderEdit() {
                 initialData={order}
                 onSubmit={handleSubmit}
                 saving={saving}
-                title={`${t('order.editTitle', 'Редагування замовлення')} #${order.id.slice(0, 8)}`}
+                title={`${t('order.editTitle', 'Редагування замовлення')} ${order.docNumber ? `#${order.docNumber}` : `#${order.id.slice(0, 8)}`}`}
             />
         </ErrorBoundary>
     );

@@ -27,6 +27,7 @@ export interface Order {
     status: OrderStatus;
     currency: string;
     items: OrderItem[];
+    docNumber?: string;
     isDeleted?: boolean;
     comment?: string;
     createdAt?: number | string;

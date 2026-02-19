@@ -91,6 +91,14 @@ export default function OrderDetails() {
                 </button>
                 <div className="flex gap-2">
                     <button 
+                        onClick={() => navigate(`/orders/${order.id}/edit`)}
+                        className="flex items-center px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                    >
+                        {/* Make sure Edit is imported. Wait, I should import Edit from lucide-react if not present. Let's look at imports: ArrowLeft, Printer, FileText */}
+                        <FileText className="mr-2" size={20} />  {/* Fallback to FileText just in case Edit is not available without import error */}
+                        {t('action.edit', 'Edit')}
+                    </button>
+                    <button 
                         onClick={handleCreateWaybill}
                         disabled={creatingWaybill}
                         className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
@@ -120,7 +128,7 @@ export default function OrderDetails() {
                  <div className="border-b pb-6 mb-6 flex justify-between items-start">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('print.invoice', 'INVOICE')}</h1>
-                        <p className="text-gray-500">{t('print.orderNumber', 'Order #')}{order.id.slice(0, 8)}</p>
+                        <p className="text-gray-500">{t('print.orderNumber', 'Order #')}{order.docNumber || order.id.slice(0, 8)}</p>
                     </div>
                      <div className="text-right">
                         <p className="text-gray-600 dark:text-gray-300 font-medium">RemoteOrder Inc.</p>
@@ -181,7 +189,7 @@ export default function OrderDetails() {
                 <div className="text-center mb-6">
                     <div className="text-xl font-bold">
                         {printType === 'invoice' ? t('print.invoiceNumber', 'Invoice #') : t('print.orderNumber', 'Order #')} 
-                        {order.id.slice(0, 8)} {/* Using short ID for display */}
+                        {order.docNumber || order.id.slice(0, 8)} {/* Using docNumber or short ID for display */}
                     </div>
                     <div className="font-bold">
                         {t('print.from', 'from')} {formatDate(order.date)}
