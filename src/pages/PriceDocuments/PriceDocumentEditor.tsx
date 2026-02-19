@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Plus, Trash, Check, Save } from 'lucide-react';
 import { PriceDocumentsService } from '../../services/priceDocuments.service';
 import { PriceTypesService } from '../../services/priceTypes.service';
@@ -9,6 +10,7 @@ import type { PriceType } from '../../types/priceType';
 import type { Product } from '../../types/product';
 
 export default function PriceDocumentEditor() {
+    const { t } = useTranslation();
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const isNew = id === 'new';
@@ -209,7 +211,7 @@ export default function PriceDocumentEditor() {
         });
     };
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return <div>{t('common.loading', 'Loading...')}</div>;
 
     return (
         <div className="space-y-6 relative">
@@ -224,19 +226,21 @@ export default function PriceDocumentEditor() {
                         <ArrowLeft className="h-6 w-6" />
                     </button>
                     <h1 className="text-2xl font-bold text-gray-900">
-                        {isNew ? 'New Price Document' : 'Edit Price Document'}
+                        {isNew ? t('priceDocument.titleNew', 'New Price Document') : t('priceDocument.titleEdit', 'Edit Price Document')}
                     </h1>
                      {document.status === 'APPLIED' && (
-                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-bold">APPLIED</span>
+                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-bold">
+                            {t('priceDocument.applied', 'APPLIED')}
+                        </span>
                     )}
                 </div>
                 <div className="flex space-x-3">
                     {!isEditing && (
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                            className="inline-flex items-center px-4 py-2 border border-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
                         >
-                            Edit
+                            {t('common.edit', 'Edit')}
                         </button>
                     )}
                     {isEditing && (
@@ -246,7 +250,7 @@ export default function PriceDocumentEditor() {
                                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
                             >
                                 <Save className="h-4 w-4 mr-2" />
-                                Save
+                                {t('common.save', 'Save')}
                             </button>
                             {document.status !== 'APPLIED' && !isNew && (
                                 <button
@@ -254,7 +258,7 @@ export default function PriceDocumentEditor() {
                                     className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
                                 >
                                     <Check className="h-4 w-4 mr-2" />
-                                    Apply Prices
+                                    {t('priceDocument.applyPrices', 'Apply Prices')}
                                 </button>
                             )}
                         </>
@@ -264,10 +268,10 @@ export default function PriceDocumentEditor() {
 
             <div className="space-y-4 sm:space-y-6">
                 <div className="bg-white shadow rounded-lg p-3 sm:p-6 space-y-4">
-                    <h3 className="text-lg font-medium text-gray-900">Document Details</h3>
+                    <h3 className="text-lg font-medium text-gray-900">{t('priceDocument.details', 'Document Details')}</h3>
                     
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Date</label>
+                        <label className="block text-sm font-medium text-gray-700">{t('priceDocument.date', 'Date')}</label>
                         <input
                             type="date"
                             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -279,27 +283,27 @@ export default function PriceDocumentEditor() {
 
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Input Method</label>
+                            <label className="block text-sm font-medium text-gray-700">{t('priceDocument.inputMethod', 'Input Method')}</label>
                             <select
                                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                 value={document.inputMethod || 'MANUAL'}
                                 onChange={e => setDocument({...document, inputMethod: e.target.value as any})}
                                 disabled={!isEditing}
                             >
-                                <option value="MANUAL">Manual Entry</option>
-                                <option value="FORMULA">Formula (Markup)</option>
+                                <option value="MANUAL">{t('priceDocument.manual', 'Manual Entry')}</option>
+                                <option value="FORMULA">{t('priceDocument.formula', 'Formula (Markup)')}</option>
                             </select>
                         </div>
 
                          <div>
-                            <label className="block text-sm font-medium text-gray-700">Target Price Type (To set)</label>
+                            <label className="block text-sm font-medium text-gray-700">{t('priceDocument.targetPriceType', 'Target Price Type (To set)')}</label>
                             <select
                                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                 value={document.targetPriceTypeId || ''}
                                 onChange={e => setDocument({...document, targetPriceTypeId: e.target.value})}
                                 disabled={!isEditing}
                             >
-                                <option value="">Select Target Price Type</option>
+                                <option value="">{t('priceDocument.targetPriceType', 'Select Target Price Type')}</option>
                                 {priceTypes.map(pt => (
                                     <option key={pt.id} value={pt.id}>{pt.name}</option>
                                 ))}
@@ -307,14 +311,14 @@ export default function PriceDocumentEditor() {
                         </div>
                         
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Source Price Type (Base for calc)</label>
+                            <label className="block text-sm font-medium text-gray-700">{t('priceDocument.sourcePriceType', 'Source Price Type (Base for calc)')}</label>
                             <select
                                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                 value={document.sourcePriceTypeId || ''}
                                 onChange={e => setDocument({...document, sourcePriceTypeId: e.target.value})}
                                 disabled={!isEditing}
                             >
-                                <option value="">Select Source Price Type (Optional)</option>
+                                <option value="">{t('priceDocument.sourcePriceType', 'Select Source Price Type (Optional)')}</option>
                                 {priceTypes.map(pt => (
                                     <option key={pt.id} value={pt.id}>{pt.name}</option>
                                 ))}
@@ -324,7 +328,7 @@ export default function PriceDocumentEditor() {
                         {document.inputMethod === 'FORMULA' && (
                             <>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Markup Percentage (%)</label>
+                                    <label className="block text-sm font-medium text-gray-700">{t('priceDocument.markup', 'Markup Percentage (%)')}</label>
                                     <div className="mt-1">
                                         <input
                                             type="number"
@@ -337,7 +341,7 @@ export default function PriceDocumentEditor() {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Rounding (0.01 - 10)</label>
+                                    <label className="block text-sm font-medium text-gray-700">{t('priceDocument.rounding', 'Rounding (0.01 - 10)')}</label>
                                     <div className="mt-1 flex rounded-md shadow-sm">
                                         <input
                                             type="number"
@@ -356,7 +360,7 @@ export default function PriceDocumentEditor() {
                                             disabled={!isEditing}
                                             className="inline-flex items-center px-4 py-2 border border-l-0 border-gray-300 rounded-r-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium"
                                         >
-                                            Apply
+                                            {t('common.apply', 'Apply')}
                                         </button>
                                     </div>
                                 </div>
@@ -365,7 +369,7 @@ export default function PriceDocumentEditor() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Comment</label>
+                        <label className="block text-sm font-medium text-gray-700">{t('priceDocument.comment', 'Comment')}</label>
                         <textarea
                             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             rows={3}
@@ -377,7 +381,7 @@ export default function PriceDocumentEditor() {
                 </div>
 
                 <div className="bg-white shadow rounded-lg p-3 sm:p-6 space-y-4 overflow-hidden">
-                    <h3 className="text-lg font-medium text-gray-900">Products & Prices</h3>
+                    <h3 className="text-lg font-medium text-gray-900">{t('priceDocument.productsPrices', 'Products & Prices')}</h3>
                     
                     {isEditing && (
                         <div className="flex space-x-2">
@@ -386,7 +390,7 @@ export default function PriceDocumentEditor() {
                                 value={selectedProduct}
                                 onChange={e => setSelectedProduct(e.target.value)}
                             >
-                                <option value="">Select Product to Add...</option>
+                                <option value="">{t('action.addProduct', 'Select Product to Add...')}</option>
                                 {products.map(p => (
                                     <option key={p.id} value={p.id}>{p.name}</option>
                                 ))}
@@ -406,15 +410,15 @@ export default function PriceDocumentEditor() {
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-2 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase w-1/3">Product</th>
+                                    <th className="px-2 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase w-1/3">{t('common.product', 'Product')}</th>
                                     <th className="px-2 sm:px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                                        Source Price <br/>
+                                        {t('priceDocument.sourcePrice', 'Source Price')} <br/>
                                         <span className="text-[10px] normal-case">
                                             ({document.sourcePriceTypeId ? priceTypes.find(pt => pt.id === document.sourcePriceTypeId)?.name : 'Standard'})
                                         </span>
                                     </th>
                                     <th className="px-2 sm:px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                                        Target Price <br/>
+                                        {t('priceDocument.targetPrice', 'Target Price')} <br/>
                                         <span className="text-[10px] normal-case">
                                             ({document.targetPriceTypeId ? priceTypes.find(pt => pt.id === document.targetPriceTypeId)?.name : 'Target'})
                                         </span>
@@ -479,7 +483,7 @@ export default function PriceDocumentEditor() {
                                 {(document.items || []).length === 0 && (
                                     <tr>
                                         <td colSpan={4} className="px-4 py-8 text-center text-gray-500 text-sm">
-                                            No products added yet.
+                                            {t('common.noData', 'No data found')}
                                         </td>
                                     </tr>
                                 )}
