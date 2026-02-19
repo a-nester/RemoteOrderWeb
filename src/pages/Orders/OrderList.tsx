@@ -59,7 +59,11 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onEdit, onDelete, onView 
                         </tr>
                     ) : (
                         orders.map((order) => (
-                            <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <tr 
+                                key={order.id} 
+                                className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                                onClick={() => onView && onView(order)}
+                            >
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                     {new Date(order.date).toLocaleDateString()}
                                 </td>
