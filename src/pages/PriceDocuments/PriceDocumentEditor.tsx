@@ -220,12 +220,12 @@ export default function PriceDocumentEditor() {
                     {notification.message}
                 </div>
             )}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                    <button onClick={() => navigate('/price-documents')} className="text-gray-500 hover:text-gray-700">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-3">
+                    <button onClick={() => navigate('/price-documents')} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
                         <ArrowLeft className="h-6 w-6" />
                     </button>
-                    <h1 className="text-2xl font-bold text-gray-900">
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                         {isNew ? t('priceDocument.titleNew', 'New Price Document') : t('priceDocument.titleEdit', 'Edit Price Document')}
                     </h1>
                      {document.status === 'APPLIED' && (
@@ -234,11 +234,11 @@ export default function PriceDocumentEditor() {
                         </span>
                     )}
                 </div>
-                <div className="flex space-x-3">
+                <div className="flex flex-wrap space-x-0 gap-2 w-full md:w-auto">
                     {!isEditing && (
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="inline-flex items-center px-4 py-2 border border-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                            className="flex-1 md:flex-none justify-center inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
                         >
                             {t('common.edit', 'Edit')}
                         </button>
@@ -247,7 +247,7 @@ export default function PriceDocumentEditor() {
                         <>
                             <button
                                 onClick={handleSave}
-                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                                className="flex-1 md:flex-none justify-center inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
                             >
                                 <Save className="h-4 w-4 mr-2" />
                                 {t('common.save', 'Save')}
@@ -255,7 +255,7 @@ export default function PriceDocumentEditor() {
                             {document.status !== 'APPLIED' && !isNew && (
                                 <button
                                     onClick={handleApply}
-                                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+                                    className="flex-1 md:flex-none justify-center inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
                                 >
                                     <Check className="h-4 w-4 mr-2" />
                                     {t('priceDocument.applyPrices', 'Apply Prices')}
@@ -267,14 +267,14 @@ export default function PriceDocumentEditor() {
             </div>
 
             <div className="space-y-4 sm:space-y-6">
-                <div className="bg-white shadow rounded-lg p-3 sm:p-6 space-y-4">
-                    <h3 className="text-lg font-medium text-gray-900">{t('priceDocument.details', 'Document Details')}</h3>
+                <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-3 sm:p-6 space-y-4">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('priceDocument.details', 'Document Details')}</h3>
                     
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">{t('priceDocument.date', 'Date')}</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('priceDocument.date', 'Date')}</label>
                         <input
                             type="date"
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             value={new Date(document.date || Date.now()).toISOString().split('T')[0]}
                             onChange={e => setDocument({...document, date: new Date(e.target.value).getTime()})}
                             disabled={!isEditing}
@@ -283,9 +283,9 @@ export default function PriceDocumentEditor() {
 
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">{t('priceDocument.inputMethod', 'Input Method')}</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('priceDocument.inputMethod', 'Input Method')}</label>
                             <select
-                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                 value={document.inputMethod || 'MANUAL'}
                                 onChange={e => setDocument({...document, inputMethod: e.target.value as any})}
                                 disabled={!isEditing}
@@ -296,9 +296,9 @@ export default function PriceDocumentEditor() {
                         </div>
 
                          <div>
-                            <label className="block text-sm font-medium text-gray-700">{t('priceDocument.targetPriceType', 'Target Price Type (To set)')}</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('priceDocument.targetPriceType', 'Target Price Type (To set)')}</label>
                             <select
-                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                 value={document.targetPriceTypeId || ''}
                                 onChange={e => setDocument({...document, targetPriceTypeId: e.target.value})}
                                 disabled={!isEditing}
@@ -311,9 +311,9 @@ export default function PriceDocumentEditor() {
                         </div>
                         
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">{t('priceDocument.sourcePriceType', 'Source Price Type (Base for calc)')}</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('priceDocument.sourcePriceType', 'Source Price Type (Base for calc)')}</label>
                             <select
-                                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                 value={document.sourcePriceTypeId || ''}
                                 onChange={e => setDocument({...document, sourcePriceTypeId: e.target.value})}
                                 disabled={!isEditing}
@@ -328,11 +328,11 @@ export default function PriceDocumentEditor() {
                         {document.inputMethod === 'FORMULA' && (
                             <>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">{t('priceDocument.markup', 'Markup Percentage (%)')}</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('priceDocument.markup', 'Markup Percentage (%)')}</label>
                                     <div className="mt-1">
                                         <input
                                             type="number"
-                                            className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                            className="block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                             value={document.markupPercentage || ''}
                                             onChange={e => setDocument({...document, markupPercentage: parseFloat(e.target.value)})}
                                             disabled={!isEditing}
@@ -341,14 +341,14 @@ export default function PriceDocumentEditor() {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">{t('priceDocument.rounding', 'Rounding (0.01 - 10)')}</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('priceDocument.rounding', 'Rounding (0.01 - 10)')}</label>
                                     <div className="mt-1 flex rounded-md shadow-sm">
                                         <input
                                             type="number"
                                             step="0.01"
                                             min="0.01"
                                             max="10"
-                                            className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-l-md border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                            className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-l-md border border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                             value={document.roundingValue || ''}
                                             onChange={e => setDocument({...document, roundingValue: parseFloat(e.target.value)})}
                                             disabled={!isEditing}
@@ -369,9 +369,9 @@ export default function PriceDocumentEditor() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">{t('priceDocument.comment', 'Comment')}</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('priceDocument.comment', 'Comment')}</label>
                         <textarea
-                            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             rows={3}
                             value={document.comment || ''}
                             onChange={e => setDocument({...document, comment: e.target.value})}
@@ -380,13 +380,13 @@ export default function PriceDocumentEditor() {
                     </div>
                 </div>
 
-                <div className="bg-white shadow rounded-lg p-3 sm:p-6 space-y-4 overflow-hidden">
-                    <h3 className="text-lg font-medium text-gray-900">{t('priceDocument.productsPrices', 'Products & Prices')}</h3>
+                <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-3 sm:p-6 space-y-4 overflow-hidden">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('priceDocument.productsPrices', 'Products & Prices')}</h3>
                     
                     {isEditing && (
                         <div className="flex space-x-2">
                             <select
-                                className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                className="block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                 value={selectedProduct}
                                 onChange={e => setSelectedProduct(e.target.value)}
                             >
@@ -406,18 +406,18 @@ export default function PriceDocumentEditor() {
                     )}
                     {!document.targetPriceTypeId && <p className="text-sm text-red-500">Please select Target Price Type first.</p>}
 
-                    <div className="-mx-3 sm:mx-0 overflow-x-auto overflow-y-auto max-h-[60vh] sm:border sm:rounded-md border-y">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                    <div className="-mx-3 sm:mx-0 overflow-x-auto overflow-y-auto max-h-[60vh] sm:border sm:rounded-md border-y dark:border-gray-700">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead className="bg-gray-50 dark:bg-gray-900">
                                 <tr>
-                                    <th className="px-2 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase w-1/3">{t('common.product', 'Product')}</th>
-                                    <th className="px-2 sm:px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                                    <th className="px-2 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-1/3">{t('common.product', 'Product')}</th>
+                                    <th className="px-2 sm:px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                                         {t('priceDocument.sourcePrice', 'Source Price')} <br/>
                                         <span className="text-[10px] normal-case">
                                             ({document.sourcePriceTypeId ? priceTypes.find(pt => pt.id === document.sourcePriceTypeId)?.name : 'Standard'})
                                         </span>
                                     </th>
-                                    <th className="px-2 sm:px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                                    <th className="px-2 sm:px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                                         {t('priceDocument.targetPrice', 'Target Price')} <br/>
                                         <span className="text-[10px] normal-case">
                                             ({document.targetPriceTypeId ? priceTypes.find(pt => pt.id === document.targetPriceTypeId)?.name : 'Target'})
@@ -426,7 +426,7 @@ export default function PriceDocumentEditor() {
                                     <th className="px-2 sm:px-4 py-2 w-10"></th>
                                 </tr>
                             </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
+                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 {(() => {
                                     const groupedItems = (document.items || []).reduce((acc, item, originalIndex) => {
                                         const product = products.find(p => p.id === item.productId);
@@ -451,17 +451,17 @@ export default function PriceDocumentEditor() {
 
                                                 return (
                                                     <tr key={originalIndex}>
-                                                        <td className="px-2 sm:px-4 py-2 text-sm text-gray-900 break-words">
+                                                        <td className="px-2 sm:px-4 py-2 text-sm text-gray-900 dark:text-white break-words">
                                                             {item.productName || product?.name || 'Unknown'}
-                                                            <span className="text-gray-500 text-xs ml-1 whitespace-nowrap">({item.unit})</span>
+                                                            <span className="text-gray-500 dark:text-gray-400 text-xs ml-1 whitespace-nowrap">({item.unit})</span>
                                                         </td>
-                                                        <td className="px-2 sm:px-4 py-2 text-sm text-right text-gray-400 whitespace-nowrap">
+                                                        <td className="px-2 sm:px-4 py-2 text-sm text-right text-gray-400 dark:text-gray-500 whitespace-nowrap">
                                                             {basePrice ? Number(basePrice).toFixed(2) : '-'}
                                                         </td>
                                                         <td className="px-2 sm:px-4 py-2 text-sm text-right">
                                                             <input
                                                                 type="number"
-                                                                className="w-16 sm:w-24 text-right border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1"
+                                                                className="w-16 sm:w-24 text-right border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                                                 value={item.price}
                                                                 onChange={e => handleUpdateItemPrice(originalIndex, parseFloat(e.target.value))}
                                                                 disabled={!isEditing}
