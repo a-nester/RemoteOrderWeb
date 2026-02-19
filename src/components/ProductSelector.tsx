@@ -79,37 +79,56 @@ export default function ProductSelector({ isOpen, onClose, products, onSelect }:
                 </div>
 
                 {/* Product List */}
-                <div className="flex-1 overflow-y-auto p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filteredProducts.map(product => (
-                            <div
-                                key={product.id}
-                                onClick={() => onSelect(product)}
-                                className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 cursor-pointer hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all bg-white dark:bg-gray-800 flex flex-col justify-between h-full"
-                            >
-                                <div>
-                                    <h3 className="font-medium text-gray-900 dark:text-white line-clamp-2 mb-2">
-                                        {product.name}
-                                    </h3>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                                        {Number(product.prices?.standard || 0).toFixed(2)} 
-                                        <span className="text-xs ml-1">UAH</span> 
-                                        <span className="mx-1">/</span> 
-                                        {product.unit}
-                                    </p>
-                                </div>
-                                <button className="mt-2 w-full py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-md flex items-center justify-center gap-2 hover:bg-blue-100 dark:hover:bg-blue-900/50">
-                                    <Plus size={16} />
-                                    {t('common.add', 'Add')}
-                                </button>
-                            </div>
-                        ))}
-                        {filteredProducts.length === 0 && (
-                            <div className="col-span-full text-center py-10 text-gray-500">
-                                {t('common.noResults', 'No products found')}
-                            </div>
-                        )}
-                    </div>
+                <div className="flex-1 overflow-y-auto p-0">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0 z-10 shadow-sm">
+                            <tr>
+                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    {t('common.product', 'Product')}
+                                </th>
+                                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32">
+                                    {t('common.price', 'Price')}
+                                </th>
+                                <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24">
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                            {filteredProducts.map(product => (
+                                <tr 
+                                    key={product.id} 
+                                    onClick={() => onSelect(product)}
+                                    className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+                                >
+                                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                        <div className="font-medium">{product.name}</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">{product.unit}</div>
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
+                                        {Number(product.prices?.standard || 0).toFixed(2)}
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onSelect(product);
+                                            }}
+                                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                                        >
+                                            <Plus size={20} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {filteredProducts.length === 0 && (
+                                <tr>
+                                    <td colSpan={3} className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                                        {t('common.noResults', 'No products found')}
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
 
             </div>
