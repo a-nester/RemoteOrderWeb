@@ -87,7 +87,7 @@ export default function Counterparties() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center bg-white p-4 shadow rounded-lg sticky top-0 z-10 dark:bg-gray-800">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 shadow rounded-lg sticky top-0 z-10 dark:bg-gray-800">
                 <div className="flex items-center gap-4">
                     {currentGroupId && (
                         <button 
@@ -101,11 +101,11 @@ export default function Counterparties() {
                         {currentGroupId ? currentGroup?.name : t('menu.counterparties', 'Counterparties')}
                     </h1>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2 w-full md:w-auto">
                     {!currentGroupId && (
                          <button
                             onClick={() => setIsGroupModalOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200"
+                            className="flex items-center justify-center flex-1 md:flex-none gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200"
                         >
                             <Plus size={18} />
                             {t('common.add')} {t('menu.groups', 'Group')}
@@ -113,7 +113,7 @@ export default function Counterparties() {
                     )}
                     <button
                         onClick={handleCreateCounterparty}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        className="flex items-center justify-center flex-1 md:flex-none gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                     >
                         <UserPlus size={18} />
                         {t('common.add')} {t('menu.counterparties', 'Counterparty')}
