@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash, Check, Save } from 'lucide-react';
 import { PriceDocumentsService } from '../../services/priceDocuments.service';
@@ -262,8 +262,8 @@ export default function PriceDocumentEditor() {
                 </div>
             </div>
 
-            <div className="space-y-6">
-                <div className="bg-white shadow rounded-lg p-6 space-y-4">
+            <div className="space-y-4 sm:space-y-6">
+                <div className="bg-white shadow rounded-lg p-3 sm:p-6 space-y-4">
                     <h3 className="text-lg font-medium text-gray-900">Document Details</h3>
                     
                     <div>
@@ -376,7 +376,7 @@ export default function PriceDocumentEditor() {
                     </div>
                 </div>
 
-                <div className="bg-white shadow rounded-lg p-6 space-y-4">
+                <div className="bg-white shadow rounded-lg p-3 sm:p-6 space-y-4 overflow-hidden">
                     <h3 className="text-lg font-medium text-gray-900">Products & Prices</h3>
                     
                     {isEditing && (
@@ -402,62 +402,80 @@ export default function PriceDocumentEditor() {
                     )}
                     {!document.targetPriceTypeId && <p className="text-sm text-red-500">Please select Target Price Type first.</p>}
 
-                    <div className="overflow-y-auto max-h-96 border rounded-md">
+                    <div className="-mx-3 sm:mx-0 overflow-x-auto overflow-y-auto max-h-[60vh] sm:border sm:rounded-md border-y">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase w-1/3">Product</th>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                                    <th className="px-2 sm:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase w-1/3">Product</th>
+                                    <th className="px-2 sm:px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
                                         Source Price <br/>
                                         <span className="text-[10px] normal-case">
                                             ({document.sourcePriceTypeId ? priceTypes.find(pt => pt.id === document.sourcePriceTypeId)?.name : 'Standard'})
                                         </span>
                                     </th>
-                                    <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                                    <th className="px-2 sm:px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">
                                         Target Price <br/>
                                         <span className="text-[10px] normal-case">
                                             ({document.targetPriceTypeId ? priceTypes.find(pt => pt.id === document.targetPriceTypeId)?.name : 'Target'})
                                         </span>
                                     </th>
-                                    <th className="px-4 py-2 w-10"></th>
+                                    <th className="px-2 sm:px-4 py-2 w-10"></th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {(document.items || []).map((item, index) => {
-                                    const product = products.find(p => p.id === item.productId);
-                                    const sourceSlug = document.sourcePriceTypeId 
-                                        ? priceTypes.find(pt => String(pt.id) === String(document.sourcePriceTypeId))?.slug 
-                                        : 'standard';
-                                    const basePrice = product ? (product.prices as any)[sourceSlug || 'standard'] : 0;
+                                {(() => {
+                                    const groupedItems = (document.items || []).reduce((acc, item, originalIndex) => {
+                                        const product = products.find(p => p.id === item.productId);
+                                        const category = product?.category || 'Uncategorized';
+                                        if (!acc[category]) acc[category] = [];
+                                        acc[category].push({ item, originalIndex, product });
+                                        return acc;
+                                    }, {} as Record<string, any[]>);
 
-                                    return (
-                                        <tr key={index}>
-                                            <td className="px-4 py-2 text-sm text-gray-900">
-                                                {item.productName || product?.name || 'Unknown'}
-                                                <span className="text-gray-500 text-xs ml-1">({item.unit})</span>
-                                            </td>
-                                            <td className="px-4 py-2 text-sm text-right text-gray-400">
-                                                {basePrice ? Number(basePrice).toFixed(2) : '-'}
-                                            </td>
-                                            <td className="px-4 py-2 text-sm text-right">
-                                                <input
-                                                    type="number"
-                                                    className="w-24 text-right border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm py-1"
-                                                    value={item.price}
-                                                    onChange={e => handleUpdateItemPrice(index, parseFloat(e.target.value))}
-                                                    disabled={!isEditing}
-                                                />
-                                            </td>
-                                            <td className="px-4 py-2 text-center">
-                                                {isEditing && (
-                                                    <button onClick={() => handleRemoveItem(index)} className="text-red-600 hover:text-red-900">
-                                                        <Trash className="h-4 w-4" />
-                                                    </button>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
+                                    return Object.keys(groupedItems).sort().map(category => (
+                                        <React.Fragment key={category}>
+                                            <tr className="bg-gray-100 dark:bg-gray-700">
+                                                <td colSpan={4} className="px-3 sm:px-4 py-1 text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">
+                                                    {category}
+                                                </td>
+                                            </tr>
+                                            {groupedItems[category].sort((a,b) => (a.product?.name || '').localeCompare(b.product?.name || '')).map(({ item, originalIndex, product }) => {
+                                                const sourceSlug = document.sourcePriceTypeId 
+                                                    ? priceTypes.find(pt => String(pt.id) === String(document.sourcePriceTypeId))?.slug 
+                                                    : 'standard';
+                                                const basePrice = product ? (product.prices as any)[sourceSlug || 'standard'] : 0;
+
+                                                return (
+                                                    <tr key={originalIndex}>
+                                                        <td className="px-2 sm:px-4 py-2 text-sm text-gray-900 break-words">
+                                                            {item.productName || product?.name || 'Unknown'}
+                                                            <span className="text-gray-500 text-xs ml-1 whitespace-nowrap">({item.unit})</span>
+                                                        </td>
+                                                        <td className="px-2 sm:px-4 py-2 text-sm text-right text-gray-400 whitespace-nowrap">
+                                                            {basePrice ? Number(basePrice).toFixed(2) : '-'}
+                                                        </td>
+                                                        <td className="px-2 sm:px-4 py-2 text-sm text-right">
+                                                            <input
+                                                                type="number"
+                                                                className="w-16 sm:w-24 text-right border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm py-1"
+                                                                value={item.price}
+                                                                onChange={e => handleUpdateItemPrice(originalIndex, parseFloat(e.target.value))}
+                                                                disabled={!isEditing}
+                                                            />
+                                                        </td>
+                                                        <td className="px-2 sm:px-4 py-2 text-center">
+                                                            {isEditing && (
+                                                                <button onClick={() => handleRemoveItem(originalIndex)} className="text-red-600 hover:text-red-900 p-1">
+                                                                    <Trash className="h-4 w-4" />
+                                                                </button>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </React.Fragment>
+                                    ));
+                                })()}
                                 {(document.items || []).length === 0 && (
                                     <tr>
                                         <td colSpan={4} className="px-4 py-8 text-center text-gray-500 text-sm">
