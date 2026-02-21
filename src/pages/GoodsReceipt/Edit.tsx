@@ -305,7 +305,7 @@ export default function GoodsReceiptEdit() {
                         </thead>
                         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                             {doc.items?.map((item, index) => (
-                                <tr key={index}>
+                                <tr key={item.id}>
                                     <td className="px-4 py-2 text-center text-gray-500">{index + 1}</td>
                                     <td className="px-4 py-2">
                                         <select
