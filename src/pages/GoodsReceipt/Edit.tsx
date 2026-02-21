@@ -103,11 +103,27 @@ function SortableRow({
           className="w-full rounded border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         >
           <option value="">Оберіть товар</option>
-          {products.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
+          {Object.entries(
+            products.reduce(
+              (acc, p) => {
+                const cat = p.category || "Без категорії";
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(p);
+                return acc;
+              },
+              {} as Record<string, Product[]>,
+            ),
+          )
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([category, items]) => (
+              <optgroup key={category} label={category}>
+                {items.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
         </select>
       </td>
       <td className="px-4 py-2">
