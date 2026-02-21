@@ -1,6 +1,30 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, CheckCircle, Plus, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  CheckCircle,
+  Plus,
+  Trash2,
+  GripVertical,
+} from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { GoodsReceiptService } from "../../services/goodsReceipt.service";
 import { ProductsService } from "../../services/products.service";
 import { OrganizationService } from "../../services/organization.service";
@@ -11,6 +35,119 @@ import type { Product } from "../../types/product";
 import type { Warehouse } from "../../types/organization";
 import type { Counterparty } from "../../types/counterparty";
 import type { PriceType } from "../../types/priceType";
+
+interface SortableRowProps {
+  item: GoodsReceiptItem;
+  index: number;
+  isPosted: boolean;
+  products: Product[];
+  handleItemChange: (
+    index: number,
+    field: keyof GoodsReceiptItem,
+    value: any,
+  ) => void;
+  removeItem: (index: number) => void;
+}
+
+function SortableRow({
+  item,
+  index,
+  isPosted,
+  products,
+  handleItemChange,
+  removeItem,
+}: SortableRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 2 : 1,
+    position: isDragging ? "relative" : ("static" as any),
+  } as React.CSSProperties;
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={
+        isDragging ? "bg-gray-50 dark:bg-gray-700 shadow-md relative z-10" : ""
+      }
+    >
+      <td className="px-4 py-2 text-center text-gray-500">
+        {!isPosted ? (
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            className="cursor-grab hover:text-gray-700 dark:hover:text-gray-300"
+          >
+            <GripVertical size={18} />
+          </button>
+        ) : (
+          index + 1
+        )}
+      </td>
+      <td className="px-4 py-2">
+        <select
+          value={item.productId}
+          onChange={(e) => handleItemChange(index, "productId", e.target.value)}
+          disabled={isPosted}
+          className="w-full rounded border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        >
+          <option value="">Оберіть товар</option>
+          {products.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td className="px-4 py-2">
+        <input
+          type="number"
+          min="0"
+          step="0.001"
+          value={item.quantity}
+          onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
+          disabled={isPosted}
+          className="w-full rounded border-gray-300 text-sm text-right dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        />
+      </td>
+      <td className="px-4 py-2">
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          value={item.price}
+          onChange={(e) => handleItemChange(index, "price", e.target.value)}
+          disabled={isPosted}
+          className="w-full rounded border-gray-300 text-sm text-right dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        />
+      </td>
+      <td className="px-4 py-2 text-right font-medium dark:text-white">
+        {Number(item.total).toFixed(2)}
+      </td>
+      <td className="px-4 py-2 text-center">
+        {!isPosted && (
+          <button
+            onClick={() => removeItem(index)}
+            className="text-red-500 hover:text-red-700"
+          >
+            <Trash2 size={18} />
+          </button>
+        )}
+      </td>
+    </tr>
+  );
+}
 
 export default function GoodsReceiptEdit() {
   const { id } = useParams();
@@ -180,6 +317,34 @@ export default function GoodsReceiptEdit() {
     }
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setDoc((prev) => {
+        const items = [...(prev.items || [])];
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+
+        return {
+          ...prev,
+          items: arrayMove(items, oldIndex, newIndex),
+        };
+      });
+    }
+  };
+
   if (loading) return <div className="p-8 text-center">Завантаження...</div>;
 
   const isPosted = doc.status === "POSTED";
@@ -328,103 +493,62 @@ export default function GoodsReceiptEdit() {
       {/* Items Table */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-x-auto">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                <th className="px-4 py-3 text-left w-10">#</th>
-                <th className="px-4 py-3 text-left min-w-[200px]">Товар</th>
-                <th className="px-4 py-3 text-right w-32 min-w-[100px]">
-                  Кількість
-                </th>
-                <th className="px-4 py-3 text-right w-32 min-w-[100px]">
-                  Ціна
-                </th>
-                <th className="px-4 py-3 text-right w-32 min-w-[100px]">
-                  Сума
-                </th>
-                <th className="px-4 py-3 w-16"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {doc.items?.map((item, index) => (
-                <tr key={item.id}>
-                  <td className="px-4 py-2 text-center text-gray-500">
-                    {index + 1}
-                  </td>
-                  <td className="px-4 py-2">
-                    <select
-                      value={item.productId}
-                      onChange={(e) =>
-                        handleItemChange(index, "productId", e.target.value)
-                      }
-                      disabled={isPosted}
-                      className="w-full rounded border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    >
-                      <option value="">Оберіть товар</option>
-                      {products.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-4 py-2">
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.001"
-                      value={item.quantity}
-                      onChange={(e) =>
-                        handleItemChange(index, "quantity", e.target.value)
-                      }
-                      disabled={isPosted}
-                      className="w-full rounded border-gray-300 text-sm text-right dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
-                  </td>
-                  <td className="px-4 py-2">
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={item.price}
-                      onChange={(e) =>
-                        handleItemChange(index, "price", e.target.value)
-                      }
-                      disabled={isPosted}
-                      className="w-full rounded border-gray-300 text-sm text-right dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
-                  </td>
-                  <td className="px-4 py-2 text-right font-medium dark:text-white">
-                    {Number(item.total).toFixed(2)}
-                  </td>
-                  <td className="px-4 py-2 text-center">
-                    {!isPosted && (
-                      <button
-                        onClick={() => removeItem(index)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    )}
-                  </td>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th className="px-4 py-3 text-left w-10"></th>
+                  <th className="px-4 py-3 text-left min-w-[200px]">Товар</th>
+                  <th className="px-4 py-3 text-right w-32 min-w-[100px]">
+                    Кількість
+                  </th>
+                  <th className="px-4 py-3 text-right w-32 min-w-[100px]">
+                    Ціна
+                  </th>
+                  <th className="px-4 py-3 text-right w-32 min-w-[100px]">
+                    Сума
+                  </th>
+                  <th className="px-4 py-3 w-16"></th>
                 </tr>
-              ))}
-            </tbody>
-            <tfoot className="bg-gray-50 dark:bg-gray-900 font-bold">
-              <tr>
-                <td
-                  colSpan={4}
-                  className="px-4 py-3 text-right dark:text-white"
-                >
-                  Всього:
-                </td>
-                <td className="px-4 py-3 text-right dark:text-white">
-                  {totalAmount.toFixed(2)}
-                </td>
-                <td></td>
-              </tr>
-            </tfoot>
-          </table>
+              </thead>
+              <SortableContext
+                items={(doc.items || []).map((i) => i.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {doc.items?.map((item, index) => (
+                    <SortableRow
+                      key={item.id}
+                      item={item}
+                      index={index}
+                      isPosted={isPosted}
+                      products={products}
+                      handleItemChange={handleItemChange}
+                      removeItem={removeItem}
+                    />
+                  ))}
+                </tbody>
+              </SortableContext>
+              <tfoot className="bg-gray-50 dark:bg-gray-900 font-bold">
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-4 py-3 text-right dark:text-white"
+                  >
+                    Всього:
+                  </td>
+                  <td className="px-4 py-3 text-right dark:text-white">
+                    {totalAmount.toFixed(2)}
+                  </td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </DndContext>
         </div>
         {!isPosted && (
           <div className="p-4 border-t border-gray-200 dark:border-gray-700">
