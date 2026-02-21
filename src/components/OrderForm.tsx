@@ -14,6 +14,7 @@ import { ReportsService } from "../services/reports.service";
 import type { StockBalance } from "../services/reports.service";
 import ProductSelector from "./ProductSelector";
 import OrderItemsTable from "./OrderItemsTable";
+import QuantityModal from "./QuantityModal";
 
 interface OrderFormProps {
   initialData?: Order;
@@ -56,6 +57,8 @@ export default function OrderForm({
   // UI State
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [stockBalances, setStockBalances] = useState<StockBalance[]>([]);
+  const [selectedProductForQty, setSelectedProductForQty] =
+    useState<Product | null>(null);
 
   useEffect(() => {
     loadData();
@@ -192,26 +195,28 @@ export default function OrderForm({
 
   // Handlers
   const handleAddProduct = (product: Product) => {
-    // Determine price
-    let price = 0;
-    if (product.prices && product.prices[priceSlug]) {
-      price = Number(product.prices[priceSlug]);
-    } else if (product.prices && product.prices["standard"]) {
-      price = Number(product.prices["standard"]);
-    }
+    // Open Quantity Modal instead of adding 1 automatically
+    setSelectedProductForQty(product);
+  };
 
+  const handleConfirmQuantity = (
+    product: Product,
+    quantity: number,
+    price: number,
+  ) => {
     const newItem: OrderItem = {
       id: crypto.randomUUID(),
       productId: product.id,
       productName: product.name,
-      quantity: 1,
-      price: price,
+      quantity,
+      price,
       unit: product.unit,
-      total: price * 1,
+      total: price * quantity,
     };
 
     setItems((prev) => [...prev, newItem]);
-    setIsProductSelectorOpen(false);
+    setSelectedProductForQty(null);
+    setIsProductSelectorOpen(false); // Close product selector too
   };
 
   const handleUpdateItem = (id: string, updates: Partial<OrderItem>) => {
@@ -472,6 +477,31 @@ export default function OrderForm({
         onSelect={handleAddProduct}
         priceSlug={priceSlug}
         stockBalances={stockBalances}
+      />
+
+      <QuantityModal
+        isOpen={selectedProductForQty !== null}
+        onClose={() => setSelectedProductForQty(null)}
+        product={selectedProductForQty}
+        price={
+          selectedProductForQty
+            ? Number(
+                selectedProductForQty.prices?.[priceSlug] ||
+                  selectedProductForQty.prices?.standard ||
+                  0,
+              )
+            : 0
+        }
+        stockBalance={
+          selectedProductForQty
+            ? Number(
+                stockBalances.find(
+                  (sb) => sb.productId === selectedProductForQty.id,
+                )?.balance || null,
+              )
+            : null
+        }
+        onConfirm={handleConfirmQuantity}
       />
     </div>
   );
