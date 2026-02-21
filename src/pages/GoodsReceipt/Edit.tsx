@@ -30,7 +30,7 @@ import type { Warehouse } from "../../types/organization";
 import type { Counterparty } from "../../types/counterparty";
 import type { PriceType } from "../../types/priceType";
 
-/* ---------- Sortable Row ---------- */
+/* ---------------- Sortable Row ---------------- */
 function SortableRow({
   id,
   children,
@@ -38,7 +38,7 @@ function SortableRow({
   id: string;
   children: (listeners: any) => React.ReactNode;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
+  const { setNodeRef, transform, transition, listeners, attributes } =
     useSortable({ id });
 
   const style = {
@@ -162,15 +162,10 @@ export default function GoodsReceiptEdit() {
     setSaving(true);
     try {
       let saved;
-      if (isNew) {
-        saved = await GoodsReceiptService.create(doc);
-      } else if (id) {
-        saved = await GoodsReceiptService.update(id, doc);
-      }
+      if (isNew) saved = await GoodsReceiptService.create(doc);
+      else if (id) saved = await GoodsReceiptService.update(id, doc);
 
-      if (saved && post) {
-        saved = await GoodsReceiptService.post(saved.id);
-      }
+      if (saved && post) saved = await GoodsReceiptService.post(saved.id);
 
       setDoc(saved!);
       if (isNew) navigate(`/goods-receipt/${saved!.id}`, { replace: true });
@@ -196,7 +191,7 @@ export default function GoodsReceiptEdit() {
             onClick={() => navigate("/goods-receipt")}
             className="mr-4 p-2"
           >
-            <ArrowLeft />
+            <ArrowLeft size={24} />
           </button>
           <h1 className="text-2xl font-bold">
             {isNew ? "Нове Поступлення" : `Поступлення ${doc.number}`}
@@ -221,17 +216,14 @@ export default function GoodsReceiptEdit() {
           collisionDetection={closestCenter}
           onDragEnd={({ active, over }) => {
             if (!over || active.id === over.id) return;
-            setDoc((prev) => {
-              const items = prev.items || [];
-              return {
-                ...prev,
-                items: arrayMove(
-                  items,
-                  items.findIndex((i) => i.id === active.id),
-                  items.findIndex((i) => i.id === over.id),
-                ),
-              };
-            });
+            setDoc((prev) => ({
+              ...prev,
+              items: arrayMove(
+                prev.items || [],
+                prev.items!.findIndex((i) => i.id === active.id),
+                prev.items!.findIndex((i) => i.id === over.id),
+              ),
+            }));
           }}
         >
           <SortableContext
@@ -244,21 +236,13 @@ export default function GoodsReceiptEdit() {
                   {(listeners) => (
                     <>
                       <td {...listeners} className="cursor-grab px-2">
-                        <GripVertical />
+                        <GripVertical size={16} />
                       </td>
                       <td>{index + 1}</td>
-                      <td>
-                        <input
-                          value={item.quantity}
-                          onChange={(e) =>
-                            handleItemChange(index, "quantity", e.target.value)
-                          }
-                        />
-                      </td>
                       <td>{item.total}</td>
                       <td>
                         <button onClick={() => removeItem(index)}>
-                          <Trash2 />
+                          <Trash2 size={18} />
                         </button>
                       </td>
                     </>
@@ -271,8 +255,9 @@ export default function GoodsReceiptEdit() {
       </table>
 
       {!isPosted && (
-        <button onClick={addItem} className="mt-4">
-          <Plus /> Додати рядок
+        <button onClick={addItem} className="mt-4 flex items-center">
+          <Plus size={18} className="mr-1" />
+          Додати рядок
         </button>
       )}
 
