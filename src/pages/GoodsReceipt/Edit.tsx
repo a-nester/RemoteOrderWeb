@@ -8,11 +8,6 @@ import {
   Trash2,
   GripVertical,
 } from "lucide-react";
-import { GoodsReceiptService } from "../../services/goodsReceipt.service";
-import { ProductsService } from "../../services/products.service";
-import { OrganizationService } from "../../services/organization.service";
-import { CounterpartyService } from "../../services/counterparty.service";
-import { PriceTypesService } from "../../services/priceTypes.service";
 
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import {
@@ -23,23 +18,28 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
+import { GoodsReceiptService } from "../../services/goodsReceipt.service";
+import { ProductsService } from "../../services/products.service";
+import { OrganizationService } from "../../services/organization.service";
+import { CounterpartyService } from "../../services/counterparty.service";
+import { PriceTypesService } from "../../services/priceTypes.service";
+
 import type { GoodsReceipt, GoodsReceiptItem } from "../../types/goodsReceipt";
 import type { Product } from "../../types/product";
 import type { Warehouse } from "../../types/organization";
 import type { Counterparty } from "../../types/counterparty";
 import type { PriceType } from "../../types/priceType";
 
+/* ---------- Sortable Row ---------- */
 function SortableRow({
   id,
-  disabled,
   children,
 }: {
   id: string;
-  disabled: boolean;
   children: (listeners: any) => React.ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id, disabled });
+    useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -92,7 +92,8 @@ export default function GoodsReceiptEdit() {
       setPriceTypes(pts);
 
       if (!isNew && id) {
-        setDoc(await GoodsReceiptService.getById(id));
+        const existing = await GoodsReceiptService.getById(id);
+        setDoc(existing);
       } else {
         setDoc((prev) => ({
           ...prev,
@@ -104,46 +105,134 @@ export default function GoodsReceiptEdit() {
     }
   };
 
-  const isPosted = doc.status === "POSTED";
+  const handleHeaderChange = (field: keyof GoodsReceipt, value: any) => {
+    setDoc((prev) => ({ ...prev, [field]: value }));
+  };
 
-  const handleDragEnd = (event: any) => {
-    if (isPosted) return;
+  const handleItemChange = (
+    index: number,
+    field: keyof GoodsReceiptItem,
+    value: any,
+  ) => {
+    const items = [...(doc.items || [])];
+    const item = { ...items[index], [field]: value };
 
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (field === "productId" && doc.priceTypeId) {
+      const product = products.find((p) => p.id === value);
+      const type = priceTypes.find((t) => t.id === doc.priceTypeId);
+      if (product && type && product.prices) {
+        item.price = Number(product.prices[type.slug]) || 0;
+      }
+    }
 
-    setDoc((prev) => {
-      const items = prev.items || [];
-      const oldIndex = items.findIndex((i) => i.id === active.id);
-      const newIndex = items.findIndex((i) => i.id === over.id);
-      return { ...prev, items: arrayMove(items, oldIndex, newIndex) };
-    });
+    item.total = Number(item.quantity || 0) * Number(item.price || 0);
+    items[index] = item;
+
+    setDoc((prev) => ({ ...prev, items }));
+  };
+
+  const addItem = () => {
+    setDoc((prev) => ({
+      ...prev,
+      items: [
+        ...(prev.items || []),
+        {
+          id: crypto.randomUUID(),
+          productId: "",
+          quantity: 1,
+          price: 0,
+          total: 0,
+        },
+      ],
+    }));
+  };
+
+  const removeItem = (index: number) => {
+    const items = [...(doc.items || [])];
+    items.splice(index, 1);
+    setDoc((prev) => ({ ...prev, items }));
+  };
+
+  const save = async (post = false) => {
+    if (!doc.warehouseId || !doc.providerId) {
+      alert("Оберіть склад та постачальника");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      let saved;
+      if (isNew) {
+        saved = await GoodsReceiptService.create(doc);
+      } else if (id) {
+        saved = await GoodsReceiptService.update(id, doc);
+      }
+
+      if (saved && post) {
+        saved = await GoodsReceiptService.post(saved.id);
+      }
+
+      setDoc(saved!);
+      if (isNew) navigate(`/goods-receipt/${saved!.id}`, { replace: true });
+
+      alert(post ? "Документ проведено!" : "Документ збережено!");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) return <div className="p-8 text-center">Завантаження...</div>;
 
+  const isPosted = doc.status === "POSTED";
   const totalAmount =
-    doc.items?.reduce((sum, i) => sum + Number(i.total || 0), 0) || 0;
+    doc.items?.reduce((s, i) => s + Number(i.total || 0), 0) || 0;
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* TABLE */}
-      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-        <thead className="bg-gray-50 dark:bg-gray-900">
-          <tr>
-            <th className="w-8"></th>
-            <th className="w-10 text-center">#</th>
-            <th>Товар</th>
-            <th className="text-right">Кількість</th>
-            <th className="text-right">Ціна</th>
-            <th className="text-right">Сума</th>
-            <th className="w-12"></th>
-          </tr>
-        </thead>
+      {/* HEADER */}
+      <div className="flex justify-between mb-6">
+        <div className="flex items-center">
+          <button
+            onClick={() => navigate("/goods-receipt")}
+            className="mr-4 p-2"
+          >
+            <ArrowLeft />
+          </button>
+          <h1 className="text-2xl font-bold">
+            {isNew ? "Нове Поступлення" : `Поступлення ${doc.number}`}
+          </h1>
+        </div>
 
+        {!isPosted && (
+          <div className="flex gap-2">
+            <button onClick={() => save(false)} disabled={saving}>
+              <Save />
+            </button>
+            <button onClick={() => save(true)} disabled={saving}>
+              <CheckCircle />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ITEMS */}
+      <table className="min-w-full divide-y">
         <DndContext
           collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
+          onDragEnd={({ active, over }) => {
+            if (!over || active.id === over.id) return;
+            setDoc((prev) => {
+              const items = prev.items || [];
+              return {
+                ...prev,
+                items: arrayMove(
+                  items,
+                  items.findIndex((i) => i.id === active.id),
+                  items.findIndex((i) => i.id === over.id),
+                ),
+              };
+            });
+          }}
         >
           <SortableContext
             items={doc.items?.map((i) => i.id) || []}
@@ -151,31 +240,26 @@ export default function GoodsReceiptEdit() {
           >
             <tbody>
               {doc.items?.map((item, index) => (
-                <SortableRow key={item.id} id={item.id} disabled={isPosted}>
+                <SortableRow key={item.id} id={item.id}>
                   {(listeners) => (
                     <>
-                      <td className="text-center">
-                        {!isPosted && (
-                          <span
-                            {...listeners}
-                            className="cursor-grab active:cursor-grabbing inline-block"
-                          >
-                            <GripVertical size={16} />
-                          </span>
-                        )}
+                      <td {...listeners} className="cursor-grab px-2">
+                        <GripVertical />
                       </td>
-                      <td className="text-center">{index + 1}</td>
-                      <td>{item.productId}</td>
-                      <td className="text-right">{item.quantity}</td>
-                      <td className="text-right">{item.price}</td>
-                      <td className="text-right">{item.total}</td>
-                      <td className="text-center">
-                        {!isPosted && (
-                          <Trash2
-                            size={16}
-                            className="text-red-500 cursor-pointer"
-                          />
-                        )}
+                      <td>{index + 1}</td>
+                      <td>
+                        <input
+                          value={item.quantity}
+                          onChange={(e) =>
+                            handleItemChange(index, "quantity", e.target.value)
+                          }
+                        />
+                      </td>
+                      <td>{item.total}</td>
+                      <td>
+                        <button onClick={() => removeItem(index)}>
+                          <Trash2 />
+                        </button>
                       </td>
                     </>
                   )}
@@ -184,17 +268,15 @@ export default function GoodsReceiptEdit() {
             </tbody>
           </SortableContext>
         </DndContext>
-
-        <tfoot className="bg-gray-50 dark:bg-gray-900 font-bold">
-          <tr>
-            <td colSpan={5} className="text-right px-4">
-              Всього:
-            </td>
-            <td className="text-right px-4">{totalAmount.toFixed(2)}</td>
-            <td />
-          </tr>
-        </tfoot>
       </table>
+
+      {!isPosted && (
+        <button onClick={addItem} className="mt-4">
+          <Plus /> Додати рядок
+        </button>
+      )}
+
+      <div className="mt-4 font-bold">Всього: {totalAmount.toFixed(2)}</div>
     </div>
   );
 }
