@@ -16,6 +16,7 @@ export default function StockBalancesReport() {
   // Default to today
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [warehouseId, setWarehouseId] = useState("");
+  const [sortBy, setSortBy] = useState("category");
 
   useEffect(() => {
     loadWarehouses();
@@ -23,7 +24,7 @@ export default function StockBalancesReport() {
 
   useEffect(() => {
     loadReport();
-  }, [date, warehouseId]);
+  }, [date, warehouseId, sortBy]);
 
   const loadWarehouses = async () => {
     try {
@@ -37,7 +38,11 @@ export default function StockBalancesReport() {
   const loadReport = async () => {
     setLoading(true);
     try {
-      const data = await ReportsService.getStockBalances(date, warehouseId);
+      const data = await ReportsService.getStockBalances(
+        date,
+        warehouseId,
+        sortBy,
+      );
       setBalances(data);
     } catch (error) {
       console.error("Failed to load stock balances report", error);
@@ -85,6 +90,19 @@ export default function StockBalancesReport() {
             ))}
           </select>
         </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Сортування
+          </label>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          >
+            <option value="category">За групами</option>
+            <option value="name">За назвою</option>
+          </select>
+        </div>
       </div>
 
       {/* Table */}
@@ -103,6 +121,9 @@ export default function StockBalancesReport() {
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 В наявності
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Вартість
               </th>
             </tr>
           </thead>
@@ -142,6 +163,9 @@ export default function StockBalancesReport() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-gray-900 dark:text-white">
                     {Number(row.balance).toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                    {Number(row.totalValue || 0).toFixed(2)} ₴
                   </td>
                 </tr>
               ))
