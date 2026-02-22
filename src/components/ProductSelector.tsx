@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, X, Plus } from "lucide-react";
+import { Search, X } from "lucide-react";
 import type { Product } from "../types/product";
 import type { StockBalance } from "../services/reports.service";
 
@@ -118,10 +118,6 @@ export default function ProductSelector({
                 >
                   Залишок
                 </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24"
-                ></th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
@@ -153,17 +149,6 @@ export default function ProductSelector({
                           )?.balance,
                         ).toFixed(2)
                       : ""}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelect(product);
-                      }}
-                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/30"
-                    >
-                      <Plus size={20} />
-                    </button>
                   </td>
                 </tr>
               ))}
