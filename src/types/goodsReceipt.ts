@@ -17,9 +17,10 @@ export interface GoodsReceipt {
     providerId: string;
     providerName?: string;
     priceTypeId?: string;
-    status: 'SAVED' | 'POSTED';
     comment?: string;
     items?: GoodsReceiptItem[];
+    amount?: string | number;
+    status: 'SAVED' | 'POSTED';
     createdAt: string;
     updatedAt: string;
     createdBy?: string;

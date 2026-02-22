@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, Printer, Edit, CheckCircle } from "lucide-react";
 import { RealizationService } from "../../services/realization.service";
 import type { Realization } from "../../types/realization";
 import { numberToWordsUk } from "../../utils/numberToWords";
@@ -45,6 +45,32 @@ export default function RealizationDetails() {
     );
   };
 
+  const handlePost = async () => {
+    if (!id) return;
+    if (
+      !window.confirm(
+        t(
+          "realization.confirmPost",
+          "Ви впевнені, що хочете провести реалізацію? Це спише товари зі складу.",
+        ),
+      )
+    ) {
+      return;
+    }
+    setLoading(true);
+    try {
+      await RealizationService.postRealization(id);
+      await loadData(); // Reload to get updated status and profit
+    } catch (error: any) {
+      console.error("Failed to post realization", error);
+      alert(
+        error.response?.data?.message ||
+          t("common.error", "Failed to post realization"),
+      );
+      setLoading(false);
+    }
+  };
+
   if (loading)
     return (
       <div className="p-8 text-center">{t("common.loading", "Loading...")}</div>
@@ -53,6 +79,8 @@ export default function RealizationDetails() {
     return (
       <div className="p-8 text-center text-red-500">Realization not found</div>
     );
+
+  const isPosted = realization.status === "POSTED";
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-8 bg-white dark:bg-gray-800 shadow-lg rounded-lg print:shadow-none print:w-full print:m-0 print:p-0">
@@ -65,13 +93,33 @@ export default function RealizationDetails() {
           <ArrowLeft className="mr-2" size={20} />
           {t("common.back", "Back")}
         </button>
-        <button
-          onClick={handlePrint}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          <Printer className="mr-2" size={20} />
-          {t("common.print", "Print")}
-        </button>
+        <div className="flex items-center space-x-4">
+          {!isPosted && (
+            <>
+              <button
+                onClick={() => navigate(`/realizations/${id}/edit`)}
+                className="flex items-center px-4 py-2 text-indigo-600 bg-indigo-50 rounded hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
+              >
+                <Edit className="mr-2" size={20} />
+                {t("common.edit", "Edit")}
+              </button>
+              <button
+                onClick={handlePost}
+                className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              >
+                <CheckCircle className="mr-2" size={20} />
+                {t("action.post", "Провести")}
+              </button>
+            </>
+          )}
+          <button
+            onClick={handlePrint}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            <Printer className="mr-2" size={20} />
+            {t("common.print", "Print")}
+          </button>
+        </div>
       </div>
 
       {/* Content */}

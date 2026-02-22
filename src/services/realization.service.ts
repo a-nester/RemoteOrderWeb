@@ -32,8 +32,8 @@ export const RealizationService = {
     },
 
     // Optional: post/conduct
-    postRealization: async (id: string): Promise<Realization> => {
-        // Assuming status update to POSTED
-        return RealizationService.update(id, { status: 'POSTED' });
+    postRealization: async (id: string): Promise<{ success: boolean; profit: number }> => {
+        const response = await axios.post(`${BASE_URL}/${id}/post`, {}, { headers: getAuthHeader() });
+        return response.data;
     }
 };

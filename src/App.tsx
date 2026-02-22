@@ -16,6 +16,7 @@ import UsersList from "./pages/OrganizationSettings/UsersList";
 import Orders from "./pages/Orders";
 import RealizationList from "./pages/Realizations";
 import RealizationDetails from "./pages/Realizations/RealizationDetails";
+import RealizationEdit from "./pages/Realizations/RealizationEdit";
 import OrderDetails from "./pages/Orders/OrderDetails";
 import OrderEdit from "./pages/Orders/OrderEdit";
 import OrderCreate from "./pages/Orders/OrderCreate";
@@ -220,6 +221,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <RealizationDetails />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/realizations/:id/edit"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <RealizationEdit />
                 </Layout>
               </ProtectedRoute>
             }

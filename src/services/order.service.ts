@@ -33,7 +33,8 @@ const mapOrder = (apiOrder: any): Order => {
         currency: 'UAH',
         items: items,
         isDeleted: apiOrder.isDeleted,
-        comment: apiOrder.comment
+        comment: apiOrder.comment,
+        docNumber: apiOrder.docNumber
     };
 };
 
