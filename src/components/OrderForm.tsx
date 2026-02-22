@@ -339,9 +339,9 @@ export default function OrderForm({
     );
 
   return (
-    <div className="max-w-4xl mx-auto p-2 md:p-8 space-y-4 md:space-y-6">
+    <div className="max-w-4xl mx-auto p-0 sm:p-2 md:p-8 space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-4 sm:px-0 mt-4 sm:mt-0">
         <div className="flex items-center">
           <button
             onClick={() => navigate("/orders")}
@@ -363,7 +363,7 @@ export default function OrderForm({
         </button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6">
+      <div className="bg-white dark:bg-gray-800 shadow rounded-none sm:rounded-lg p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6 border-y sm:border-y-0 border-gray-200 dark:border-gray-700">
         {/* Top Form: Client, Date, Status */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           {/* Client */}
