@@ -40,6 +40,7 @@ export default function Layout({ children, title }: LayoutProps) {
     location.pathname.startsWith("/organization-settings"),
   );
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
 
   useEffect(() => {
     setIsSidebarOpen(false);
@@ -53,6 +54,7 @@ export default function Layout({ children, title }: LayoutProps) {
   const togglePriceEditor = () => setIsPriceEditorOpen(!isPriceEditorOpen);
   const toggleReports = () => setIsReportsOpen(!isReportsOpen);
   const toggleOrganization = () => setIsOrganizationOpen(!isOrganizationOpen);
+  const toggleArchive = () => setIsArchiveOpen(!isArchiveOpen);
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex transition-colors duration-200">
@@ -271,20 +273,55 @@ export default function Layout({ children, title }: LayoutProps) {
           </NavLink>
 
           {user?.role === "admin" && (
-            <NavLink
-              to="/orders/archive"
-              className={({ isActive }) =>
-                clsx(
-                  "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                  isActive
-                    ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                )
-              }
-            >
-              <Archive className="mr-3 h-5 w-5" />
-              {t("menu.archive", "Archive")}
-            </NavLink>
+            <div>
+              <button
+                onClick={toggleArchive}
+                className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-md transition-colors"
+              >
+                <div className="flex items-center">
+                  <Archive className="mr-3 h-5 w-5" />
+                  {t("menu.archive", "Archive")}
+                </div>
+                {isArchiveOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </button>
+
+              {isArchiveOpen && (
+                <div className="ml-4 mt-1 space-y-1">
+                  <NavLink
+                    to="/orders/archive"
+                    className={({ isActive }) =>
+                      clsx(
+                        "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                        isActive
+                          ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                      )
+                    }
+                  >
+                    <span className="w-5 mr-3"></span>
+                    Всі Замовлення
+                  </NavLink>
+                  <NavLink
+                    to="/realizations/archive"
+                    className={({ isActive }) =>
+                      clsx(
+                        "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                        isActive
+                          ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                      )
+                    }
+                  >
+                    <span className="w-5 mr-3"></span>
+                    Видалені реалізації
+                  </NavLink>
+                </div>
+              )}
+            </div>
           )}
 
           <NavLink

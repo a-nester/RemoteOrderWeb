@@ -200,17 +200,41 @@ export default function OrderForm({
     quantity: number,
     price: number,
   ) => {
-    const newItem: OrderItem = {
-      id: crypto.randomUUID(),
-      productId: product.id,
-      productName: product.name,
-      quantity,
-      price,
-      unit: product.unit,
-      total: price * quantity,
-    };
+    setItems((prev) => {
+      const existingItemIndex = prev.findIndex(
+        (item) => item.productId === product.id,
+      );
 
-    setItems((prev) => [...prev, newItem]);
+      if (existingItemIndex >= 0) {
+        // Update existing item
+        return prev.map((item, index) => {
+          if (index === existingItemIndex) {
+            const newQuantity = item.quantity + quantity;
+            return {
+              ...item,
+              quantity: newQuantity,
+              total: Number((newQuantity * price).toFixed(2)),
+              // Optionally update price to the newly confirmed price if it differs
+              price: price,
+            };
+          }
+          return item;
+        });
+      } else {
+        // Add new item
+        const newItem: OrderItem = {
+          id: crypto.randomUUID(),
+          productId: product.id,
+          productName: product.name,
+          quantity,
+          price,
+          unit: product.unit,
+          total: Number((price * quantity).toFixed(2)),
+        };
+        return [...prev, newItem];
+      }
+    });
+
     setSelectedProductForQty(null);
     setIsProductSelectorOpen(false); // Close product selector too
   };
