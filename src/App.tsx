@@ -21,6 +21,7 @@ import OrderDetails from "./pages/Orders/OrderDetails";
 import OrderEdit from "./pages/Orders/OrderEdit";
 import OrderCreate from "./pages/Orders/OrderCreate";
 import OrdersArchive from "./pages/Orders/OrdersArchive";
+import RealizationsArchive from "./pages/Archive/RealizationsArchive";
 import GoodsReceiptList from "./pages/GoodsReceipt";
 import GoodsReceiptEdit from "./pages/GoodsReceipt/Edit";
 import StockBalancesReport from "./pages/Reports/StockBalances";
@@ -161,6 +162,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <OrdersArchive />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/realizations/archive"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <RealizationsArchive />
                 </Layout>
               </ProtectedRoute>
             }

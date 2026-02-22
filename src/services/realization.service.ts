@@ -11,8 +11,14 @@ const getAuthHeader = () => {
 };
 
 export const RealizationService = {
-    getAll: async (): Promise<Realization[]> => {
-        const response = await axios.get(BASE_URL, { headers: getAuthHeader() });
+    getAll: async (filter?: { includeDeleted?: boolean }): Promise<Realization[]> => {
+        const params: any = {};
+        if (filter?.includeDeleted) params.includeDeleted = 'true';
+        
+        const response = await axios.get(BASE_URL, { 
+            params,
+            headers: getAuthHeader() 
+        });
         return response.data;
     },
 
@@ -35,5 +41,9 @@ export const RealizationService = {
     postRealization: async (id: string): Promise<{ success: boolean; profit: number }> => {
         const response = await axios.post(`${BASE_URL}/${id}/post`, {}, { headers: getAuthHeader() });
         return response.data;
+    },
+
+    deleteRealization: async (id: string): Promise<void> => {
+        await axios.delete(`${BASE_URL}/${id}`, { headers: getAuthHeader() });
     }
 };

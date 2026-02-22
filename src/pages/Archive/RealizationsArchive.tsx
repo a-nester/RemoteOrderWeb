@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { FileText, Eye, Trash2 } from "lucide-react";
+import { Eye, Archive } from "lucide-react";
 import { RealizationService } from "../../services/realization.service";
 import type { Realization } from "../../types/realization";
 
-export default function RealizationList() {
+export default function RealizationsArchive() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -18,36 +18,16 @@ export default function RealizationList() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await RealizationService.getAll();
-      setRealizations(data);
+      // Fetch ALL realizations with includeDeleted flag
+      const data = await RealizationService.getAll({ includeDeleted: true });
+
+      // Filter down to only deleted ones
+      const archived = data.filter((r) => r.isDeleted);
+      setRealizations(archived);
     } catch (error) {
-      console.error("Failed to load realizations", error);
+      console.error("Failed to load realizations archive", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: string, status: string) => {
-    if (status === "POSTED") {
-      alert(t("common.error", "Cannot delete a posted realization"));
-      return;
-    }
-    if (
-      !window.confirm(
-        t(
-          "common.confirmDelete",
-          "Are you sure you want to delete this realization?",
-        ),
-      )
-    )
-      return;
-
-    try {
-      await RealizationService.deleteRealization(id);
-      loadData();
-    } catch (error) {
-      console.error(error);
-      alert(t("common.error", "Failed to delete"));
     }
   };
 
@@ -71,19 +51,9 @@ export default function RealizationList() {
     <div className="space-y-6">
       <div className="flex justify-between items-center px-4 md:px-0">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-          <FileText className="mr-3" />
-          {t("menu.realizations", "Realizations")}
+          <Archive className="mr-3" />
+          Видалені реалізації
         </h1>
-        {/* 
-                // Manual creation is not requested yet, only from Order.
-                <button
-                    onClick={() => navigate('/realizations/new')}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                    <Plus className="mr-2" size={18} />
-                    {t('action.create', 'Create')}
-                </button> 
-                */}
       </div>
 
       <div className="bg-white dark:bg-gray-800 shadow hidden md:block rounded-lg overflow-x-auto">
@@ -114,15 +84,15 @@ export default function RealizationList() {
             {realizations.map((item) => (
               <tr
                 key={item.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                className="hover:bg-gray-50 dark:hover:bg-gray-700/50 opacity-70"
               >
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500 dark:text-gray-400 line-through">
                   {item.number}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {new Date(item.date).toLocaleDateString()}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {item.counterpartyName || "-"}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -132,29 +102,16 @@ export default function RealizationList() {
                     {t(`status.${item.status}`, item.status)}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-white">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-500 dark:text-gray-400">
                   {Number(item.amount).toFixed(2)} {item.currency}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex justify-end space-x-3">
-                    <button
-                      onClick={() => navigate(`/realizations/${item.id}`)}
-                      className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-                    >
-                      <Eye size={18} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(item.id, item.status)}
-                      disabled={item.status === "POSTED"}
-                      className={
-                        item.status === "POSTED"
-                          ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
-                          : "text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                      }
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => navigate(`/realizations/${item.id}`)}
+                    className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                  >
+                    <Eye size={18} />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -164,7 +121,7 @@ export default function RealizationList() {
                   colSpan={6}
                   className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400"
                 >
-                  {t("common.noData", "No realizations found")}
+                  Немає видалених реалізацій
                 </td>
               </tr>
             )}
@@ -177,14 +134,12 @@ export default function RealizationList() {
         {realizations.map((item) => (
           <div
             key={item.id}
-            className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 space-y-2"
+            className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 space-y-2 opacity-70"
           >
             <div className="flex justify-between items-start">
-              <div>
-                <span className="text-sm font-bold text-gray-900 dark:text-white">
-                  #{item.number}
-                </span>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="line-through text-gray-500">
+                <span className="text-sm font-bold">#{item.number}</span>
+                <p className="text-xs">
                   {new Date(item.date).toLocaleDateString()}
                 </p>
               </div>
@@ -194,39 +149,25 @@ export default function RealizationList() {
                 {item.status}
               </span>
             </div>
-            <div className="text-sm text-gray-700 dark:text-gray-300">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
               {item.counterpartyName}
             </div>
             <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
-              <span className="font-bold text-gray-900 dark:text-white">
+              <span className="font-bold text-gray-500 dark:text-gray-400">
                 {Number(item.amount).toFixed(2)} {item.currency}
               </span>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => navigate(`/realizations/${item.id}`)}
-                  className="p-2 text-indigo-600 dark:text-indigo-400"
-                >
-                  <Eye size={20} />
-                </button>
-                <button
-                  onClick={() => handleDelete(item.id, item.status)}
-                  disabled={item.status === "POSTED"}
-                  className={
-                    item.status === "POSTED"
-                      ? "p-2 text-gray-300 dark:text-gray-600 cursor-not-allowed"
-                      : "p-2 text-red-600 dark:text-red-400"
-                  }
-                >
-                  <Trash2 size={20} />
-                </button>
-              </div>
+              <button
+                onClick={() => navigate(`/realizations/${item.id}`)}
+                className="p-2 text-indigo-600 dark:text-indigo-400"
+              >
+                <Eye size={20} />
+              </button>
             </div>
           </div>
         ))}
-
         {realizations.length === 0 && (
-          <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-            {t("common.noData", "No realizations found")}
+          <div className="text-center text-gray-500 py-4">
+            Немає видалених реалізацій
           </div>
         )}
       </div>

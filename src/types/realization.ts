@@ -36,4 +36,5 @@ export interface Realization {
     counterpartyName?: string;
     warehouseName?: string;
     items?: RealizationItem[];
+    isDeleted?: boolean;
 }
