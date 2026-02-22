@@ -290,6 +290,44 @@ export default function OrderForm({
     );
   };
 
+  const handleUpdatePrices = () => {
+    if (!counterpartyId) return;
+    if (items.length === 0) return;
+
+    if (
+      !window.confirm(
+        t(
+          "order.confirmUpdatePrices",
+          "Оновити ціни всіх товарів згідно з поточним прайсом клієнта?",
+        ),
+      )
+    ) {
+      return;
+    }
+
+    setItems((prevItems) =>
+      prevItems.map((item) => {
+        const product = products.find((p) => p.id === item.productId);
+        if (!product) return item;
+
+        let newPrice = 0;
+        if (product.prices && product.prices[priceSlug] !== undefined) {
+          newPrice = Number(product.prices[priceSlug]);
+        } else if (product.prices && product.prices["standard"] !== undefined) {
+          newPrice = Number(product.prices["standard"]);
+        } else if ((product as any).price) {
+          newPrice = Number((product as any).price);
+        }
+
+        return {
+          ...item,
+          price: newPrice,
+          total: Number((newPrice * item.quantity).toFixed(2)),
+        };
+      }),
+    );
+  };
+
   const handleSave = async () => {
     console.log("OrderForm: handleSave called");
 
@@ -451,7 +489,14 @@ export default function OrderForm({
               className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
           </div>
-          <div className="flex flex-col justify-end items-end">
+          <div></div>
+          <div className="flex flex-col justify-end items-end space-y-2">
+            <button
+              onClick={handleUpdatePrices}
+              className="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300"
+            >
+              {t("order.updatePricesButton", "🔄 Оновити ціни")}
+            </button>
             <span className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               {t("common.total", "Total Amount")}
             </span>
