@@ -9,6 +9,13 @@ interface LoginResponse {
     error?: string;
 }
 
+export const getAuthHeader = () => {
+    const { token } = localStorage.getItem('auth') 
+        ? JSON.parse(localStorage.getItem('auth') as string).state 
+        : { token: null };
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export const AuthService = {
     async login(email: string, password: string): Promise<LoginResponse> {
         try {

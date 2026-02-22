@@ -81,20 +81,22 @@ export default function Layout({ children, title }: LayoutProps) {
           </button>
         </div>
         <nav className="mt-6 px-4 space-y-2">
-          <NavLink
-            to="/dashboard"
-            className={({ isActive }) =>
-              clsx(
-                "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                isActive
-                  ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-              )
-            }
-          >
-            <LayoutDashboard className="mr-3 h-5 w-5" />
-            {t("menu.dashboard")}
-          </NavLink>
+          {user?.role === "admin" && (
+            <NavLink
+              to="/dashboard"
+              className={({ isActive }) =>
+                clsx(
+                  "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                  isActive
+                    ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                )
+              }
+            >
+              <LayoutDashboard className="mr-3 h-5 w-5" />
+              {t("menu.dashboard")}
+            </NavLink>
+          )}
 
           <NavLink
             to="/products"
@@ -111,57 +113,60 @@ export default function Layout({ children, title }: LayoutProps) {
             {t("menu.products")}
           </NavLink>
 
-          {/* Price Editor Group */}
-          <div>
-            <button
-              onClick={togglePriceEditor}
-              className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-md transition-colors"
-            >
-              <div className="flex items-center">
-                <FileText className="mr-3 h-5 w-5" />
-                {t("menu.priceEditor")}
-              </div>
-              {isPriceEditorOpen ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
-            </button>
+          {/* Price Editor Group - Admin Only */}
+          {user?.role === "admin" && (
+            <div>
+              <button
+                onClick={togglePriceEditor}
+                className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-md transition-colors"
+              >
+                <div className="flex items-center">
+                  <FileText className="mr-3 h-5 w-5" />
+                  {t("menu.priceEditor")}
+                </div>
+                {isPriceEditorOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </button>
 
-            {isPriceEditorOpen && (
-              <div className="ml-4 mt-1 space-y-1">
-                <NavLink
-                  to="/price-documents"
-                  className={({ isActive }) =>
-                    clsx(
-                      "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                      isActive
-                        ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                    )
-                  }
-                >
-                  <span className="w-5 mr-3"></span> {/* Indent placeholder */}
-                  {t("menu.priceSettings")}
-                </NavLink>
-                {/* Price Types - Assuming route /price-types exists or will exist */}
-                <NavLink
-                  to="/price-types" // TODO: Create this route if not exists
-                  className={({ isActive }) =>
-                    clsx(
-                      "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                      isActive
-                        ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                    )
-                  }
-                >
-                  <span className="w-5 mr-3"></span>
-                  {t("menu.priceTypes")}
-                </NavLink>
-              </div>
-            )}
-          </div>
+              {isPriceEditorOpen && (
+                <div className="ml-4 mt-1 space-y-1">
+                  <NavLink
+                    to="/price-documents"
+                    className={({ isActive }) =>
+                      clsx(
+                        "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                        isActive
+                          ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                      )
+                    }
+                  >
+                    <span className="w-5 mr-3"></span>{" "}
+                    {/* Indent placeholder */}
+                    {t("menu.priceSettings")}
+                  </NavLink>
+                  {/* Price Types - Assuming route /price-types exists or will exist */}
+                  <NavLink
+                    to="/price-types" // TODO: Create this route if not exists
+                    className={({ isActive }) =>
+                      clsx(
+                        "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                        isActive
+                          ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                      )
+                    }
+                  >
+                    <span className="w-5 mr-3"></span>
+                    {t("menu.priceTypes")}
+                  </NavLink>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Reports Group */}
           <div>
@@ -229,20 +234,22 @@ export default function Layout({ children, title }: LayoutProps) {
             {t("menu.orders")}
           </NavLink>
 
-          <NavLink
-            to="/goods-receipt"
-            className={({ isActive }) =>
-              clsx(
-                "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                isActive
-                  ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-              )
-            }
-          >
-            <FileText className="mr-3 h-5 w-5" />
-            {t("menu.goodsReceipt", "Goods Receipt")}
-          </NavLink>
+          {user?.role === "admin" && (
+            <NavLink
+              to="/goods-receipt"
+              className={({ isActive }) =>
+                clsx(
+                  "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                  isActive
+                    ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                )
+              }
+            >
+              <FileText className="mr-3 h-5 w-5" />
+              {t("menu.goodsReceipt", "Goods Receipt")}
+            </NavLink>
+          )}
 
           <NavLink
             to="/realizations"
@@ -259,20 +266,22 @@ export default function Layout({ children, title }: LayoutProps) {
             {t("menu.realizations", "Realizations")}
           </NavLink>
 
-          <NavLink
-            to="/orders/archive"
-            className={({ isActive }) =>
-              clsx(
-                "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                isActive
-                  ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-              )
-            }
-          >
-            <Archive className="mr-3 h-5 w-5" />
-            {t("menu.archive", "Archive")}
-          </NavLink>
+          {user?.role === "admin" && (
+            <NavLink
+              to="/orders/archive"
+              className={({ isActive }) =>
+                clsx(
+                  "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                  isActive
+                    ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                )
+              }
+            >
+              <Archive className="mr-3 h-5 w-5" />
+              {t("menu.archive", "Archive")}
+            </NavLink>
+          )}
 
           <NavLink
             to="/settings"
@@ -289,20 +298,22 @@ export default function Layout({ children, title }: LayoutProps) {
             {t("menu.settings")}
           </NavLink>
 
-          <NavLink
-            to="/organization-settings"
-            className={({ isActive }) =>
-              clsx(
-                "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                isActive
-                  ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-              )
-            }
-          >
-            <Store className="mr-3 h-5 w-5" />
-            {t("menu.organizationSettings", "Organization")}
-          </NavLink>
+          {user?.role === "admin" && (
+            <NavLink
+              to="/organization-settings"
+              className={({ isActive }) =>
+                clsx(
+                  "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                  isActive
+                    ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                )
+              }
+            >
+              <Store className="mr-3 h-5 w-5" />
+              {t("menu.organizationSettings", "Organization")}
+            </NavLink>
+          )}
         </nav>
         <div className="absolute bottom-0 w-full p-4 border-t">
           <div className="flex items-center">
