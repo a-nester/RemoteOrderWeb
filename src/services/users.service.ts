@@ -8,6 +8,8 @@ export interface User {
     email: string;
     role: 'admin' | 'manager' | 'client';
     warehouseId?: string | null;
+    counterpartyId?: string | null;
+    organizationId?: number | null;
 }
 
 export const UsersService = {

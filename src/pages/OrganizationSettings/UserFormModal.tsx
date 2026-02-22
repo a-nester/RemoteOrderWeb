@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Save } from "lucide-react";
 import type { User } from "../../services/users.service";
+import { CounterpartyService } from "../../services/counterparty.service";
+import type { Counterparty } from "../../types/counterparty";
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -20,16 +22,24 @@ export default function UserFormModal({
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "manager" | "client">("client");
   const [password, setPassword] = useState("");
+  const [counterpartyId, setCounterpartyId] = useState("");
+  const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    CounterpartyService.getAll().then(setCounterparties).catch(console.error);
+  }, []);
 
   useEffect(() => {
     if (initialData) {
       setEmail(initialData.email || "");
       setRole(initialData.role || "client");
+      setCounterpartyId(initialData.counterpartyId || "");
       setPassword(""); // Never populate password
     } else {
       setEmail("");
       setRole("client");
+      setCounterpartyId("");
       setPassword("");
     }
   }, [initialData, isOpen]);
@@ -41,6 +51,9 @@ export default function UserFormModal({
     setSaving(true);
     try {
       const data: any = { email, role };
+      if (role === "client" && counterpartyId) {
+        data.counterpartyId = counterpartyId;
+      }
       if (password.trim() !== "") {
         data.password = password;
       }
@@ -93,6 +106,27 @@ export default function UserFormModal({
               <option value="client">Клієнт (Client)</option>
             </select>
           </div>
+
+          {role === "client" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Прив'язаний Контрагент (Обов'язково для клієнта)
+              </label>
+              <select
+                value={counterpartyId}
+                onChange={(e) => setCounterpartyId(e.target.value)}
+                required={role === "client"}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              >
+                <option value="">-- Оберіть контрагента --</option>
+                {counterparties.map((cp) => (
+                  <option key={cp.id} value={cp.id}>
+                    {cp.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

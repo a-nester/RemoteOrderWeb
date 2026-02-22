@@ -53,16 +53,18 @@ export default function UsersList() {
     );
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-8">
       <div className="flex justify-between items-center">
-        <h2 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
-          <UserIcon className="mr-2" size={20} />
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+          <UserIcon className="mr-3" size={24} />
           Користувачі
-        </h2>
-        {/* 
-                  Omitting "Add User" for now per requirements, but the hook is there 
-                  <button onClick={() => handleOpenModal()} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Add User</button>
-                */}
+        </h1>
+        <button
+          onClick={() => handleOpenModal()}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+        >
+          Додати користувача
+        </button>
       </div>
 
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">

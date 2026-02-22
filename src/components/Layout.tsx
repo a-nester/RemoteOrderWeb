@@ -36,6 +36,9 @@ export default function Layout({ children, title }: LayoutProps) {
   const [isReportsOpen, setIsReportsOpen] = useState(
     location.pathname.startsWith("/reports"),
   );
+  const [isOrganizationOpen, setIsOrganizationOpen] = useState(
+    location.pathname.startsWith("/organization-settings"),
+  );
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -49,6 +52,7 @@ export default function Layout({ children, title }: LayoutProps) {
 
   const togglePriceEditor = () => setIsPriceEditorOpen(!isPriceEditorOpen);
   const toggleReports = () => setIsReportsOpen(!isReportsOpen);
+  const toggleOrganization = () => setIsOrganizationOpen(!isOrganizationOpen);
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex transition-colors duration-200">
@@ -299,20 +303,55 @@ export default function Layout({ children, title }: LayoutProps) {
           </NavLink>
 
           {user?.role === "admin" && (
-            <NavLink
-              to="/organization-settings"
-              className={({ isActive }) =>
-                clsx(
-                  "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                  isActive
-                    ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                )
-              }
-            >
-              <Store className="mr-3 h-5 w-5" />
-              {t("menu.organizationSettings", "Organization")}
-            </NavLink>
+            <div>
+              <button
+                onClick={toggleOrganization}
+                className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-md transition-colors"
+              >
+                <div className="flex items-center">
+                  <Store className="mr-3 h-5 w-5" />
+                  {t("menu.organizationSettings", "Organization")}
+                </div>
+                {isOrganizationOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </button>
+
+              {isOrganizationOpen && (
+                <div className="ml-4 mt-1 space-y-1">
+                  <NavLink
+                    to="/organization-settings/main"
+                    className={({ isActive }) =>
+                      clsx(
+                        "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                        isActive
+                          ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                      )
+                    }
+                  >
+                    <span className="w-5 mr-3"></span>
+                    Основні
+                  </NavLink>
+                  <NavLink
+                    to="/organization-settings/users"
+                    className={({ isActive }) =>
+                      clsx(
+                        "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                        isActive
+                          ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                      )
+                    }
+                  >
+                    <span className="w-5 mr-3"></span>
+                    Користувачі
+                  </NavLink>
+                </div>
+              )}
+            </div>
           )}
         </nav>
         <div className="absolute bottom-0 w-full p-4 border-t">

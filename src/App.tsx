@@ -12,6 +12,7 @@ import Settings from "./pages/Settings";
 import PriceTypes from "./pages/PriceTypes";
 import Counterparties from "./pages/Counterparties";
 import OrganizationSettings from "./pages/OrganizationSettings";
+import UsersList from "./pages/OrganizationSettings/UsersList";
 import Orders from "./pages/Orders";
 import RealizationList from "./pages/Realizations";
 import RealizationDetails from "./pages/Realizations/RealizationDetails";
@@ -124,11 +125,21 @@ function App() {
             }
           />
           <Route
-            path="/organization-settings"
+            path="/organization-settings/main"
             element={
               <ProtectedRoute>
                 <Layout>
                   <OrganizationSettings />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/organization-settings/users"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <UsersList />
                 </Layout>
               </ProtectedRoute>
             }

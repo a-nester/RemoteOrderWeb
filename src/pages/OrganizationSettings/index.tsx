@@ -3,16 +3,12 @@ import { useTranslation } from "react-i18next";
 import { Save, Plus, Store, Edit } from "lucide-react";
 import { OrganizationService } from "../../services/organization.service";
 import type { Organization, Warehouse } from "../../types/organization";
-import UsersList from "./UsersList";
-
-type Tab = "main" | "users";
 
 export default function OrganizationSettings() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [org, setOrg] = useState<Organization | null>(null);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [activeTab, setActiveTab] = useState<Tab>("main");
 
   // Org Form State
   const [orgName, setOrgName] = useState("");
@@ -124,132 +120,102 @@ export default function OrganizationSettings() {
         {t("menu.organizationSettings", "Organization Settings")}
       </h1>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab("main")}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === "main"
-                ? "border-indigo-500 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600"
-            }`}
-          >
-            Основні
-          </button>
-          <button
-            onClick={() => setActiveTab("users")}
-            className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === "users"
-                ? "border-indigo-500 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600"
-            }`}
-          >
-            Користувачі
-          </button>
-        </nav>
-      </div>
-
-      {activeTab === "main" && (
-        <div className="space-y-8">
-          {/* Organization Name Section */}
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-              {t("organization.details", "Organization Details")}
-            </h2>
-            <div className="flex gap-4 items-end">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t("organization.name", "Name")}
-                </label>
-                <input
-                  type="text"
-                  value={orgName}
-                  onChange={(e) => setOrgName(e.target.value)}
-                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
-              </div>
-              <button
-                onClick={handleSaveOrg}
-                disabled={savingOrg}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-              >
-                <Save className="mr-2" size={18} />
-                {savingOrg
-                  ? t("common.saving", "Saving...")
-                  : t("common.save", "Save")}
-              </button>
+      <div className="space-y-8">
+        {/* Organization Name Section */}
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            {t("organization.details", "Organization Details")}
+          </h2>
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t("organization.name", "Name")}
+              </label>
+              <input
+                type="text"
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
             </div>
-          </div>
-
-          {/* Warehouses Section */}
-          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-                {t("organization.warehouses", "Warehouses")}
-              </h2>
-              <button
-                onClick={() => handleOpenModal()}
-                className="flex items-center px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700"
-              >
-                <Plus size={18} className="mr-1" />
-                {t("action.add", "Add")}
-              </button>
-            </div>
-
-            <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-900">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      {t("common.name", "Name")}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      {t("common.address", "Address")}
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      {t("common.actions", "Actions")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {warehouses.map((wh) => (
-                    <tr key={wh.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                        {wh.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {wh.address || "-"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => handleOpenModal(wh)}
-                          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-4"
-                        >
-                          <Edit size={18} />
-                        </button>
-                        {/* Implement delete if needed, for now just edit */}
-                      </td>
-                    </tr>
-                  ))}
-                  {warehouses.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={3}
-                        className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400"
-                      >
-                        {t("common.noData", "No warehouses found")}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <button
+              onClick={handleSaveOrg}
+              disabled={savingOrg}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              <Save className="mr-2" size={18} />
+              {savingOrg
+                ? t("common.saving", "Saving...")
+                : t("common.save", "Save")}
+            </button>
           </div>
         </div>
-      )}
 
-      {activeTab === "users" && <UsersList />}
+        {/* Warehouses Section */}
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+              {t("organization.warehouses", "Warehouses")}
+            </h2>
+            <button
+              onClick={() => handleOpenModal()}
+              className="flex items-center px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700"
+            >
+              <Plus size={18} className="mr-1" />
+              {t("action.add", "Add")}
+            </button>
+          </div>
+
+          <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-900">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    {t("common.name", "Name")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    {t("common.address", "Address")}
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    {t("common.actions", "Actions")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {warehouses.map((wh) => (
+                  <tr key={wh.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {wh.name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {wh.address || "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={() => handleOpenModal(wh)}
+                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-4"
+                      >
+                        <Edit size={18} />
+                      </button>
+                      {/* Implement delete if needed, for now just edit */}
+                    </td>
+                  </tr>
+                ))}
+                {warehouses.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={3}
+                      className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400"
+                    >
+                      {t("common.noData", "No warehouses found")}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
       {/* Warehouse Modal */}
       {isModalOpen && (
