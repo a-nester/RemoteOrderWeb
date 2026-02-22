@@ -140,7 +140,7 @@ export default function OrderForm({
 
   // Derived State
   const selectedCounterparty = useMemo(
-    () => counterparties.find((c) => c.id === counterpartyId),
+    () => counterparties.find((c) => String(c.id) === String(counterpartyId)),
     [counterparties, counterpartyId],
   );
 
@@ -172,11 +172,7 @@ export default function OrderForm({
   }, [selectedCounterparty?.warehouseId, date]);
 
   const priceSlug = useMemo(() => {
-    console.log("OrderForm: Recalculating priceSlug");
-    console.log("OrderForm: selectedCounterparty:", selectedCounterparty);
-
     if (!selectedCounterparty?.priceTypeId) {
-      console.log("OrderForm: Lookup failed - No priceTypeId on client");
       return "standard";
     }
 
@@ -184,12 +180,12 @@ export default function OrderForm({
     const pt = priceTypes.find(
       (p) => String(p.id) === String(selectedCounterparty.priceTypeId),
     );
-    console.log("OrderForm: Found PriceType:", pt);
     return pt?.slug || "standard";
   }, [selectedCounterparty, priceTypes]);
 
   const totalAmount = useMemo(
-    () => items.reduce((sum, item) => sum + (Number(item.total) || 0), 0),
+    () =>
+      (items || []).reduce((sum, item) => sum + (Number(item?.total) || 0), 0),
     [items],
   );
 
@@ -460,7 +456,7 @@ export default function OrderForm({
               {t("common.total", "Total Amount")}
             </span>
             <span className="text-3xl font-bold text-gray-900 dark:text-white">
-              {totalAmount.toFixed(2)}{" "}
+              {(totalAmount || 0).toFixed(2)}{" "}
               <span className="text-xl font-normal text-gray-500">
                 {currency}
               </span>
