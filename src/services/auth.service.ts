@@ -10,8 +10,8 @@ interface LoginResponse {
 }
 
 export const getAuthHeader = () => {
-    const { token } = localStorage.getItem('auth') 
-        ? JSON.parse(localStorage.getItem('auth') as string).state 
+    const { token } = localStorage.getItem('auth-storage') 
+        ? JSON.parse(localStorage.getItem('auth-storage') as string).state 
         : { token: null };
     return token ? { Authorization: `Bearer ${token}` } : {};
 };
