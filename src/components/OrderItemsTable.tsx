@@ -151,7 +151,10 @@ export default function OrderItemsTable({
               {t("common.total", "Total")}:
             </td>
             <td className="px-4 py-3 text-right text-sm font-bold text-gray-900 dark:text-white">
-              {items.reduce((sum, i) => sum + i.total, 0).toFixed(2)} {currency}
+              {(items || [])
+                .reduce((sum, i) => sum + (Number(i?.total) || 0), 0)
+                .toFixed(2)}{" "}
+              {currency}
             </td>
             {!readonly && <td></td>}
           </tr>
