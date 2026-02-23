@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Trash2 } from "lucide-react";
 import type { OrderItem } from "../types/order";
@@ -10,6 +11,49 @@ interface OrderItemsTableProps {
   readonly?: boolean;
 }
 
+const NumberInput = ({
+  value,
+  min,
+  step,
+  onChange,
+  className,
+}: {
+  value: number;
+  min: string;
+  step: string;
+  onChange: (val: number) => void;
+  className: string;
+}) => {
+  const [localVal, setLocalVal] = useState(value.toString());
+
+  useEffect(() => {
+    // Sync external changes unless the user is actively typing a decimal point
+    if (parseFloat(localVal) !== value && !localVal.endsWith(".")) {
+      setLocalVal(value.toString());
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setLocalVal(val);
+    const parsed = parseFloat(val);
+    if (!isNaN(parsed) && parsed >= 0) {
+      onChange(parsed);
+    }
+  };
+
+  return (
+    <input
+      type="number"
+      min={min}
+      step={step}
+      value={localVal}
+      onChange={handleChange}
+      className={className}
+    />
+  );
+};
+
 export default function OrderItemsTable({
   items,
   currency,
@@ -19,18 +63,12 @@ export default function OrderItemsTable({
 }: OrderItemsTableProps) {
   const { t } = useTranslation();
 
-  const handleQuantityChange = (id: string, value: string) => {
-    const quantity = parseFloat(value);
-    if (!isNaN(quantity) && quantity >= 0) {
-      onUpdateItem(id, { quantity });
-    }
+  const handleQuantityChange = (id: string, quantity: number) => {
+    onUpdateItem(id, { quantity });
   };
 
-  const handlePriceChange = (id: string, value: string) => {
-    const price = parseFloat(value);
-    if (!isNaN(price) && price >= 0) {
-      onUpdateItem(id, { price });
-    }
+  const handlePriceChange = (id: string, price: number) => {
+    onUpdateItem(id, { price });
   };
 
   if (items.length === 0) {
@@ -100,14 +138,11 @@ export default function OrderItemsTable({
                 {readonly ? (
                   <span>{item.quantity}</span>
                 ) : (
-                  <input
-                    type="number"
+                  <NumberInput
                     min="0"
-                    step="0.1"
+                    step="0.001"
                     value={item.quantity}
-                    onChange={(e) =>
-                      handleQuantityChange(item.id, e.target.value)
-                    }
+                    onChange={(val) => handleQuantityChange(item.id, val)}
                     className="w-16 md:w-20 text-right rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs md:text-sm px-1 py-1 md:px-2 md:py-2"
                   />
                 )}
@@ -116,12 +151,11 @@ export default function OrderItemsTable({
                 {readonly ? (
                   <span>{Number(item.price || 0).toFixed(2)}</span>
                 ) : (
-                  <input
-                    type="number"
+                  <NumberInput
                     min="0"
                     step="0.01"
                     value={item.price}
-                    onChange={(e) => handlePriceChange(item.id, e.target.value)}
+                    onChange={(val) => handlePriceChange(item.id, val)}
                     className="w-16 md:w-20 text-right rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs md:text-sm px-1 py-1 md:px-2 md:py-2"
                   />
                 )}

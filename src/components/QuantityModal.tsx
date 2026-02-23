@@ -21,7 +21,7 @@ export default function QuantityModal({
   onConfirm,
 }: QuantityModalProps) {
   const { t } = useTranslation();
-  const [quantity, setQuantity] = useState<number>(1);
+  const [quantity, setQuantity] = useState<number | string>(1);
 
   // Reset quantity when modal opens for a new product
   useEffect(() => {
@@ -32,11 +32,12 @@ export default function QuantityModal({
 
   if (!isOpen || !product) return null;
 
-  const total = quantity * price;
+  const parsedQuantity = Number(quantity) || 0;
+  const total = parsedQuantity * price;
 
   const handleConfirm = () => {
-    if (quantity > 0) {
-      onConfirm(product, quantity, price);
+    if (parsedQuantity > 0) {
+      onConfirm(product, parsedQuantity, price);
     }
   };
 
@@ -85,21 +86,21 @@ export default function QuantityModal({
             </label>
             <div className="flex items-center">
               <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                onClick={() => setQuantity(Math.max(1, parsedQuantity - 1))}
                 className="w-12 h-12 flex items-center justify-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-l-lg text-gray-800 dark:text-white text-xl font-medium transition-colors border border-gray-300 dark:border-gray-600 border-r-0"
               >
                 -
               </button>
               <input
                 type="number"
-                min="1"
-                step="any"
+                min="0.001"
+                step="0.001"
                 value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value) || 0)}
+                onChange={(e) => setQuantity(e.target.value)}
                 className="flex-1 h-12 text-center text-lg font-bold border-y border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-0 focus:outline-none"
               />
               <button
-                onClick={() => setQuantity(quantity + 1)}
+                onClick={() => setQuantity(parsedQuantity + 1)}
                 className="w-12 h-12 flex items-center justify-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-r-lg text-gray-800 dark:text-white text-xl font-medium transition-colors border border-gray-300 dark:border-gray-600 border-l-0"
               >
                 +
@@ -129,7 +130,7 @@ export default function QuantityModal({
           </button>
           <button
             onClick={handleConfirm}
-            disabled={quantity <= 0}
+            disabled={parsedQuantity <= 0}
             className="flex-1 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors flex items-center justify-center disabled:opacity-50"
           >
             <Check size={20} className="mr-2" />
