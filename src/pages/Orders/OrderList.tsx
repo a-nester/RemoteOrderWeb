@@ -9,6 +9,7 @@ interface OrderListProps {
   onEdit: (order: Order) => void;
   onDelete?: (order: Order) => void;
   onView?: (order: Order) => void;
+  onStatusChange?: (id: string, status: OrderStatus) => void;
 }
 
 const OrderList: React.FC<OrderListProps> = ({
@@ -16,19 +17,20 @@ const OrderList: React.FC<OrderListProps> = ({
   onEdit,
   onDelete,
   onView,
+  onStatusChange,
 }) => {
   const { t } = useTranslation();
 
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
       case OrderStatus.NEW:
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800";
       case OrderStatus.ACCEPTED:
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800";
       case OrderStatus.COMPLETED:
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
@@ -86,12 +88,31 @@ const OrderList: React.FC<OrderListProps> = ({
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                   {order.amount.toFixed(2)} {order.currency}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}
+                <td
+                  className="px-6 py-4 whitespace-nowrap"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <select
+                    value={order.status}
+                    onChange={(e) =>
+                      onStatusChange &&
+                      onStatusChange(order.id, e.target.value as OrderStatus)
+                    }
+                    disabled={!onStatusChange}
+                    className={`px-2 py-1 text-xs leading-5 font-semibold rounded-full border outline-none appearance-none cursor-pointer pr-6 ${getStatusColor(order.status)}`}
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                      backgroundPosition: "right 0.25rem center",
+                      backgroundRepeat: "no-repeat",
+                      backgroundSize: "1.25em 1.25em",
+                    }}
                   >
-                    {t(`status.${order.status}`, order.status)}
-                  </span>
+                    {Object.values(OrderStatus).map((status) => (
+                      <option key={status} value={status}>
+                        {t(`status.${status}`, status)}
+                      </option>
+                    ))}
+                  </select>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end gap-2">
