@@ -29,6 +29,30 @@ export default function GoodsReceiptList() {
     }
   };
 
+  const handlePost = async (id: string) => {
+    if (!window.confirm("Провести документ (зарахувати товари на склад)?"))
+      return;
+    try {
+      await GoodsReceiptService.post(id);
+      loadDocs();
+    } catch (error: any) {
+      console.error(error);
+      alert(error.response?.data?.error || "Помилка проведення");
+    }
+  };
+
+  const handleUnpost = async (id: string) => {
+    if (!window.confirm("Скасувати проведення (зняти товари зі складу)?"))
+      return;
+    try {
+      await GoodsReceiptService.unpost(id);
+      loadDocs();
+    } catch (error: any) {
+      console.error(error);
+      alert(error.response?.data?.error || "Помилка скасування");
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -165,13 +189,29 @@ export default function GoodsReceiptList() {
                         {doc.status === "POSTED" ? "Проведено" : "Збережено"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                       <button
                         onClick={() => navigate(`/goods-receipt/${doc.id}`)}
                         className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
                       >
-                        Відкрити
+                        {doc.status === "POSTED" ? "Переглянути" : "Редагувати"}
                       </button>
+
+                      {doc.status === "POSTED" ? (
+                        <button
+                          onClick={() => handleUnpost(doc.id)}
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                        >
+                          Скасувати
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handlePost(doc.id)}
+                          className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                        >
+                          Провести
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))

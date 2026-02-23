@@ -37,5 +37,10 @@ export const GoodsReceiptService = {
     post: async (id: string): Promise<GoodsReceipt> => {
         const response = await axios.post(`${BASE_URL}/${id}/post`, {}, { headers: getAuthHeader() });
         return response.data;
+    },
+
+    unpost: async (id: string): Promise<GoodsReceipt> => {
+        const response = await axios.post(`${BASE_URL}/${id}/unpost`, {}, { headers: getAuthHeader() });
+        return response.data;
     }
 };
