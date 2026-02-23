@@ -22,9 +22,8 @@ export const CounterpartyService = {
         const response = await axios.get(`${API_URL}/counterparty-groups`, getHeaders());
         return response.data;
     },
-
-    createGroup: async (name: string): Promise<CounterpartyGroup> => {
-        const response = await axios.post(`${API_URL}/counterparty-groups`, { name }, getHeaders());
+    createGroup: async (name: string, parentId?: string): Promise<CounterpartyGroup> => {
+        const response = await axios.post(`${API_URL}/counterparty-groups`, { name, parentId }, getHeaders());
         return response.data;
     },
 

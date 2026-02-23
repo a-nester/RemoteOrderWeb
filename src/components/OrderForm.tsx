@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Save, Plus } from "lucide-react";
+import { ArrowLeft, Save, Plus, Search, ChevronDown } from "lucide-react";
 import { CounterpartyService } from "../services/counterparty.service";
 import { ProductsService } from "../services/products.service";
 import { PriceTypesService } from "../services/priceTypes.service";
@@ -59,6 +59,10 @@ export default function OrderForm({
   const [stockBalances, setStockBalances] = useState<StockBalance[]>([]);
   const [selectedProductForQty, setSelectedProductForQty] =
     useState<Product | null>(null);
+
+  // Combobox State
+  const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
+  const [clientSearchTerm, setClientSearchTerm] = useState("");
 
   useEffect(() => {
     loadData();
@@ -143,6 +147,12 @@ export default function OrderForm({
     () => counterparties.find((c) => String(c.id) === String(counterpartyId)),
     [counterparties, counterpartyId],
   );
+
+  const filteredCounterparties = useMemo(() => {
+    return counterparties.filter((cp) =>
+      cp.name.toLowerCase().includes(clientSearchTerm.toLowerCase()),
+    );
+  }, [counterparties, clientSearchTerm]);
 
   const currency = useMemo(() => {
     if (!selectedCounterparty?.priceTypeId) return "UAH";
@@ -257,12 +267,11 @@ export default function OrderForm({
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const handleCounterpartyChange = (
-    e: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
-    const newClientId = e.target.value;
+  const selectCounterparty = (newClientId: string) => {
     console.log("OrderForm: Client changed to", newClientId);
     setCounterpartyId(newClientId);
+    setIsClientDropdownOpen(false);
+    setClientSearchTerm("");
 
     if (!newClientId) return;
 
@@ -425,24 +434,77 @@ export default function OrderForm({
         {/* Top Form: Client, Date, Status */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           {/* Client */}
-          <div>
+          <div className="relative">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t("menu.counterparties", "Counterparty")}
             </label>
-            <select
-              value={counterpartyId}
-              onChange={handleCounterpartyChange}
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+
+            <div
+              className="relative w-full rounded-md border border-gray-300 shadow-sm bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white cursor-pointer"
+              onClick={() => setIsClientDropdownOpen(true)}
             >
-              <option value="">
-                {t("action.selectClient", "Select Client")}
-              </option>
-              {counterparties.map((cp) => (
-                <option key={cp.id} value={cp.id}>
-                  {cp.name}
-                </option>
-              ))}
-            </select>
+              <div className="flex items-center justify-between px-3 py-2">
+                <span
+                  className={
+                    counterpartyId
+                      ? "text-gray-900 dark:text-white"
+                      : "text-gray-500 dark:text-gray-400"
+                  }
+                >
+                  {selectedCounterparty
+                    ? selectedCounterparty.name
+                    : t("action.selectClient", "Select Client")}
+                </span>
+                <ChevronDown size={18} className="text-gray-400" />
+              </div>
+            </div>
+
+            {isClientDropdownOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setIsClientDropdownOpen(false)}
+                />
+                <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 top-full left-0">
+                  <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+                    <div className="relative">
+                      <Search
+                        className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400"
+                        size={16}
+                      />
+                      <input
+                        type="text"
+                        autoFocus
+                        value={clientSearchTerm}
+                        onChange={(e) => setClientSearchTerm(e.target.value)}
+                        placeholder="Пошук клієнта..."
+                        className="w-full pl-8 pr-3 py-1.5 text-sm rounded bg-gray-100 dark:bg-gray-900 border-none focus:ring-2 focus:ring-blue-500 dark:text-white dark:placeholder-gray-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto">
+                    {filteredCounterparties.map((cp) => (
+                      <div
+                        key={cp.id}
+                        onClick={() => selectCounterparty(cp.id)}
+                        className={`px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                          String(cp.id) === String(counterpartyId)
+                            ? "bg-blue-50 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200 font-medium"
+                            : "text-gray-900 dark:text-gray-200"
+                        }`}
+                      >
+                        {cp.name}
+                      </div>
+                    ))}
+                    {filteredCounterparties.length === 0 && (
+                      <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                        Клієнтів не знайдено
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Date */}

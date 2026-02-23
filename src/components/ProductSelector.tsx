@@ -43,6 +43,18 @@ export default function ProductSelector({
     });
   }, [products, searchTerm, selectedCategory]);
 
+  const groupedProducts = useMemo(() => {
+    const groups: Record<string, Product[]> = {};
+    filteredProducts.forEach((p) => {
+      const cat = p.category || "Без категорії";
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(p);
+    });
+    // Sort keys so they appear in a consistent order
+    const sortedKeys = Object.keys(groups).sort();
+    return sortedKeys.map((key) => ({ category: key, items: groups[key] }));
+  }, [filteredProducts]);
+
   if (!isOpen) return null;
 
   return (
@@ -121,36 +133,54 @@ export default function ProductSelector({
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredProducts.map((product) => (
-                <tr
-                  key={product.id}
-                  onClick={() => onSelect(product)}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+              {groupedProducts.map((group) => (
+                <optgroup
+                  key={group.category}
+                  label="hack-for-react-key"
+                  className="contents"
                 >
-                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                    <div className="font-medium">{product.name}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {product.unit}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
-                    {Number(
-                      product.prices?.[priceSlug] ||
-                        product.prices?.standard ||
-                        0,
-                    ).toFixed(2)}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-indigo-600 dark:text-indigo-400 text-right">
-                    {stockBalances.find((sb) => sb.productId === product.id)
-                      ?.balance
-                      ? Number(
-                          stockBalances.find(
-                            (sb) => sb.productId === product.id,
-                          )?.balance,
-                        ).toFixed(2)
-                      : ""}
-                  </td>
-                </tr>
+                  {/* Category Header */}
+                  <tr className="bg-gray-100 dark:bg-gray-800">
+                    <td
+                      colSpan={3}
+                      className="px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300"
+                    >
+                      {group.category}
+                    </td>
+                  </tr>
+                  {/* Category Products */}
+                  {group.items.map((product) => (
+                    <tr
+                      key={product.id}
+                      onClick={() => onSelect(product)}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+                    >
+                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                        <div className="font-medium">{product.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {product.unit}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
+                        {Number(
+                          product.prices?.[priceSlug] ||
+                            product.prices?.standard ||
+                            0,
+                        ).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-indigo-600 dark:text-indigo-400 text-right">
+                        {stockBalances.find((sb) => sb.productId === product.id)
+                          ?.balance
+                          ? Number(
+                              stockBalances.find(
+                                (sb) => sb.productId === product.id,
+                              )?.balance,
+                            ).toFixed(2)
+                          : ""}
+                      </td>
+                    </tr>
+                  ))}
+                </optgroup>
               ))}
               {filteredProducts.length === 0 && (
                 <tr>

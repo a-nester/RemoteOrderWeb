@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { FileText, Eye, Trash2 } from "lucide-react";
+import { FileText, Eye, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { RealizationService } from "../../services/realization.service";
 import type { Realization } from "../../types/realization";
 
@@ -10,6 +10,7 @@ export default function RealizationList() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [realizations, setRealizations] = useState<Realization[]>([]);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     loadData();
@@ -93,8 +94,20 @@ export default function RealizationList() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t("common.number", "Number")}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {t("common.date", "Date")}
+              <th
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                onClick={() =>
+                  setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
+                }
+              >
+                <div className="flex items-center gap-1">
+                  {t("common.date", "Date")}
+                  {sortOrder === "asc" ? (
+                    <ArrowDown size={14} />
+                  ) : (
+                    <ArrowUp size={14} />
+                  )}
+                </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t("menu.counterparties", "Counterparty")}
@@ -111,53 +124,59 @@ export default function RealizationList() {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {realizations.map((item) => (
-              <tr
-                key={item.id}
-                className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
-              >
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                  {item.number}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {new Date(item.date).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {item.counterpartyName || "-"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(item.status)}`}
-                  >
-                    {t(`status.${item.status}`, item.status)}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-white">
-                  {Number(item.amount).toFixed(2)} {item.currency}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex justify-end space-x-3">
-                    <button
-                      onClick={() => navigate(`/realizations/${item.id}`)}
-                      className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+            {[...realizations]
+              .sort((a, b) => {
+                const dateA = new Date(a.date).getTime();
+                const dateB = new Date(b.date).getTime();
+                return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+              })
+              .map((item) => (
+                <tr
+                  key={item.id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    {item.number}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {new Date(item.date).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {item.counterpartyName || "-"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(item.status)}`}
                     >
-                      <Eye size={18} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(item.id, item.status)}
-                      disabled={item.status === "POSTED"}
-                      className={
-                        item.status === "POSTED"
-                          ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
-                          : "text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                      }
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      {t(`status.${item.status}`, item.status)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-white">
+                    {Number(item.amount).toFixed(2)} {item.currency}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        onClick={() => navigate(`/realizations/${item.id}`)}
+                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                      >
+                        <Eye size={18} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item.id, item.status)}
+                        disabled={item.status === "POSTED"}
+                        className={
+                          item.status === "POSTED"
+                            ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
+                            : "text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                        }
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             {realizations.length === 0 && (
               <tr>
                 <td

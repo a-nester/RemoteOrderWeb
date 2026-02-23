@@ -1,7 +1,7 @@
-
 export interface CounterpartyGroup {
     id: string;
     name: string;
+    parentId?: string;
     createdAt?: string;
     updatedAt?: string;
 }
