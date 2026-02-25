@@ -297,7 +297,7 @@ export default function RealizationDetails() {
                   {item.unit || "шт"}
                 </td>
                 <td className="border border-black p-1 text-right">
-                  {Number(item.quantity).toFixed(0)}
+                  {Number(item.quantity).toFixed(3)}
                 </td>
                 <td className="border border-black p-1 text-right">
                   {Number(item.price).toFixed(2)}
