@@ -149,7 +149,7 @@ export default function RealizationDetails() {
             {t("common.print", "Print")}
           </button>
         </div>
-        // UNPOST
+
         {isPosted && (
           <button
             onClick={handleUnpost}
