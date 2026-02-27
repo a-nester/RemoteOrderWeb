@@ -91,7 +91,7 @@ export default function RealizationDetails() {
       await RealizationService.unpostRealization(id);
       await loadData(); // перезавантажити статус і profit
     } catch (error: any) {
-      console.error("Failed to unpost realization", error);
+      console.log("UNPOST ERROR:", error.response?.data);
       alert(
         error.response?.data?.message ||
           t("common.error", "Failed to unpost realization"),
