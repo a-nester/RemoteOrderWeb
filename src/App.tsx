@@ -26,6 +26,7 @@ import GoodsReceiptList from "./pages/GoodsReceipt";
 import GoodsReceiptEdit from "./pages/GoodsReceipt/Edit";
 import StockBalancesReport from "./pages/Reports/StockBalances";
 import "./i18n";
+import SalesReport from "./pages/Reports/SalesReport";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
