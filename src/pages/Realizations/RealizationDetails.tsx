@@ -71,6 +71,35 @@ export default function RealizationDetails() {
     }
   };
 
+  const handleUnpost = async () => {
+    if (!id) return;
+
+    if (
+      !window.confirm(
+        t(
+          "realization.confirmUnpost",
+          "Ви впевнені, що хочете розпровести реалізацію? Товари будуть повернуті на склад.",
+        ),
+      )
+    ) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await RealizationService.unpostRealization(id);
+      await loadData(); // перезавантажити статус і profit
+    } catch (error: any) {
+      console.error("Failed to unpost realization", error);
+      alert(
+        error.response?.data?.message ||
+          t("common.error", "Failed to unpost realization"),
+      );
+      setLoading(false);
+    }
+  };
+
   if (loading)
     return (
       <div className="p-8 text-center">{t("common.loading", "Loading...")}</div>
@@ -120,10 +149,19 @@ export default function RealizationDetails() {
             {t("common.print", "Print")}
           </button>
         </div>
+        // UNPOST
+        {isPosted && (
+          <button
+            onClick={handleUnpost}
+            className="flex items-center px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Розпровести
+          </button>
+        )}
       </div>
 
       {/* Content */}
-      <div id="realization-print-area">
+      <div>
         <div className="border-b pb-6 mb-6 flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">

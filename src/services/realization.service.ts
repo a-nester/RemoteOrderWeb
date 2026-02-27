@@ -45,5 +45,13 @@ export const RealizationService = {
 
     deleteRealization: async (id: string): Promise<void> => {
         await axios.delete(`${BASE_URL}/${id}`, { headers: getAuthHeader() });
+    },
+
+    unpostRealization: async (id: string): Promise<{ success: boolean }> => {
+        const response = await axios.post(`${BASE_URL}/${id}/unpost`, {}, { headers: getAuthHeader() });
+        return response.data;
     }
 };
+
+
+
