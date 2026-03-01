@@ -133,7 +133,8 @@ export default function RealizationList() {
               .map((item) => (
                 <tr
                   key={item.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  onClick={() => navigate(`/realizations/${item.id}`)}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                     {item.number}
@@ -157,13 +158,19 @@ export default function RealizationList() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-3">
                       <button
-                        onClick={() => navigate(`/realizations/${item.id}`)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/realizations/${item.id}`);
+                        }}
                         className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
                       >
                         <Eye size={18} />
                       </button>
                       <button
-                        onClick={() => handleDelete(item.id, item.status)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(item.id, item.status);
+                        }}
                         disabled={item.status === "POSTED"}
                         className={
                           item.status === "POSTED"
@@ -196,7 +203,8 @@ export default function RealizationList() {
         {realizations.map((item) => (
           <div
             key={item.id}
-            className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 space-y-2"
+            onClick={() => navigate(`/realizations/${item.id}`)}
+            className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 space-y-2 cursor-pointer hover:shadow-md transition-shadow"
           >
             <div className="flex justify-between items-start">
               <div>
@@ -222,13 +230,19 @@ export default function RealizationList() {
               </span>
               <div className="flex space-x-2">
                 <button
-                  onClick={() => navigate(`/realizations/${item.id}`)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/realizations/${item.id}`);
+                  }}
                   className="p-2 text-indigo-600 dark:text-indigo-400"
                 >
                   <Eye size={20} />
                 </button>
                 <button
-                  onClick={() => handleDelete(item.id, item.status)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(item.id, item.status);
+                  }}
                   disabled={item.status === "POSTED"}
                   className={
                     item.status === "POSTED"
