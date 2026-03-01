@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { FileText, Eye, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Eye, Trash2, FileText, ArrowDown, ArrowUp } from "lucide-react";
 import { RealizationService } from "../../services/realization.service";
 import type { Realization } from "../../types/realization";
 
@@ -75,16 +75,13 @@ export default function RealizationList() {
           <FileText className="mr-3" />
           {t("menu.realizations", "Realizations")}
         </h1>
-        {/* 
-                // Manual creation is not requested yet, only from Order.
-                <button
-                    onClick={() => navigate('/realizations/new')}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                    <Plus className="mr-2" size={18} />
-                    {t('action.create', 'Create')}
-                </button> 
-                */}
+        <button
+          onClick={() => navigate("/realizations/create")}
+          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="mr-2" size={18} />
+          {t("action.create", "Create")}
+        </button>
       </div>
 
       <div className="bg-white dark:bg-gray-800 shadow hidden md:block rounded-lg overflow-x-auto">

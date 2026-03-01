@@ -17,6 +17,7 @@ import Orders from "./pages/Orders";
 import RealizationList from "./pages/Realizations";
 import RealizationDetails from "./pages/Realizations/RealizationDetails";
 import RealizationEdit from "./pages/Realizations/RealizationEdit";
+import RealizationCreate from "./pages/Realizations/RealizationCreate";
 import OrderDetails from "./pages/Orders/OrderDetails";
 import OrderEdit from "./pages/Orders/OrderEdit";
 import OrderCreate from "./pages/Orders/OrderCreate";
@@ -233,6 +234,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <RealizationList />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/realizations/create"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <RealizationCreate />
                 </Layout>
               </ProtectedRoute>
             }

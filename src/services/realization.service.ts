@@ -32,6 +32,11 @@ export const RealizationService = {
         return response.data;
     },
 
+    create: async (data: Partial<Realization>): Promise<{ id: string, message: string }> => {
+        const response = await axios.post(BASE_URL, data, { headers: getAuthHeader() });
+        return response.data;
+    },
+
     update: async (id: string, data: Partial<Realization>): Promise<Realization> => {
         const response = await axios.put(`${BASE_URL}/${id}`, data, { headers: getAuthHeader() });
         return response.data;

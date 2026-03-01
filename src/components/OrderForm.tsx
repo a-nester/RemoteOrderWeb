@@ -21,6 +21,7 @@ interface OrderFormProps {
   onSubmit: (data: any) => Promise<void>;
   saving: boolean;
   title: string;
+  isRealization?: boolean;
 }
 
 export default function OrderForm({
