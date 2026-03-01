@@ -61,10 +61,10 @@ export default function SalesReport() {
           date: r.date,
           counterpartyName: r.counterpartyName ?? "",
           warehouseName: r.warehouseName ?? "",
-          amount: r.amount,
+          amount: Number(r.amount),
           currency: r.currency,
           status: r.status,
-          profit: r.profit ?? 0,
+          profit: Number(r.profit ?? 0),
         }));
         setSales(mapped);
       } else if (activeTab === "byClient") {
