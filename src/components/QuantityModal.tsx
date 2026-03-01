@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Check } from "lucide-react";
 import type { Product } from "../types/product";
@@ -22,11 +22,17 @@ export default function QuantityModal({
 }: QuantityModalProps) {
   const { t } = useTranslation();
   const [quantity, setQuantity] = useState<number | string>(1);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Reset quantity when modal opens for a new product
+  // Reset quantity and focus input when modal opens
   useEffect(() => {
     if (isOpen) {
       setQuantity(1);
+      // Timeout ensures the element is rendered in DOM before focus
+      setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select(); // Select the text to easily overwrite '1'
+      }, 50);
     }
   }, [isOpen, product]);
 
@@ -92,11 +98,18 @@ export default function QuantityModal({
                 -
               </button>
               <input
+                ref={inputRef}
                 type="number"
                 min="0.001"
                 step="0.001"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleConfirm();
+                  }
+                }}
                 className="flex-1 h-12 text-center text-lg font-bold border-y border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-0 focus:outline-none"
               />
               <button
