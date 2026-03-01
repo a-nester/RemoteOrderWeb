@@ -349,7 +349,7 @@ export default function SalesReport() {
                       <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
                         {formatNum(
                           salesByClient.reduce(
-                            (sum, item) => sum + item.totalAmount,
+                            (sum, item) => sum + Number(item.totalAmount),
                             0,
                           ),
                         )}
@@ -357,7 +357,7 @@ export default function SalesReport() {
                       <td className="px-4 py-3 text-right text-sm font-bold text-green-700">
                         {formatNum(
                           salesByClient.reduce(
-                            (sum, item) => sum + item.totalProfit,
+                            (sum, item) => sum + Number(item.totalProfit),
                             0,
                           ),
                         )}
