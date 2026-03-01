@@ -397,6 +397,10 @@ export default function OrderForm({
       alert(t("order.selectClient", "Please select a client"));
       return;
     }
+    if (isRealization && !warehouseId) {
+      alert(t("order.selectWarehouse", "Будь ласка, оберіть склад"));
+      return;
+    }
     if (items.length === 0) {
       if (
         !window.confirm(
