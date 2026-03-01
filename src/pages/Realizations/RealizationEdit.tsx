@@ -31,7 +31,7 @@ export default function RealizationEdit() {
     }
   };
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: any, action?: "save" | "saveAndPost") => {
     if (!id) return;
     setSaving(true);
     try {
@@ -40,6 +40,7 @@ export default function RealizationEdit() {
         date: data.date,
         counterpartyId: data.counterpartyId,
         status: data.status, // OrderForm includes status, although we could ignore it for realizations
+        warehouseId: data.warehouseId,
         amount: data.amount,
         comment: data.comment,
         items: data.items.map((item: any) => ({
@@ -52,7 +53,14 @@ export default function RealizationEdit() {
       };
 
       await RealizationService.update(id, payload);
-      navigate(`/realizations/${id}`);
+
+      if (action === "saveAndPost") {
+        await RealizationService.postRealization(id);
+        navigate("/realizations");
+      } else {
+        alert(t("common.saved", "Збережено успішно"));
+        // loadData(); // Optionally refresh if we want clean DB state
+      }
     } catch (error) {
       console.error("Failed to update realization", error);
       alert(t("common.error", "Failed to update realization"));

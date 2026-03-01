@@ -1,7 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Save, Plus, Search, ChevronDown } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  Search,
+  Check,
+  ChevronDown,
+  Plus,
+} from "lucide-react";
 import { CounterpartyService } from "../services/counterparty.service";
 import { ProductsService } from "../services/products.service";
 import { PriceTypesService } from "../services/priceTypes.service";
@@ -20,7 +27,7 @@ import QuantityModal from "./QuantityModal";
 
 interface OrderFormProps {
   initialData?: Order;
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: any, action?: "save" | "saveAndPost") => Promise<void>;
   saving: boolean;
   title: string;
   isRealization?: boolean;
@@ -390,7 +397,7 @@ export default function OrderForm({
     );
   };
 
-  const handleSave = async () => {
+  const handleSave = async (action: "save" | "saveAndPost" = "save") => {
     console.log("OrderForm: handleSave called");
 
     if (!counterpartyId) {
@@ -429,7 +436,7 @@ export default function OrderForm({
     console.log("OrderForm: Saving order data:", orderData);
 
     try {
-      await onSubmit(orderData);
+      await onSubmit(orderData, action);
     } catch (err) {
       console.error("OrderForm: onSubmit failed", err);
       // Re-throw or handle? onSubmit in parent (OrderCreate) catches checking there.
@@ -457,14 +464,28 @@ export default function OrderForm({
             {title}
           </h1>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-        >
-          <Save className="mr-2" size={18} />
-          {saving ? t("common.saving", "Saving...") : t("common.save", "Save")}
-        </button>
+        <div className="flex items-center gap-2">
+          {isRealization && (
+            <button
+              onClick={() => handleSave("saveAndPost")}
+              disabled={saving}
+              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+            >
+              <Check className="mr-2" size={18} />
+              {saving ? t("common.saving", "Saving...") : "Зберегти і провести"}
+            </button>
+          )}
+          <button
+            onClick={() => handleSave("save")}
+            disabled={saving}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+          >
+            <Save className="mr-2" size={18} />
+            {saving
+              ? t("common.saving", "Saving...")
+              : t("common.save", "Save")}
+          </button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-gray-800 shadow rounded-none sm:rounded-lg p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6 border-y sm:border-y-0 border-gray-200 dark:border-gray-700">
