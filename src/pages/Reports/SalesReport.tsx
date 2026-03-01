@@ -257,6 +257,29 @@ export default function SalesReport() {
                     </tr>
                   )}
                 </tbody>
+                {sales.length > 0 && (
+                  <tfoot className="bg-gray-50 border-t-2 border-gray-200">
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="px-4 py-3 text-right text-sm font-bold text-gray-700"
+                      >
+                        {t("common.total", "Всього")}:
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
+                        {sales
+                          .reduce((sum, item) => sum + item.amount, 0)
+                          .toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-bold text-green-700">
+                        {sales
+                          .reduce((sum, item) => sum + item.profit, 0)
+                          .toFixed(2)}
+                      </td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                )}
               </table>
             </div>
           )}
