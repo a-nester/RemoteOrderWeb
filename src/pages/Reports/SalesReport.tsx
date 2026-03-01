@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { RealizationService } from "../../services/realization.service";
 import {
   ReportsService,
-  SalesByClient,
-  SalesByProduct,
+  type SalesByClient,
+  type SalesByProduct,
 } from "../../services/reports.service";
 import { useTranslation } from "react-i18next";
 

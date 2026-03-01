@@ -31,6 +31,7 @@ export interface Realization {
     createdAt?: string;
     updatedAt?: string;
     createdBy?: string;
+    profit?: number;
 
     // Enriched
     counterpartyName?: string;
