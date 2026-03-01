@@ -12,6 +12,8 @@ import type { Product } from "../types/product";
 import type { PriceType } from "../types/priceType";
 import { ReportsService } from "../services/reports.service";
 import type { StockBalance } from "../services/reports.service";
+import { OrganizationService } from "../services/organization.service";
+import type { Warehouse } from "../types/organization";
 import ProductSelector from "./ProductSelector";
 import OrderItemsTable from "./OrderItemsTable";
 import QuantityModal from "./QuantityModal";
@@ -29,6 +31,7 @@ export default function OrderForm({
   onSubmit,
   saving,
   title,
+  isRealization = false,
 }: OrderFormProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -39,6 +42,7 @@ export default function OrderForm({
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [priceTypes, setPriceTypes] = useState<PriceType[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
 
   // Form State
   const [date, setDate] = useState(
@@ -53,6 +57,9 @@ export default function OrderForm({
   const [comment, setComment] = useState(initialData?.comment || "");
   const [items, setItems] = useState<OrderItem[]>(
     Array.isArray(initialData?.items) ? initialData.items : [],
+  );
+  const [warehouseId, setWarehouseId] = useState<string>(
+    (initialData as any)?.warehouseId || "", // Type cast for realization type duck-typing
   );
 
   // UI State
@@ -127,14 +134,19 @@ export default function OrderForm({
   const loadData = async () => {
     setLoading(true);
     try {
-      const [cpData, prodData, ptData] = await Promise.all([
+      const [cpData, productsData, priceTypesData] = await Promise.all([
         CounterpartyService.getAll(),
         ProductsService.fetchProducts(),
         PriceTypesService.fetchPriceTypes(),
       ]);
       setCounterparties(cpData);
-      setProducts(prodData.products);
-      setPriceTypes(ptData);
+      setProducts(productsData.products.filter((p) => !p.isDeleted));
+      setPriceTypes(priceTypesData.filter((pt) => !pt.isDeleted));
+
+      if (isRealization) {
+        const warehousesData = await OrganizationService.getWarehouses();
+        setWarehouses(warehousesData);
+      }
     } catch (error) {
       console.error("Failed to load data", error);
       alert(t("common.error", "Failed to load data"));
@@ -148,6 +160,18 @@ export default function OrderForm({
     () => counterparties.find((c) => String(c.id) === String(counterpartyId)),
     [counterparties, counterpartyId],
   );
+
+  // Auto-set warehouse when counterparty changes, for Realizations
+  useEffect(() => {
+    if (
+      isRealization &&
+      selectedCounterparty?.warehouseId &&
+      !warehouseId &&
+      !initialData
+    ) {
+      setWarehouseId(selectedCounterparty.warehouseId);
+    }
+  }, [selectedCounterparty, isRealization, warehouseId, initialData]);
 
   const filteredCounterparties = useMemo(() => {
     return counterparties.filter((cp) =>
@@ -165,11 +189,15 @@ export default function OrderForm({
 
   useEffect(() => {
     const fetchStock = async () => {
-      if (selectedCounterparty?.warehouseId) {
+      // Use explicit warehouseId if it's a realization, otherwise fallback to counterparty's warehouse.
+      const activeWarehouseId = isRealization
+        ? warehouseId
+        : selectedCounterparty?.warehouseId;
+      if (activeWarehouseId) {
         try {
           const balances = await ReportsService.getStockBalances(
             date,
-            selectedCounterparty.warehouseId,
+            activeWarehouseId,
           );
           setStockBalances(balances);
         } catch (e) {
@@ -180,7 +208,7 @@ export default function OrderForm({
       }
     };
     fetchStock();
-  }, [selectedCounterparty?.warehouseId, date]);
+  }, [warehouseId, selectedCounterparty?.warehouseId, date, isRealization]);
 
   const priceSlug = useMemo(() => {
     if (!selectedCounterparty?.priceTypeId) {
@@ -379,7 +407,7 @@ export default function OrderForm({
       }
     }
 
-    const orderData = {
+    const orderData: any = {
       // Ensure date is a valid full ISO string
       date: new Date(date).toISOString(),
       counterpartyId,
@@ -389,6 +417,10 @@ export default function OrderForm({
       amount: totalAmount,
       currency,
     };
+
+    if (isRealization) {
+      orderData.warehouseId = warehouseId;
+    }
 
     console.log("OrderForm: Saving order data:", orderData);
 
@@ -522,14 +554,15 @@ export default function OrderForm({
           </div>
 
           {/* Status */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <div className="flex flex-col flex-1 pl-4 md:pl-0 sm:pr-4 md:pr-0 border-l border-gray-200 dark:border-gray-700 md:border-none min-w-[120px]">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ml-2">
               {t("common.status", "Status")}
             </label>
             <select
+              title="status"
               value={status}
               onChange={(e) => setStatus(e.target.value as OrderStatus)}
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm pl-2 pr-6 py-2 appearance-none bg-transparent font-medium"
             >
               {Object.values(OrderStatus).map((s) => (
                 <option key={s} value={s}>
@@ -539,6 +572,32 @@ export default function OrderForm({
             </select>
           </div>
         </div>
+
+        {/* Realization Settings (Warehouse) */}
+        {isRealization && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t("common.warehouse", "Склад")}
+              </label>
+              <select
+                aria-label="Склад"
+                value={warehouseId}
+                onChange={(e) => setWarehouseId(e.target.value)}
+                className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500 p-2"
+              >
+                <option value="">
+                  {t("warehouse.select", "Оберіть склад")}
+                </option>
+                {warehouses.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
 
         {/* Items Section */}
         <div>
@@ -620,15 +679,13 @@ export default function OrderForm({
               )
             : 0
         }
-        stockBalance={
-          selectedProductForQty
-            ? Number(
-                stockBalances.find(
-                  (sb) => sb.productId === selectedProductForQty.id,
-                )?.balance || null,
-              )
-            : null
-        }
+        stockBalance={(() => {
+          if (!selectedProductForQty) return null;
+          const found = stockBalances.find(
+            (sb) => sb.productId === selectedProductForQty.id,
+          );
+          return found !== undefined ? Number(found.balance) : null;
+        })()}
         onConfirm={handleConfirmQuantity}
       />
     </div>

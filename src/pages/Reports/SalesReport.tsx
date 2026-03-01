@@ -337,6 +337,34 @@ export default function SalesReport() {
                     </tr>
                   )}
                 </tbody>
+                {salesByClient.length > 0 && (
+                  <tfoot className="bg-gray-50 border-t-2 border-gray-200">
+                    <tr>
+                      <td
+                        colSpan={3}
+                        className="px-4 py-3 text-right text-sm font-bold text-gray-700"
+                      >
+                        {t("common.total", "Всього")}:
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
+                        {formatNum(
+                          salesByClient.reduce(
+                            (sum, item) => sum + item.totalAmount,
+                            0,
+                          ),
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-bold text-green-700">
+                        {formatNum(
+                          salesByClient.reduce(
+                            (sum, item) => sum + item.totalProfit,
+                            0,
+                          ),
+                        )}
+                      </td>
+                    </tr>
+                  </tfoot>
+                )}
               </table>
             </div>
           )}
@@ -400,6 +428,42 @@ export default function SalesReport() {
                     </tr>
                   )}
                 </tbody>
+                {salesByProduct.length > 0 && (
+                  <tfoot className="bg-gray-50 border-t-2 border-gray-200">
+                    <tr>
+                      <td
+                        colSpan={3}
+                        className="px-4 py-3 text-right text-sm font-bold text-gray-700"
+                      >
+                        {t("common.total", "Всього")}:
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
+                        {formatNum(
+                          salesByProduct.reduce(
+                            (sum, item) => sum + Number(item.totalQuantity),
+                            0,
+                          ),
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
+                        {formatNum(
+                          salesByProduct.reduce(
+                            (sum, item) => sum + Number(item.totalAmount),
+                            0,
+                          ),
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-bold text-green-700">
+                        {formatNum(
+                          salesByProduct.reduce(
+                            (sum, item) => sum + Number(item.totalProfit),
+                            0,
+                          ),
+                        )}
+                      </td>
+                    </tr>
+                  </tfoot>
+                )}
               </table>
             </div>
           )}
