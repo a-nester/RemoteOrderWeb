@@ -265,6 +265,12 @@ export default function ReconciliationReport() {
                   scope="col"
                   className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider print:text-black print:px-2"
                 >
+                  Сальдо на початок
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider print:text-black print:px-2"
+                >
                   Дебет (+)
                 </th>
                 <th
@@ -293,7 +299,7 @@ export default function ReconciliationReport() {
                         onClick={() => toggleGroup(group.counterpartyId)}
                       >
                         <td
-                          colSpan={4}
+                          colSpan={5}
                           className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white print:px-2 flex items-center gap-2"
                         >
                           <button
@@ -323,50 +329,64 @@ export default function ReconciliationReport() {
                       {/* Expaned Rows */}
                       {isExpanded && (
                         <>
-                          <tr className="bg-gray-50 dark:bg-gray-700/50 print:bg-gray-200 font-semibold">
-                            <td
-                              colSpan={4}
-                              className="px-6 py-4 text-sm text-gray-900 dark:text-white print:px-2 text-right"
-                            >
-                              Сальдо на початок періоду ({filters.dateFrom}):
-                            </td>
-                            <td className="px-6 py-4 text-right text-sm text-gray-900 dark:text-white print:px-2">
-                              {formatMoney(group.startBalance)}
-                            </td>
-                          </tr>
-                          {group.ledger.map((row, i) => (
-                            <tr
-                              key={`${row.documentId}-${i}`}
-                              className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                            >
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white print:px-2 pl-12">
-                                {dtFormat(row.date)}
+                          {group.ledger.length === 0 && (
+                            <tr className="bg-gray-50 dark:bg-gray-700/50 print:bg-gray-200 font-semibold">
+                              <td
+                                colSpan={5}
+                                className="px-6 py-4 text-sm text-gray-900 dark:text-white print:px-2 text-right"
+                              >
+                                Сальдо на початок періоду ({filters.dateFrom}):
                               </td>
-                              <td className="px-6 py-4 text-sm text-gray-900 dark:text-white print:px-2">
-                                {row.type === "REALIZATION" &&
-                                  `Реалізація №${row.docNumber}`}
-                                {row.type === "GOODS_RECEIPT" &&
-                                  `Надходження №${row.docNumber}`}
-                                {row.type === "INCOME" &&
-                                  `Прибутковий ордер №${row.docNumber}`}
-                                {row.type === "OUTCOME" &&
-                                  `Видатковий ордер №${row.docNumber}`}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2">
-                                {parseFloat(row.debit) !== 0
-                                  ? formatMoney(row.debit)
-                                  : ""}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2">
-                                {parseFloat(row.credit) !== 0
-                                  ? formatMoney(row.credit)
-                                  : ""}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900 dark:text-white print:px-2">
-                                {formatMoney(row.runningBalance)}
+                              <td className="px-6 py-4 text-right text-sm text-gray-900 dark:text-white print:px-2">
+                                {formatMoney(group.startBalance)}
                               </td>
                             </tr>
-                          ))}
+                          )}
+                          {group.ledger.map((row, i) => {
+                            // Calculate balance before this transaction
+                            const balanceBefore =
+                              row.runningBalance -
+                              (parseFloat(row.balanceChange) || 0);
+
+                            return (
+                              <tr
+                                key={`${row.documentId}-${i}`}
+                                className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                              >
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white print:px-2 pl-12">
+                                  {dtFormat(row.date)}
+                                </td>
+                                <td className="px-6 py-4 text-sm text-gray-900 dark:text-white print:px-2">
+                                  {row.type === "REALIZATION" &&
+                                    `Реалізація №${row.docNumber}`}
+                                  {row.type === "GOODS_RECEIPT" &&
+                                    `Надходження №${row.docNumber}`}
+                                  {row.type === "INCOME" &&
+                                    `Прибутковий ордер №${row.docNumber}`}
+                                  {row.type === "OUTCOME" &&
+                                    `Видатковий ордер №${row.docNumber}`}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2 font-medium">
+                                  {i === 0
+                                    ? formatMoney(group.startBalance)
+                                    : formatMoney(balanceBefore)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2">
+                                  {parseFloat(row.debit) !== 0
+                                    ? formatMoney(row.debit)
+                                    : ""}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2">
+                                  {parseFloat(row.credit) !== 0
+                                    ? formatMoney(row.credit)
+                                    : ""}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900 dark:text-white print:px-2">
+                                  {formatMoney(row.runningBalance)}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </>
                       )}
                     </React.Fragment>
@@ -375,7 +395,7 @@ export default function ReconciliationReport() {
               {!hasData && (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-6 py-8 text-center text-gray-500 dark:text-gray-400"
                   >
                     Натисніть "Сформувати" для отримання даних
@@ -387,7 +407,7 @@ export default function ReconciliationReport() {
               <tfoot className="bg-gray-200 dark:bg-gray-700 print:bg-gray-300">
                 <tr>
                   <td
-                    colSpan={2}
+                    colSpan={3}
                     className="px-6 py-4 text-right text-sm font-bold text-gray-900 dark:text-white print:text-black uppercase"
                   >
                     Всього по звіту:
