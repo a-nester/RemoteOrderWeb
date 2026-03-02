@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { API_URL } from "../../constants/api";
 import { useAuthStore } from "../../store/auth.store";
 import { CounterpartyService } from "../../services/counterparty.service";
 import type { Counterparty, CounterpartyGroup } from "../../types/counterparty";
-import { FileText, Search, Printer } from "lucide-react";
+import { FileText, Search, Printer, Plus, Minus } from "lucide-react";
 
 interface LedgerRow {
   documentId: string;
@@ -19,14 +19,22 @@ interface LedgerRow {
   comment: string | null;
 }
 
+interface GroupedReconciliation {
+  counterpartyId: string;
+  startBalance: number;
+  endBalance: number;
+  ledger: LedgerRow[];
+}
+
 export default function ReconciliationReport() {
   const { t } = useTranslation();
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
   const [groups, setGroups] = useState<CounterpartyGroup[]>([]);
   const [loading, setLoading] = useState(false);
-  const [ledger, setLedger] = useState<LedgerRow[]>([]);
-  const [endBalance, setEndBalance] = useState<number>(0);
-  const [startBalance, setStartBalance] = useState<number>(0);
+  const [groupedData, setGroupedData] = useState<GroupedReconciliation[]>([]);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
+    {},
+  );
   const [hasData, setHasData] = useState(false);
 
   const [filters, setFilters] = useState({
@@ -69,9 +77,7 @@ export default function ReconciliationReport() {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-      setLedger(res.data.ledger);
-      setEndBalance(res.data.endBalance);
-      setStartBalance(res.data.startBalance || 0);
+      setGroupedData(res.data.grouped || []);
       setHasData(true);
     } catch (error) {
       console.error("Error fetching reconciliation:", error);
@@ -99,6 +105,34 @@ export default function ReconciliationReport() {
     if (selectedGroup) return `Група: ${selectedGroup.name}`;
     return "________________";
   };
+
+  const getCpName = (id: string) => {
+    return (
+      counterparties.find((c) => c.id === id)?.name || "Невідомий контрагент"
+    );
+  };
+
+  const toggleGroup = (id: string) => {
+    setExpandedGroups((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const globalDebit = groupedData.reduce(
+    (acc, g) =>
+      acc + g.ledger.reduce((sum, r) => sum + (parseFloat(r.debit) || 0), 0),
+    0,
+  );
+  const globalCredit = groupedData.reduce(
+    (acc, g) =>
+      acc + g.ledger.reduce((sum, r) => sum + (parseFloat(r.credit) || 0), 0),
+    0,
+  );
+  const globalEndBalance = groupedData.reduce(
+    (acc, g) => acc + g.endBalance,
+    0,
+  );
 
   return (
     <div className="space-y-6 print:space-y-0">
@@ -248,50 +282,96 @@ export default function ReconciliationReport() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 print:divide-black">
-              {hasData && (
-                <tr className="bg-gray-50 dark:bg-gray-700/50 print:bg-gray-200 font-semibold">
-                  <td
-                    colSpan={4}
-                    className="px-6 py-4 text-sm text-gray-900 dark:text-white print:px-2 text-right"
-                  >
-                    Сальдо на початок періоду ({filters.dateFrom}):
-                  </td>
-                  <td className="px-6 py-4 text-right text-sm text-gray-900 dark:text-white print:px-2">
-                    {formatMoney(startBalance)}
-                  </td>
-                </tr>
-              )}
-              {ledger.map((row, i) => (
-                <tr
-                  key={`${row.documentId}-${i}`}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white print:px-2">
-                    {dtFormat(row.date)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white print:px-2">
-                    {row.type === "REALIZATION" &&
-                      `Реалізація №${row.docNumber}`}
-                    {row.type === "GOODS_RECEIPT" &&
-                      `Надходження №${row.docNumber}`}
-                    {row.type === "INCOME" &&
-                      `Прибутковий ордер №${row.docNumber}`}
-                    {row.type === "OUTCOME" &&
-                      `Видатковий ордер №${row.docNumber}`}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2">
-                    {parseFloat(row.debit) !== 0 ? formatMoney(row.debit) : ""}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2">
-                    {parseFloat(row.credit) !== 0
-                      ? formatMoney(row.credit)
-                      : ""}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900 dark:text-white print:px-2">
-                    {formatMoney(row.runningBalance)}
-                  </td>
-                </tr>
-              ))}
+              {hasData &&
+                groupedData.map((group) => {
+                  const isExpanded = expandedGroups[group.counterpartyId];
+                  return (
+                    <React.Fragment key={group.counterpartyId}>
+                      {/* Header Row for the Group */}
+                      <tr
+                        className="bg-gray-100 dark:bg-gray-700/80 font-bold hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer print:bg-gray-300"
+                        onClick={() => toggleGroup(group.counterpartyId)}
+                      >
+                        <td
+                          colSpan={4}
+                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white print:px-2 flex items-center gap-2"
+                        >
+                          <button
+                            className="mr-2 p-1 rounded hover:bg-gray-300 dark:hover:bg-gray-500 print:hidden"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleGroup(group.counterpartyId);
+                            }}
+                          >
+                            {isExpanded ? (
+                              <Minus className="h-4 w-4" />
+                            ) : (
+                              <Plus className="h-4 w-4" />
+                            )}
+                          </button>
+                          {/* Fallback for print if needed */}
+                          <span className="hidden print:inline-block mr-1">
+                            {isExpanded ? "-" : "+"}
+                          </span>
+                          {getCpName(group.counterpartyId)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2">
+                          {formatMoney(group.endBalance)}
+                        </td>
+                      </tr>
+
+                      {/* Expaned Rows */}
+                      {isExpanded && (
+                        <>
+                          <tr className="bg-gray-50 dark:bg-gray-700/50 print:bg-gray-200 font-semibold">
+                            <td
+                              colSpan={4}
+                              className="px-6 py-4 text-sm text-gray-900 dark:text-white print:px-2 text-right"
+                            >
+                              Сальдо на початок періоду ({filters.dateFrom}):
+                            </td>
+                            <td className="px-6 py-4 text-right text-sm text-gray-900 dark:text-white print:px-2">
+                              {formatMoney(group.startBalance)}
+                            </td>
+                          </tr>
+                          {group.ledger.map((row, i) => (
+                            <tr
+                              key={`${row.documentId}-${i}`}
+                              className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                            >
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white print:px-2 pl-12">
+                                {dtFormat(row.date)}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-900 dark:text-white print:px-2">
+                                {row.type === "REALIZATION" &&
+                                  `Реалізація №${row.docNumber}`}
+                                {row.type === "GOODS_RECEIPT" &&
+                                  `Надходження №${row.docNumber}`}
+                                {row.type === "INCOME" &&
+                                  `Прибутковий ордер №${row.docNumber}`}
+                                {row.type === "OUTCOME" &&
+                                  `Видатковий ордер №${row.docNumber}`}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2">
+                                {parseFloat(row.debit) !== 0
+                                  ? formatMoney(row.debit)
+                                  : ""}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2">
+                                {parseFloat(row.credit) !== 0
+                                  ? formatMoney(row.credit)
+                                  : ""}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900 dark:text-white print:px-2">
+                                {formatMoney(row.runningBalance)}
+                              </td>
+                            </tr>
+                          ))}
+                        </>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               {!hasData && (
                 <tr>
                   <td
@@ -304,22 +384,28 @@ export default function ReconciliationReport() {
               )}
             </tbody>
             {hasData && (
-              <tfoot className="bg-gray-50 dark:bg-gray-700 print:bg-transparent">
+              <tfoot className="bg-gray-200 dark:bg-gray-700 print:bg-gray-300">
                 <tr>
                   <td
-                    colSpan={4}
-                    className="px-6 py-4 text-right text-sm font-bold text-gray-900 dark:text-white print:text-black"
+                    colSpan={2}
+                    className="px-6 py-4 text-right text-sm font-bold text-gray-900 dark:text-white print:text-black uppercase"
                   >
-                    Кінцеве сальдо:
+                    Всього по звіту:
                   </td>
                   <td className="px-6 py-4 text-right text-sm font-bold text-gray-900 dark:text-white print:text-black">
-                    {formatMoney(endBalance)}
-                    {endBalance > 0 && (
+                    {formatMoney(globalDebit)}
+                  </td>
+                  <td className="px-6 py-4 text-right text-sm font-bold text-gray-900 dark:text-white print:text-black">
+                    {formatMoney(globalCredit)}
+                  </td>
+                  <td className="px-6 py-4 text-right text-sm font-bold text-gray-900 dark:text-white print:text-black">
+                    {formatMoney(globalEndBalance)}
+                    {globalEndBalance > 0 && (
                       <span className="text-xs font-normal text-gray-500 ml-1">
                         (Нам винні)
                       </span>
                     )}
-                    {endBalance < 0 && (
+                    {globalEndBalance < 0 && (
                       <span className="text-xs font-normal text-gray-500 ml-1">
                         (Ми винні)
                       </span>
