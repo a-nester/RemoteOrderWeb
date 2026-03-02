@@ -26,8 +26,12 @@ import RealizationsArchive from "./pages/Archive/RealizationsArchive";
 import GoodsReceiptList from "./pages/GoodsReceipt";
 import GoodsReceiptEdit from "./pages/GoodsReceipt/Edit";
 import StockBalancesReport from "./pages/Reports/StockBalances";
-import "./i18n";
 import SalesReport from "./pages/Reports/SalesReport";
+import ReconciliationReport from "./pages/Reports/ReconciliationReport";
+import CashFlowReport from "./pages/Reports/CashFlowReport";
+import FinanceSettings from "./pages/Finance/Cashboxes";
+import CashTransactions from "./pages/Finance/CashTransactions";
+import "./i18n";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -134,6 +138,46 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <SalesReport />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports/reconciliation"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ReconciliationReport />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports/cashflow"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CashFlowReport />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/finance/cashboxes"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <FinanceSettings />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/finance/transactions"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CashTransactions />
                 </Layout>
               </ProtectedRoute>
             }

@@ -15,6 +15,7 @@ import {
   Store,
   Menu,
   X,
+  Wallet,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
@@ -41,6 +42,9 @@ export default function Layout({ children, title }: LayoutProps) {
   );
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  const [isFinanceOpen, setIsFinanceOpen] = useState(
+    location.pathname.startsWith("/finance"),
+  );
 
   useEffect(() => {
     setIsSidebarOpen(false);
@@ -55,6 +59,7 @@ export default function Layout({ children, title }: LayoutProps) {
   const toggleReports = () => setIsReportsOpen(!isReportsOpen);
   const toggleOrganization = () => setIsOrganizationOpen(!isOrganizationOpen);
   const toggleArchive = () => setIsArchiveOpen(!isArchiveOpen);
+  const toggleFinance = () => setIsFinanceOpen(!isFinanceOpen);
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex transition-colors duration-200">
@@ -224,6 +229,59 @@ export default function Layout({ children, title }: LayoutProps) {
               </div>
             )}
           </div>
+
+          {/* Finance Group - Admin Only */}
+          {user?.role === "admin" && (
+            <div>
+              <button
+                onClick={toggleFinance}
+                className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-md transition-colors"
+              >
+                <div className="flex items-center">
+                  <Wallet className="mr-3 h-5 w-5" />
+                  Фінанси
+                </div>
+                {isFinanceOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </button>
+
+              {isFinanceOpen && (
+                <div className="ml-4 mt-1 space-y-1">
+                  <NavLink
+                    to="/finance/transactions"
+                    className={({ isActive }) =>
+                      clsx(
+                        "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                        isActive
+                          ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                      )
+                    }
+                  >
+                    <span className="w-5 mr-3"></span>
+                    Каса банку
+                  </NavLink>
+                  <NavLink
+                    to="/finance/cashboxes"
+                    className={({ isActive }) =>
+                      clsx(
+                        "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                        isActive
+                          ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                      )
+                    }
+                  >
+                    <span className="w-5 mr-3"></span>
+                    Налаштування каси
+                  </NavLink>
+                </div>
+              )}
+            </div>
+          )}
 
           <NavLink
             to="/counterparties"
