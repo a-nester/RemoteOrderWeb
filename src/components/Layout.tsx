@@ -74,13 +74,13 @@ export default function Layout({ children, title }: LayoutProps) {
       {/* Sidebar */}
       <div
         className={clsx(
-          "fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out z-40 print:hidden",
+          "fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out z-40 print:hidden flex flex-col h-full",
           isSidebarOpen
             ? "translate-x-0"
             : "-translate-x-full md:translate-x-0",
         )}
       >
-        <div className="flex items-center justify-between px-4 h-16 border-b dark:border-gray-700">
+        <div className="flex-none flex items-center justify-between px-4 h-16 border-b dark:border-gray-700">
           <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
             RemoteOrder
           </h1>
@@ -91,7 +91,7 @@ export default function Layout({ children, title }: LayoutProps) {
             <X size={24} />
           </button>
         </div>
-        <nav className="mt-6 px-4 space-y-2">
+        <nav className="flex-1 overflow-y-auto mt-6 px-4 space-y-2 pb-4">
           {user?.role === "admin" && (
             <NavLink
               to="/dashboard"

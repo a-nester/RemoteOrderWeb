@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "axios";
+import { Link } from "react-router-dom";
 import { API_URL } from "../../constants/api";
 import { useAuthStore } from "../../store/auth.store";
 import { CounterpartyService } from "../../services/counterparty.service";
@@ -251,37 +252,37 @@ export default function ReconciliationReport() {
               <tr>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider print:text-black print:px-2"
+                  className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider print:text-black print:px-2"
                 >
                   Дата
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider print:text-black print:px-2"
+                  className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider print:text-black print:px-2 w-[35%]"
                 >
                   Документ
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider print:text-black print:px-2"
+                  className="px-6 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider print:text-black print:px-2"
                 >
                   Сальдо на початок
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider print:text-black print:px-2"
+                  className="px-6 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider print:text-black print:px-2"
                 >
                   Дебет (+)
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider print:text-black print:px-2"
+                  className="px-6 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider print:text-black print:px-2"
                 >
                   Кредит (-)
                 </th>
                 <th
                   scope="col"
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider print:text-black print:px-2"
+                  className="px-6 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider print:text-black print:px-2"
                 >
                   Борг контрагента
                 </th>
@@ -300,7 +301,7 @@ export default function ReconciliationReport() {
                       >
                         <td
                           colSpan={5}
-                          className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white print:px-2 flex items-center gap-2"
+                          className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white print:px-2 flex items-center gap-2"
                         >
                           <button
                             className="mr-2 p-1 rounded hover:bg-gray-300 dark:hover:bg-gray-500 print:hidden"
@@ -321,7 +322,7 @@ export default function ReconciliationReport() {
                           </span>
                           {getCpName(group.counterpartyId)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2">
+                        <td className="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2">
                           {formatMoney(group.endBalance)}
                         </td>
                       </tr>
@@ -333,11 +334,11 @@ export default function ReconciliationReport() {
                             <tr className="bg-gray-50 dark:bg-gray-700/50 print:bg-gray-200 font-semibold">
                               <td
                                 colSpan={5}
-                                className="px-6 py-4 text-sm text-gray-900 dark:text-white print:px-2 text-right"
+                                className="px-6 py-2 text-sm text-gray-900 dark:text-white print:px-2 text-right"
                               >
                                 Сальдо на початок періоду ({filters.dateFrom}):
                               </td>
-                              <td className="px-6 py-4 text-right text-sm text-gray-900 dark:text-white print:px-2">
+                              <td className="px-6 py-2 text-right text-sm text-gray-900 dark:text-white print:px-2">
                                 {formatMoney(group.startBalance)}
                               </td>
                             </tr>
@@ -353,35 +354,53 @@ export default function ReconciliationReport() {
                                 key={`${row.documentId}-${i}`}
                                 className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
                               >
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white print:px-2 pl-12">
+                                <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white print:px-2 pl-12">
                                   {dtFormat(row.date)}
                                 </td>
-                                <td className="px-6 py-4 text-sm text-gray-900 dark:text-white print:px-2">
-                                  {row.type === "REALIZATION" &&
-                                    `Реалізація №${row.docNumber}`}
-                                  {row.type === "GOODS_RECEIPT" &&
-                                    `Надходження №${row.docNumber}`}
-                                  {row.type === "INCOME" &&
-                                    `Прибутковий ордер №${row.docNumber}`}
-                                  {row.type === "OUTCOME" &&
-                                    `Видатковий ордер №${row.docNumber}`}
+                                <td className="px-6 py-2 text-sm text-gray-900 dark:text-white print:px-2">
+                                  {row.type === "REALIZATION" && (
+                                    <Link
+                                      to={`/realizations/${row.documentId}`}
+                                      className="text-indigo-600 dark:text-indigo-400 hover:underline"
+                                    >
+                                      Реалізація №{row.docNumber}
+                                    </Link>
+                                  )}
+                                  {row.type === "GOODS_RECEIPT" && (
+                                    <Link
+                                      to={`/receipts/${row.documentId}`}
+                                      className="text-indigo-600 dark:text-indigo-400 hover:underline"
+                                    >
+                                      Надходження №{row.docNumber}
+                                    </Link>
+                                  )}
+                                  {row.type === "INCOME" && (
+                                    <span className="text-gray-900 dark:text-white">
+                                      Прибутковий ордер №{row.docNumber}
+                                    </span>
+                                  )}
+                                  {row.type === "OUTCOME" && (
+                                    <span className="text-gray-900 dark:text-white">
+                                      Видатковий ордер №{row.docNumber}
+                                    </span>
+                                  )}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2 font-medium">
+                                <td className="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2 font-medium">
                                   {i === 0
                                     ? formatMoney(group.startBalance)
                                     : formatMoney(balanceBefore)}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2">
+                                <td className="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2">
                                   {parseFloat(row.debit) !== 0
                                     ? formatMoney(row.debit)
                                     : ""}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2">
+                                <td className="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2">
                                   {parseFloat(row.credit) !== 0
                                     ? formatMoney(row.credit)
                                     : ""}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900 dark:text-white print:px-2">
+                                <td className="px-6 py-2 whitespace-nowrap text-right text-sm font-medium text-gray-900 dark:text-white print:px-2">
                                   {formatMoney(row.runningBalance)}
                                 </td>
                               </tr>
@@ -408,17 +427,17 @@ export default function ReconciliationReport() {
                 <tr>
                   <td
                     colSpan={3}
-                    className="px-6 py-4 text-right text-sm font-bold text-gray-900 dark:text-white print:text-black uppercase"
+                    className="px-6 py-2 text-right text-sm font-bold text-gray-900 dark:text-white print:text-black uppercase"
                   >
                     Всього по звіту:
                   </td>
-                  <td className="px-6 py-4 text-right text-sm font-bold text-gray-900 dark:text-white print:text-black">
+                  <td className="px-6 py-2 text-right text-sm font-bold text-gray-900 dark:text-white print:text-black">
                     {formatMoney(globalDebit)}
                   </td>
-                  <td className="px-6 py-4 text-right text-sm font-bold text-gray-900 dark:text-white print:text-black">
+                  <td className="px-6 py-2 text-right text-sm font-bold text-gray-900 dark:text-white print:text-black">
                     {formatMoney(globalCredit)}
                   </td>
-                  <td className="px-6 py-4 text-right text-sm font-bold text-gray-900 dark:text-white print:text-black">
+                  <td className="px-6 py-2 text-right text-sm font-bold text-gray-900 dark:text-white print:text-black">
                     {formatMoney(globalEndBalance)}
                     {globalEndBalance > 0 && (
                       <span className="text-xs font-normal text-gray-500 ml-1">
