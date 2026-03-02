@@ -31,7 +31,15 @@ export default function CashFlowReport() {
   const [cashboxes, setCashboxes] = useState<Cashbox[]>([]);
   const [loading, setLoading] = useState(false);
   const [ledger, setLedger] = useState<CashFlowRow[]>([]);
+  const [hasData, setHasData] = useState(false);
+  const [incomesByCategory, setIncomesByCategory] = useState<
+    { name: string; amount: number }[]
+  >([]);
+  const [outcomesByCategory, setOutcomesByCategory] = useState<
+    { name: string; amount: number }[]
+  >([]);
   const [totals, setTotals] = useState({
+    startBalance: 0,
     endBalance: 0,
     totalIncome: 0,
     totalOutcome: 0,
@@ -66,10 +74,14 @@ export default function CashFlowReport() {
       );
       setLedger(res.data.ledger);
       setTotals({
+        startBalance: res.data.startBalance || 0,
         endBalance: res.data.endBalance,
         totalIncome: res.data.totalIncome,
         totalOutcome: res.data.totalOutcome,
       });
+      setIncomesByCategory(res.data.incomesByCategory || []);
+      setOutcomesByCategory(res.data.outcomesByCategory || []);
+      setHasData(true);
     } catch (error) {
       console.error("Error fetching cashflow:", error);
       alert("Помилка завантаження звіту");
@@ -170,7 +182,15 @@ export default function CashFlowReport() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print:flex print:gap-8 print:mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 print:flex print:gap-8 print:mb-6">
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 print:bg-gray-100">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            Початковий залишок
+          </div>
+          <div className="text-xl font-bold text-gray-900 dark:text-white print:text-black mt-1">
+            {formatMoney(totals.startBalance)}
+          </div>
+        </div>
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="text-sm text-gray-500 dark:text-gray-400">
             Надходження (Дебет)
@@ -191,11 +211,65 @@ export default function CashFlowReport() {
           <div className="text-sm text-gray-500 dark:text-gray-400">
             Кінцевий залишок
           </div>
-          <div className="text-xl font-bold text-gray-900 dark:text-white print:text-black">
+          <div className="text-xl font-bold text-gray-900 dark:text-white print:text-black mt-1">
             {formatMoney(totals.endBalance)}
           </div>
         </div>
       </div>
+
+      {/* Category Breakdown */}
+      {hasData && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:hidden">
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+              Деталізація надходжень
+            </h3>
+            <div className="space-y-3">
+              {incomesByCategory.length === 0 ? (
+                <div className="text-sm text-gray-500">Немає надходжень</div>
+              ) : (
+                incomesByCategory.map((cat, idx) => (
+                  <div
+                    key={idx}
+                    className="flex justify-between items-center text-sm"
+                  >
+                    <span className="text-gray-600 dark:text-gray-300">
+                      {cat.name}
+                    </span>
+                    <span className="font-semibold text-green-600">
+                      {formatMoney(cat.amount)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+              Деталізація витрат
+            </h3>
+            <div className="space-y-3">
+              {outcomesByCategory.length === 0 ? (
+                <div className="text-sm text-gray-500">Немає витрат</div>
+              ) : (
+                outcomesByCategory.map((cat, idx) => (
+                  <div
+                    key={idx}
+                    className="flex justify-between items-center text-sm"
+                  >
+                    <span className="text-gray-600 dark:text-gray-300">
+                      {cat.name}
+                    </span>
+                    <span className="font-semibold text-red-600">
+                      {formatMoney(cat.amount)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden print:shadow-none print:border-none">
         {/* Ledger */}
@@ -248,6 +322,19 @@ export default function CashFlowReport() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 print:divide-black">
+              {hasData && (
+                <tr className="bg-gray-50 dark:bg-gray-700/50 print:bg-gray-200 font-semibold">
+                  <td
+                    colSpan={6}
+                    className="px-6 py-4 text-sm text-gray-900 dark:text-white print:px-2 text-right"
+                  >
+                    Початковий залишок ({filters.dateFrom}):
+                  </td>
+                  <td className="px-6 py-4 text-right text-sm text-gray-900 dark:text-white print:px-2">
+                    {formatMoney(totals.startBalance)}
+                  </td>
+                </tr>
+              )}
               {ledger.map((row, i) => (
                 <tr
                   key={`${row.id}-${i}`}
@@ -287,7 +374,7 @@ export default function CashFlowReport() {
                   </td>
                 </tr>
               ))}
-              {ledger.length === 0 && (
+              {!hasData && (
                 <tr>
                   <td
                     colSpan={7}

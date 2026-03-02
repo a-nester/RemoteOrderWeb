@@ -4,7 +4,7 @@ import axios from "axios";
 import { API_URL } from "../../constants/api";
 import { useAuthStore } from "../../store/auth.store";
 import { CounterpartyService } from "../../services/counterparty.service";
-import type { Counterparty } from "../../types/counterparty";
+import type { Counterparty, CounterpartyGroup } from "../../types/counterparty";
 import { FileText, Search, Printer } from "lucide-react";
 
 interface LedgerRow {
@@ -22,12 +22,16 @@ interface LedgerRow {
 export default function ReconciliationReport() {
   const { t } = useTranslation();
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
+  const [groups, setGroups] = useState<CounterpartyGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [ledger, setLedger] = useState<LedgerRow[]>([]);
   const [endBalance, setEndBalance] = useState<number>(0);
+  const [startBalance, setStartBalance] = useState<number>(0);
+  const [hasData, setHasData] = useState(false);
 
   const [filters, setFilters] = useState({
     counterpartyId: "",
+    groupId: "",
     dateFrom: new Date(new Date().setMonth(new Date().getMonth() - 1))
       .toISOString()
       .split("T")[0],
@@ -35,12 +39,18 @@ export default function ReconciliationReport() {
   });
 
   useEffect(() => {
-    CounterpartyService.getAll().then(setCounterparties);
+    Promise.all([
+      CounterpartyService.getAll(),
+      CounterpartyService.getGroups(),
+    ]).then(([cpRes, gRes]) => {
+      setCounterparties(cpRes);
+      setGroups(gRes);
+    });
   }, []);
 
   const fetchReport = async () => {
-    if (!filters.counterpartyId) {
-      alert("Оберіть контрагента");
+    if (!filters.counterpartyId && !filters.groupId) {
+      alert("Оберіть контрагента або групу");
       return;
     }
     try {
@@ -49,6 +59,7 @@ export default function ReconciliationReport() {
       const params = new URLSearchParams();
       if (filters.counterpartyId)
         params.append("counterpartyId", filters.counterpartyId);
+      if (filters.groupId) params.append("groupId", filters.groupId);
       if (filters.dateFrom) params.append("dateFrom", filters.dateFrom);
       if (filters.dateTo) params.append("dateTo", filters.dateTo);
 
@@ -60,6 +71,8 @@ export default function ReconciliationReport() {
       );
       setLedger(res.data.ledger);
       setEndBalance(res.data.endBalance);
+      setStartBalance(res.data.startBalance || 0);
+      setHasData(true);
     } catch (error) {
       console.error("Error fetching reconciliation:", error);
       alert("Помилка завантаження звіту");
@@ -79,6 +92,13 @@ export default function ReconciliationReport() {
   const selectedCp = counterparties.find(
     (c) => c.id === filters.counterpartyId,
   );
+  const selectedGroup = groups.find((g) => g.id === filters.groupId);
+
+  const getTargetName = () => {
+    if (selectedCp) return selectedCp.name;
+    if (selectedGroup) return `Група: ${selectedGroup.name}`;
+    return "________________";
+  };
 
   return (
     <div className="space-y-6 print:space-y-0">
@@ -96,7 +116,30 @@ export default function ReconciliationReport() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 grid grid-cols-1 md:grid-cols-4 gap-4 print:hidden">
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 grid grid-cols-1 md:grid-cols-5 gap-4 print:hidden">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Група контрагентів
+          </label>
+          <select
+            value={filters.groupId}
+            onChange={(e) =>
+              setFilters({
+                ...filters,
+                groupId: e.target.value,
+                counterpartyId: "",
+              })
+            }
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          >
+            <option value="">Всі групи...</option>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+        </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Контрагент
@@ -104,11 +147,15 @@ export default function ReconciliationReport() {
           <select
             value={filters.counterpartyId}
             onChange={(e) =>
-              setFilters({ ...filters, counterpartyId: e.target.value })
+              setFilters({
+                ...filters,
+                counterpartyId: e.target.value,
+                groupId: "",
+              })
             }
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           >
-            <option value="">Оберіть контрагента...</option>
+            <option value="">Без вибору / Оберіть контрагента...</option>
             {counterparties.map((cp) => (
               <option key={cp.id} value={cp.id}>
                 {cp.name}
@@ -156,7 +203,7 @@ export default function ReconciliationReport() {
       <div className="hidden print:block mb-8 text-center uppercase tracking-wider">
         <h2 className="text-xl font-bold">Акт звірки взаєморозрахунків</h2>
         <div className="text-sm mt-2">
-          між Нами та {selectedCp?.name || "________________"}
+          між Нами та {getTargetName()}
           <br />
           за період з {filters.dateFrom || "..."} по {filters.dateTo || "..."}
         </div>
@@ -201,6 +248,19 @@ export default function ReconciliationReport() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 print:divide-black">
+              {hasData && (
+                <tr className="bg-gray-50 dark:bg-gray-700/50 print:bg-gray-200 font-semibold">
+                  <td
+                    colSpan={4}
+                    className="px-6 py-4 text-sm text-gray-900 dark:text-white print:px-2 text-right"
+                  >
+                    Сальдо на початок періоду ({filters.dateFrom}):
+                  </td>
+                  <td className="px-6 py-4 text-right text-sm text-gray-900 dark:text-white print:px-2">
+                    {formatMoney(startBalance)}
+                  </td>
+                </tr>
+              )}
               {ledger.map((row, i) => (
                 <tr
                   key={`${row.documentId}-${i}`}
@@ -232,7 +292,7 @@ export default function ReconciliationReport() {
                   </td>
                 </tr>
               ))}
-              {ledger.length === 0 && (
+              {!hasData && (
                 <tr>
                   <td
                     colSpan={5}
@@ -243,7 +303,7 @@ export default function ReconciliationReport() {
                 </tr>
               )}
             </tbody>
-            {ledger.length > 0 && (
+            {hasData && (
               <tfoot className="bg-gray-50 dark:bg-gray-700 print:bg-transparent">
                 <tr>
                   <td
