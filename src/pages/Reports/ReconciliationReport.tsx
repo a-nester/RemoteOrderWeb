@@ -301,26 +301,28 @@ export default function ReconciliationReport() {
                       >
                         <td
                           colSpan={5}
-                          className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white print:px-2 flex items-center gap-2"
+                          className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white print:px-2"
                         >
-                          <button
-                            className="mr-2 p-1 rounded hover:bg-gray-300 dark:hover:bg-gray-500 print:hidden"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleGroup(group.counterpartyId);
-                            }}
-                          >
-                            {isExpanded ? (
-                              <Minus className="h-4 w-4" />
-                            ) : (
-                              <Plus className="h-4 w-4" />
-                            )}
-                          </button>
-                          {/* Fallback for print if needed */}
-                          <span className="hidden print:inline-block mr-1">
-                            {isExpanded ? "-" : "+"}
-                          </span>
-                          {getCpName(group.counterpartyId)}
+                          <div className="flex items-center gap-2">
+                            <button
+                              className="mr-2 p-1 rounded hover:bg-gray-300 dark:hover:bg-gray-500 print:hidden"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleGroup(group.counterpartyId);
+                              }}
+                            >
+                              {isExpanded ? (
+                                <Minus className="h-4 w-4" />
+                              ) : (
+                                <Plus className="h-4 w-4" />
+                              )}
+                            </button>
+                            {/* Fallback for print if needed */}
+                            <span className="hidden print:inline-block mr-1">
+                              {isExpanded ? "-" : "+"}
+                            </span>
+                            {getCpName(group.counterpartyId)}
+                          </div>
                         </td>
                         <td className="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white print:px-2">
                           {formatMoney(group.endBalance)}
