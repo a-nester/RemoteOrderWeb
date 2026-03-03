@@ -455,7 +455,9 @@ export default function OrderForm({
       <div className="flex items-center justify-between px-4 sm:px-0 mt-4 sm:mt-0">
         <div className="flex items-center">
           <button
-            onClick={() => navigate("/orders")}
+            onClick={() =>
+              navigate(isRealization ? "/realizations" : "/orders")
+            }
             className="mr-4 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
           >
             <ArrowLeft size={24} />

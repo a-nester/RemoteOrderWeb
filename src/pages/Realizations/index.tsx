@@ -1,7 +1,15 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Plus, Eye, Trash2, FileText, ArrowDown, ArrowUp } from "lucide-react";
+import {
+  Plus,
+  Eye,
+  Trash2,
+  FileText,
+  ArrowDown,
+  ArrowUp,
+  Search,
+} from "lucide-react";
 import { RealizationService } from "../../services/realization.service";
 import type { Realization } from "../../types/realization";
 
@@ -11,6 +19,28 @@ export default function RealizationList() {
   const [loading, setLoading] = useState(true);
   const [realizations, setRealizations] = useState<Realization[]>([]);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  const [startDate, setStartDate] = useState(() => {
+    const saved = localStorage.getItem("realization_startDate");
+    if (saved) return saved;
+    const date = new Date();
+    date.setDate(1);
+    return date.toISOString().split("T")[0];
+  });
+  const [endDate, setEndDate] = useState(() => {
+    const saved = localStorage.getItem("realization_endDate");
+    if (saved) return saved;
+    const date = new Date();
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0)
+      .toISOString()
+      .split("T")[0];
+  });
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    localStorage.setItem("realization_startDate", startDate);
+    localStorage.setItem("realization_endDate", endDate);
+  }, [startDate, endDate, searchTerm]);
 
   useEffect(() => {
     loadData();
@@ -70,18 +100,52 @@ export default function RealizationList() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center px-4 md:px-0">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 shadow rounded-lg sticky top-0 z-10 dark:bg-gray-800 gap-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
           <FileText className="mr-3" />
           {t("menu.realizations", "Realizations")}
         </h1>
-        <button
-          onClick={() => navigate("/realizations/create")}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="mr-2" size={18} />
-          {t("action.create", "Create")}
-        </button>
+
+        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+          {/* Search Input */}
+          <div className="relative flex-1 md:w-64">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder={t("common.search", "Search...")}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white h-[42px]"
+            />
+          </div>
+
+          {/* Date Filters */}
+          <div className="flex gap-2 items-center">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 h-[42px]"
+            />
+            <span className="text-gray-500">-</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 h-[42px]"
+            />
+          </div>
+
+          <button
+            onClick={() => navigate("/realizations/create")}
+            className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors h-[42px]"
+          >
+            <Plus className="mr-2" size={18} />
+            {t("action.create", "Create")}
+          </button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-gray-800 shadow hidden md:block rounded-lg overflow-x-auto">
@@ -122,6 +186,21 @@ export default function RealizationList() {
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {[...realizations]
+              .filter((a) => {
+                if (
+                  searchTerm &&
+                  !a.number.toString().includes(searchTerm) &&
+                  !a.counterpartyName
+                    ?.toLowerCase()
+                    .includes(searchTerm.toLowerCase())
+                ) {
+                  return false;
+                }
+                const date = a.date.split("T")[0];
+                if (startDate && date < startDate) return false;
+                if (endDate && date > endDate) return false;
+                return true;
+              })
               .sort((a, b) => {
                 const dateA = new Date(a.date).getTime();
                 const dateB = new Date(b.date).getTime();

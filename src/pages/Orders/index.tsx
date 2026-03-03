@@ -14,11 +14,15 @@ export default function Orders() {
 
   // Filters
   const [startDate, setStartDate] = useState(() => {
+    const saved = localStorage.getItem("orders_startDate");
+    if (saved) return saved;
     const date = new Date();
     date.setDate(1); // First day of current month
     return date.toISOString().split("T")[0];
   });
   const [endDate, setEndDate] = useState(() => {
+    const saved = localStorage.getItem("orders_endDate");
+    if (saved) return saved;
     const date = new Date();
     return new Date(date.getFullYear(), date.getMonth() + 1, 0)
       .toISOString()
@@ -27,6 +31,8 @@ export default function Orders() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
+    localStorage.setItem("orders_startDate", startDate);
+    localStorage.setItem("orders_endDate", endDate);
     loadOrders();
   }, [startDate, endDate, searchTerm]); // Reload when filters change
 

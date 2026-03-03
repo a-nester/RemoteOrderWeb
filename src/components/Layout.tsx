@@ -515,7 +515,7 @@ export default function Layout({ children, title }: LayoutProps) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 md:ml-64 transition-all duration-300">
-        <header className="bg-white shadow-sm h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 print:hidden">
+        <header className="bg-white shadow-sm h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 print:hidden md:hidden">
           <div className="flex items-center">
             <button
               onClick={() => setIsSidebarOpen(true)}
