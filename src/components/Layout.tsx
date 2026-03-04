@@ -514,8 +514,8 @@ export default function Layout({ children, title }: LayoutProps) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 md:ml-64 transition-all duration-300">
-        <header className="bg-white shadow-sm h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 print:hidden md:hidden">
+      <div className="flex-1 flex flex-col min-w-0 md:ml-64 h-screen overflow-y-auto overflow-x-hidden transition-all duration-300">
+        <header className="bg-white shadow-sm h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 print:hidden md:hidden sticky top-0 z-20">
           <div className="flex items-center">
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -529,9 +529,7 @@ export default function Layout({ children, title }: LayoutProps) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );
