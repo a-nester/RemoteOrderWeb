@@ -467,16 +467,14 @@ export default function OrderForm({
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          {isRealization && (
-            <button
-              onClick={() => handleSave("saveAndPost")}
-              disabled={saving}
-              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-            >
-              <Check className="mr-2" size={18} />
-              {saving ? t("common.saving", "Saving...") : "Зберегти і провести"}
-            </button>
-          )}
+          <button
+            onClick={() => handleSave("saveAndPost")}
+            disabled={saving}
+            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+          >
+            <Check className="mr-2" size={18} />
+            {saving ? t("common.saving", "Saving...") : "Зберегти і провести"}
+          </button>
           <button
             onClick={() => handleSave("save")}
             disabled={saving}

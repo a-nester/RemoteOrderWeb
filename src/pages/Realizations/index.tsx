@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Plus,
   Eye,
@@ -17,31 +17,44 @@ import DocumentActionsDropdown from "../../components/DocumentActionsDropdown";
 export default function RealizationList() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [realizations, setRealizations] = useState<Realization[]>([]);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const location = useLocation();
 
+  const [realizations, setRealizations] = useState<Realization[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  // Date filters
   const [startDate, setStartDate] = useState(() => {
-    const saved = localStorage.getItem("realization_startDate");
-    if (saved) return saved;
-    const date = new Date();
-    date.setDate(1);
-    return date.toISOString().split("T")[0];
+    return localStorage.getItem("realizationsStartDate") || "";
   });
   const [endDate, setEndDate] = useState(() => {
     const saved = localStorage.getItem("realization_endDate");
     if (saved) return saved;
-    const date = new Date();
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0)
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth() + 1, 0)
       .toISOString()
       .split("T")[0];
   });
-  const [searchTerm, setSearchTerm] = useState("");
+
+  const [highlightId, setHighlightId] = useState<string | null>(
+    location.state?.highlight || null,
+  );
+
+  useEffect(() => {
+    if (highlightId) {
+      const timer = setTimeout(() => {
+        setHighlightId(null);
+        window.history.replaceState({}, document.title);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightId]);
 
   useEffect(() => {
     localStorage.setItem("realization_startDate", startDate);
     localStorage.setItem("realization_endDate", endDate);
-  }, [startDate, endDate, searchTerm]);
+  }, [startDate, endDate]);
 
   useEffect(() => {
     loadData();
@@ -221,56 +234,63 @@ export default function RealizationList() {
                 const dateB = new Date(b.date).getTime();
                 return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
               })
-              .map((item) => (
-                <tr
-                  key={item.id}
-                  onClick={() => navigate(`/realizations/${item.id}`)}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {item.number}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(item.date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {item.counterpartyName || "-"}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(item.status)}`}
-                    >
-                      {t(`status.${item.status}`, item.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-white">
-                    {Number(item.amount).toFixed(2)} {item.currency}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end space-x-3 items-center">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/realizations/${item.id}`);
-                        }}
-                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2"
+              .map((item) => {
+                const isHighlighted = item.id === highlightId;
+                return (
+                  <tr
+                    key={item.id}
+                    onClick={() => navigate(`/realizations/${item.id}`)}
+                    className={`cursor-pointer ${
+                      isHighlighted
+                        ? "bg-green-100 dark:bg-green-900/40 transition-colors duration-1000"
+                        : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                    }`}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {item.number}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {new Date(item.date).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {item.counterpartyName || "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(item.status)}`}
                       >
-                        <Eye size={18} />
-                      </button>
+                        {t(`status.${item.status}`, item.status)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-white">
+                      {Number(item.amount).toFixed(2)} {item.currency}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex justify-end space-x-3 items-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/realizations/${item.id}`);
+                          }}
+                          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2"
+                        >
+                          <Eye size={18} />
+                        </button>
 
-                      <DocumentActionsDropdown
-                        isPosted={item.status === "POSTED"}
-                        paymentUrl={`/finance/transactions?action=payment&counterpartyId=${item.counterpartyId || ""}&amount=${item.amount}`}
-                        copyUrl={`/realizations/create?copyFrom=${item.id}`}
-                        onToggleStatus={() =>
-                          handleToggleStatus(item.id, item.status)
-                        }
-                        onDelete={() => handleDelete(item.id, item.status)}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        <DocumentActionsDropdown
+                          isPosted={item.status === "POSTED"}
+                          paymentUrl={`/finance/transactions?action=payment&counterpartyId=${item.counterpartyId || ""}&amount=${item.amount}`}
+                          copyUrl={`/realizations/create?copyFrom=${item.id}`}
+                          onToggleStatus={() =>
+                            handleToggleStatus(item.id, item.status)
+                          }
+                          onDelete={() => handleDelete(item.id, item.status)}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             {realizations.length === 0 && (
               <tr>
                 <td

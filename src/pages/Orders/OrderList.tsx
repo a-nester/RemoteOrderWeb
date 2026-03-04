@@ -4,6 +4,8 @@ import type { Order } from "../../types/order";
 import { OrderStatus } from "../../types/order";
 import { Edit, Eye, ArrowUp, ArrowDown } from "lucide-react";
 import DocumentActionsDropdown from "../../components/DocumentActionsDropdown";
+import { useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 interface OrderListProps {
   orders: Order[];
@@ -21,6 +23,21 @@ const OrderList: React.FC<OrderListProps> = ({
   onStatusChange,
 }) => {
   const { t } = useTranslation();
+  const location = useLocation();
+  const [highlightId, setHighlightId] = useState<string | null>(
+    location.state?.highlight || null,
+  );
+
+  useEffect(() => {
+    if (highlightId) {
+      const timer = setTimeout(() => {
+        setHighlightId(null);
+        // Clear history state to prevent re-highlighting on reload
+        window.history.replaceState({}, document.title);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightId]);
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("asc");
 
   const getStatusColor = (status: OrderStatus) => {
@@ -90,97 +107,107 @@ const OrderList: React.FC<OrderListProps> = ({
                 const dateB = new Date(b.date).getTime();
                 return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
               })
-              .map((order) => (
-                <tr
-                  key={order.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-                  onClick={() => onView && onView(order)}
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {new Date(order.date).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
-                    {order.docNumber || order.id.slice(0, 8)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {order.counterpartyName}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {order.amount.toFixed(2)} {order.currency}
-                  </td>
-                  <td
-                    className="px-6 py-4 whitespace-nowrap"
-                    onClick={(e) => e.stopPropagation()}
+              .map((order) => {
+                const isHighlighted = order.id === highlightId;
+                return (
+                  <tr
+                    key={order.id}
+                    onClick={() => onView && onView(order)}
+                    className={`cursor-pointer ${
+                      isHighlighted
+                        ? "bg-green-100 dark:bg-green-900/40 transition-colors duration-1000"
+                        : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                    }`}
                   >
-                    <select
-                      value={order.status}
-                      onChange={(e) =>
-                        onStatusChange &&
-                        onStatusChange(order.id, e.target.value as OrderStatus)
-                      }
-                      disabled={!onStatusChange}
-                      className={`px-2 py-1 text-xs leading-5 font-semibold rounded-full border outline-none appearance-none cursor-pointer pr-6 ${getStatusColor(order.status)}`}
-                      style={{
-                        backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                        backgroundPosition: "right 0.25rem center",
-                        backgroundRepeat: "no-repeat",
-                        backgroundSize: "1.25em 1.25em",
-                      }}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {new Date(order.date).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
+                      {order.docNumber || order.id.slice(0, 8)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {order.counterpartyName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {order.amount.toFixed(2)} {order.currency}
+                    </td>
+                    <td
+                      className="px-6 py-4 whitespace-nowrap"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      {Object.values(OrderStatus).map((status) => (
-                        <option key={status} value={status}>
-                          {t(`status.${status}`, status)}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end gap-2">
-                      {onView && (
+                      <select
+                        value={order.status}
+                        onChange={(e) =>
+                          onStatusChange &&
+                          onStatusChange(
+                            order.id,
+                            e.target.value as OrderStatus,
+                          )
+                        }
+                        disabled={!onStatusChange}
+                        className={`px-2 py-1 text-xs leading-5 font-semibold rounded-full border outline-none appearance-none cursor-pointer pr-6 ${getStatusColor(order.status)}`}
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                          backgroundPosition: "right 0.25rem center",
+                          backgroundRepeat: "no-repeat",
+                          backgroundSize: "1.25em 1.25em",
+                        }}
+                      >
+                        {Object.values(OrderStatus).map((status) => (
+                          <option key={status} value={status}>
+                            {t(`status.${status}`, status)}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex justify-end gap-2">
+                        {onView && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onView(order);
+                            }}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                            title={t("common.view", "View")}
+                          >
+                            <Eye size={18} />
+                          </button>
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onView(order);
+                            onEdit(order);
                           }}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                          title={t("common.view", "View")}
+                          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                          title={t("common.edit", "Edit")}
                         >
-                          <Eye size={18} />
+                          <Edit size={18} />
                         </button>
-                      )}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEdit(order);
-                        }}
-                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-                        title={t("common.edit", "Edit")}
-                      >
-                        <Edit size={18} />
-                      </button>
 
-                      <DocumentActionsDropdown
-                        isPosted={["ACCEPTED", "COMPLETED"].includes(
-                          order.status,
-                        )}
-                        paymentUrl={`/finance/transactions?action=payment&counterpartyId=${order.counterpartyId || ""}&amount=${order.amount}`}
-                        copyUrl={`/orders/create?copyFrom=${order.id}`}
-                        onToggleStatus={() => {
-                          if (onStatusChange) {
-                            onStatusChange(
-                              order.id,
-                              ["ACCEPTED", "COMPLETED"].includes(order.status)
-                                ? OrderStatus.NEW
-                                : OrderStatus.ACCEPTED,
-                            );
-                          }
-                        }}
-                        onDelete={() => onDelete && onDelete(order)}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))
+                        <DocumentActionsDropdown
+                          isPosted={["ACCEPTED", "COMPLETED"].includes(
+                            order.status,
+                          )}
+                          paymentUrl={`/finance/transactions?action=payment&counterpartyId=${order.counterpartyId || ""}&amount=${order.amount}`}
+                          copyUrl={`/orders/create?copyFrom=${order.id}`}
+                          onToggleStatus={() => {
+                            if (onStatusChange) {
+                              onStatusChange(
+                                order.id,
+                                ["ACCEPTED", "COMPLETED"].includes(order.status)
+                                  ? OrderStatus.NEW
+                                  : OrderStatus.ACCEPTED,
+                              );
+                            }
+                          }}
+                          onDelete={() => onDelete && onDelete(order)}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
           )}
         </tbody>
       </table>

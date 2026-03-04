@@ -56,7 +56,7 @@ export default function RealizationEdit() {
 
       if (action === "saveAndPost") {
         await RealizationService.postRealization(id);
-        navigate("/realizations");
+        navigate("/realizations", { state: { highlight: id } });
       } else {
         alert(t("common.saved", "Збережено успішно"));
         // loadData(); // Optionally refresh if we want clean DB state

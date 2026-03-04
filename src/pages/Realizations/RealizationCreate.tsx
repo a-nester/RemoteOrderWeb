@@ -54,7 +54,7 @@ export default function RealizationCreate() {
 
       if (action === "saveAndPost") {
         await RealizationService.postRealization(res.id);
-        navigate("/realizations");
+        navigate("/realizations", { state: { highlight: res.id } });
       } else {
         navigate(`/realizations/${res.id}/edit`);
       }

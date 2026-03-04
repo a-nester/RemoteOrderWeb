@@ -31,11 +31,19 @@ export default function OrderCreate() {
     }
   }, [searchParams]);
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: any, action?: "save" | "saveAndPost") => {
     setSaving(true);
     try {
-      await OrderService.createOrder(data);
-      navigate("/orders");
+      const payload = { ...data };
+      if (action === "saveAndPost") {
+        payload.status = OrderStatus.ACCEPTED;
+      }
+      const res = await OrderService.createOrder(payload);
+      if (action === "saveAndPost") {
+        navigate("/orders", { state: { highlight: res.id } });
+      } else {
+        navigate(`/orders/${res.id}/edit`);
+      }
     } catch (error) {
       console.error("Failed to save order", error);
       alert(t("common.error", "Failed to save order"));
