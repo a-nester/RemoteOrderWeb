@@ -43,6 +43,13 @@ export default function RealizationList() {
 
   useEffect(() => {
     if (highlightId) {
+      setTimeout(() => {
+        const el = document.getElementById(`row-${highlightId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+
       const timer = setTimeout(() => {
         setHighlightId(null);
         window.history.replaceState({}, document.title);
@@ -238,6 +245,7 @@ export default function RealizationList() {
                 const isHighlighted = item.id === highlightId;
                 return (
                   <tr
+                    id={`row-${item.id}`}
                     key={item.id}
                     onClick={() => navigate(`/realizations/${item.id}`)}
                     className={`cursor-pointer ${

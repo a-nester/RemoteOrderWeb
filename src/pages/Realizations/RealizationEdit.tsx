@@ -103,6 +103,7 @@ export default function RealizationEdit() {
       onSubmit={handleSubmit}
       saving={saving}
       title={t("realization.edit", "Редагування Реалізації")}
+      isRealization={true}
     />
   );
 }

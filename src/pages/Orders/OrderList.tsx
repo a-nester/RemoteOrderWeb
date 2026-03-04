@@ -30,6 +30,13 @@ const OrderList: React.FC<OrderListProps> = ({
 
   useEffect(() => {
     if (highlightId) {
+      setTimeout(() => {
+        const el = document.getElementById(`row-${highlightId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+
       const timer = setTimeout(() => {
         setHighlightId(null);
         // Clear history state to prevent re-highlighting on reload
@@ -111,6 +118,7 @@ const OrderList: React.FC<OrderListProps> = ({
                 const isHighlighted = order.id === highlightId;
                 return (
                   <tr
+                    id={`row-${order.id}`}
                     key={order.id}
                     onClick={() => onView && onView(order)}
                     className={`cursor-pointer ${
