@@ -2,7 +2,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import type { Order } from "../../types/order";
 import { OrderStatus } from "../../types/order";
-import { Edit, Trash2, Eye, ArrowUp, ArrowDown } from "lucide-react";
+import { Edit, Eye, ArrowUp, ArrowDown } from "lucide-react";
+import DocumentActionsDropdown from "../../components/DocumentActionsDropdown";
 
 interface OrderListProps {
   orders: Order[];
@@ -157,18 +158,25 @@ const OrderList: React.FC<OrderListProps> = ({
                       >
                         <Edit size={18} />
                       </button>
-                      {onDelete && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(order);
-                          }}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                          title={t("common.delete", "Delete")}
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      )}
+
+                      <DocumentActionsDropdown
+                        isPosted={["ACCEPTED", "COMPLETED"].includes(
+                          order.status,
+                        )}
+                        paymentUrl={`/finance/transactions?action=payment&counterpartyId=${order.counterpartyId || ""}&amount=${order.amount}`}
+                        copyUrl={`/orders/create?copyFrom=${order.id}`}
+                        onToggleStatus={() => {
+                          if (onStatusChange) {
+                            onStatusChange(
+                              order.id,
+                              ["ACCEPTED", "COMPLETED"].includes(order.status)
+                                ? OrderStatus.NEW
+                                : OrderStatus.ACCEPTED,
+                            );
+                          }
+                        }}
+                        onDelete={() => onDelete && onDelete(order)}
+                      />
                     </div>
                   </td>
                 </tr>

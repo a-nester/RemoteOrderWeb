@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 import { FinanceService } from "../../services/finance.service";
 import type {
   CashTransaction,
@@ -24,6 +25,7 @@ export default function CashTransactions() {
   const [categories, setCategories] = useState<TransactionCategory[]>([]);
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   // Form State
@@ -62,7 +64,25 @@ export default function CashTransactions() {
       setCashboxes(cbRes);
       setCategories(catRes);
       setCounterparties(cpRes);
-      if (cbRes.length > 0) setForm((f) => ({ ...f, cashboxId: cbRes[0].id }));
+
+      const isPayment = searchParams.get("action") === "payment";
+      const initialCashboxId = cbRes.length > 0 ? cbRes[0].id : "";
+
+      setForm((f) => ({
+        ...f,
+        cashboxId: initialCashboxId,
+        ...(isPayment
+          ? {
+              type: "INCOME",
+              counterpartyId: searchParams.get("counterpartyId") || "",
+              amount: searchParams.get("amount") || "",
+            }
+          : {}),
+      }));
+
+      if (isPayment) {
+        setIsFormOpen(true);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {

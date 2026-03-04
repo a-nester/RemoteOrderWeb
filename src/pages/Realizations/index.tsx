@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { RealizationService } from "../../services/realization.service";
 import type { Realization } from "../../types/realization";
+import DocumentActionsDropdown from "../../components/DocumentActionsDropdown";
 
 export default function RealizationList() {
   const { t } = useTranslation();
@@ -79,6 +80,20 @@ export default function RealizationList() {
     } catch (error) {
       console.error(error);
       alert(t("common.error", "Failed to delete"));
+    }
+  };
+
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
+    try {
+      if (currentStatus === "POSTED") {
+        await RealizationService.unpostRealization(id);
+      } else {
+        await RealizationService.postRealization(id);
+      }
+      loadData();
+    } catch (error) {
+      console.error("Error toggling status", error);
+      alert(t("common.error", "Failed to change status"));
     }
   };
 
@@ -232,30 +247,26 @@ export default function RealizationList() {
                     {Number(item.amount).toFixed(2)} {item.currency}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end space-x-3">
+                    <div className="flex justify-end space-x-3 items-center">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           navigate(`/realizations/${item.id}`);
                         }}
-                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2"
                       >
                         <Eye size={18} />
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(item.id, item.status);
-                        }}
-                        disabled={item.status === "POSTED"}
-                        className={
-                          item.status === "POSTED"
-                            ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
-                            : "text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+
+                      <DocumentActionsDropdown
+                        isPosted={item.status === "POSTED"}
+                        paymentUrl={`/finance/transactions?action=payment&counterpartyId=${item.counterpartyId || ""}&amount=${item.amount}`}
+                        copyUrl={`/realizations/create?copyFrom=${item.id}`}
+                        onToggleStatus={() =>
+                          handleToggleStatus(item.id, item.status)
                         }
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                        onDelete={() => handleDelete(item.id, item.status)}
+                      />
                     </div>
                   </td>
                 </tr>
