@@ -9,6 +9,7 @@ export type User = {
     email: string;
     role: Role;
     warehouseId?: string;
+    preferences?: any;
 };
 
 type AuthState = {
@@ -17,6 +18,7 @@ type AuthState = {
     isAuthenticated: boolean;
     login: (email: string, password: string) => Promise<boolean>;
     logout: () => void;
+    setPreferences: (prefs: any) => void;
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -47,6 +49,12 @@ export const useAuthStore = create<AuthState>()(
 
             logout: () => {
                 set({ user: null, token: null, isAuthenticated: false });
+            },
+
+            setPreferences: (prefs) => {
+                set((state) => ({
+                    user: state.user ? { ...state.user, preferences: prefs } : null
+                }));
             },
         }),
         {

@@ -33,5 +33,15 @@ export const AuthService = {
             console.error("Login error", error);
             return { success: false, error: error.response?.data?.error || error.message };
         }
+    },
+
+    async updatePreferences(preferences: any): Promise<boolean> {
+        try {
+            await axios.put(`${API_URL}/admin/users/me/preferences`, { preferences }, { headers: getAuthHeader() });
+            return true;
+        } catch (error) {
+            console.error("Failed to update preferences", error);
+            return false;
+        }
     }
 };

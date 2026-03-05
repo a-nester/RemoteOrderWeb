@@ -6,6 +6,8 @@ import { Edit, Eye, ArrowUp, ArrowDown } from "lucide-react";
 import DocumentActionsDropdown from "../../components/DocumentActionsDropdown";
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useAuthStore } from "../../store/auth.store";
+import { AuthService } from "../../services/auth.service";
 
 interface OrderListProps {
   orders: Order[];
@@ -45,7 +47,20 @@ const OrderList: React.FC<OrderListProps> = ({
       return () => clearTimeout(timer);
     }
   }, [highlightId, orders]); // add orders to guarantee it triggers after render if data arrives late
-  const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("asc");
+
+  const { user, setPreferences } = useAuthStore();
+  const defaultSort = user?.preferences?.orderSort || "desc"; // Match initial requirement descending
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(defaultSort);
+
+  const toggleSort = async () => {
+    const newSort = sortOrder === "asc" ? "desc" : "asc";
+    setSortOrder(newSort);
+
+    // Save to server
+    const newPrefs = { ...user?.preferences, orderSort: newSort };
+    setPreferences(newPrefs);
+    await AuthService.updatePreferences(newPrefs);
+  };
 
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
@@ -66,12 +81,10 @@ const OrderList: React.FC<OrderListProps> = ({
         <thead className="bg-gray-50 dark:bg-gray-900">
           <tr>
             <th
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-              onClick={() =>
-                setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
-              }
+              className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              onClick={toggleSort}
             >
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 {t("common.date", "Date")}
                 {sortOrder === "asc" ? (
                   <ArrowDown size={14} />
