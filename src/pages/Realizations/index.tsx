@@ -48,7 +48,7 @@ export default function RealizationList() {
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
         }
-      }, 100);
+      }, 300);
 
       const timer = setTimeout(() => {
         setHighlightId(null);
@@ -56,7 +56,7 @@ export default function RealizationList() {
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [highlightId]);
+  }, [highlightId, realizations]); // add realizations to dependency so it triggers after data load
 
   useEffect(() => {
     localStorage.setItem("realization_startDate", startDate);

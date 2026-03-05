@@ -35,7 +35,7 @@ const OrderList: React.FC<OrderListProps> = ({
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "center" });
         }
-      }, 100);
+      }, 300);
 
       const timer = setTimeout(() => {
         setHighlightId(null);
@@ -44,7 +44,7 @@ const OrderList: React.FC<OrderListProps> = ({
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [highlightId]);
+  }, [highlightId, orders]); // add orders to guarantee it triggers after render if data arrives late
   const [sortOrder, setSortOrder] = React.useState<"asc" | "desc">("asc");
 
   const getStatusColor = (status: OrderStatus) => {
