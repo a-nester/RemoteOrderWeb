@@ -267,26 +267,26 @@ export default function RealizationList() {
                         : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
                     }`}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                       {item.number}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {new Date(item.date).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {item.counterpartyName || "-"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-2 whitespace-nowrap">
                       <span
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(item.status)}`}
                       >
                         {t(`status.${item.status}`, item.status)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-white">
+                    <td className="px-6 py-2 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-white">
                       {Number(item.amount).toFixed(2)} {item.currency}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-2 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-3 items-center">
                         <button
                           onClick={(e) => {
@@ -332,7 +332,7 @@ export default function RealizationList() {
           <div
             key={item.id}
             onClick={() => navigate(`/realizations/${item.id}`)}
-            className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 space-y-2 cursor-pointer hover:shadow-md transition-shadow"
+            className="bg-white dark:bg-gray-800 shadow rounded-lg p-3 space-y-1 cursor-pointer hover:shadow-md transition-shadow"
           >
             <div className="flex justify-between items-start">
               <div>
