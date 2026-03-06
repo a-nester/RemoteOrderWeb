@@ -81,7 +81,7 @@ const OrderList: React.FC<OrderListProps> = ({
         <thead className="bg-gray-50 dark:bg-gray-900">
           <tr>
             <th
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               onClick={toggleSort}
             >
               <div className="flex items-center gap-2">
@@ -93,19 +93,19 @@ const OrderList: React.FC<OrderListProps> = ({
                 )}
               </div>
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               {t("common.number", "Номер")}
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               {t("menu.counterparties", "Counterparties")}
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               {t("common.sum", "Sum")}
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               {t("common.status", "Status")}
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-6 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               {t("common.actions", "Actions")}
             </th>
           </tr>
@@ -140,20 +140,20 @@ const OrderList: React.FC<OrderListProps> = ({
                         : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
                     }`}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {new Date(order.date).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
+                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
                       {order.docNumber || order.id.slice(0, 8)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {order.counterpartyName}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {order.amount.toFixed(2)} {order.currency}
                     </td>
                     <td
-                      className="px-6 py-4 whitespace-nowrap"
+                      className="px-6 py-1 whitespace-nowrap"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <select
@@ -181,7 +181,7 @@ const OrderList: React.FC<OrderListProps> = ({
                         ))}
                       </select>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-1 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">
                         {onView && (
                           <button

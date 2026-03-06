@@ -612,11 +612,9 @@ export default function OrderForm({
               </select>
             </div>
           )}
-        </div>
 
-        {/* Realization Settings (Warehouse) */}
-        {isRealization && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          {/* Realization Settings (Warehouse) */}
+          {isRealization && (
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t("common.warehouse", "Склад")}
@@ -637,8 +635,8 @@ export default function OrderForm({
                 ))}
               </select>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Items Section */}
         <div>

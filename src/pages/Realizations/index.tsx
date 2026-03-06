@@ -202,11 +202,11 @@ export default function RealizationList() {
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-900">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t("common.number", "Number")}
               </th>
               <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
                 onClick={toggleSort}
               >
                 <div className="flex items-center gap-1">
@@ -218,16 +218,16 @@ export default function RealizationList() {
                   )}
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t("menu.counterparties", "Counterparty")}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t("common.status", "Status")}
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t("common.amount", "Amount")}
               </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-6 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t("common.actions", "Actions")}
               </th>
             </tr>
@@ -267,26 +267,26 @@ export default function RealizationList() {
                         : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
                     }`}
                   >
-                    <td className="px-6 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    <td className="px-6 py-1 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                       {item.number}
                     </td>
-                    <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {new Date(item.date).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {item.counterpartyName || "-"}
                     </td>
-                    <td className="px-6 py-2 whitespace-nowrap">
+                    <td className="px-6 py-1 whitespace-nowrap">
                       <span
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(item.status)}`}
                       >
                         {t(`status.${item.status}`, item.status)}
                       </span>
                     </td>
-                    <td className="px-6 py-2 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-white">
+                    <td className="px-6 py-1 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-white">
                       {Number(item.amount).toFixed(2)} {item.currency}
                     </td>
-                    <td className="px-6 py-2 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-1 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-3 items-center">
                         <button
                           onClick={(e) => {
