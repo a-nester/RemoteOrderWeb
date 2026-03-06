@@ -450,7 +450,13 @@ export default function OrderForm({
     );
 
   return (
-    <div className="max-w-4xl mx-auto p-0 sm:p-2 md:p-8 space-y-4 md:space-y-6">
+    <div
+      className={
+        isRealization
+          ? "w-[95%] max-w-none mx-auto p-2 sm:p-4 space-y-4"
+          : "max-w-4xl mx-auto p-0 sm:p-2 md:p-8 space-y-4 md:space-y-6"
+      }
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 sm:px-0 mt-4 sm:mt-0">
         <div className="flex items-center">
@@ -490,7 +496,13 @@ export default function OrderForm({
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow rounded-none sm:rounded-lg p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6 border-y sm:border-y-0 border-gray-200 dark:border-gray-700">
+      <div
+        className={
+          isRealization
+            ? "bg-white dark:bg-gray-800 shadow rounded-none sm:rounded-lg p-3 sm:p-4 space-y-4 border-y sm:border-y-0 border-gray-200 dark:border-gray-700"
+            : "bg-white dark:bg-gray-800 shadow rounded-none sm:rounded-lg p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6 border-y sm:border-y-0 border-gray-200 dark:border-gray-700"
+        }
+      >
         {/* Top Form: Client, Date, Status */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           {/* Client */}
@@ -581,23 +593,25 @@ export default function OrderForm({
           </div>
 
           {/* Status */}
-          <div className="flex flex-col flex-1 pl-4 md:pl-0 sm:pr-4 md:pr-0 border-l border-gray-200 dark:border-gray-700 md:border-none min-w-[120px]">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ml-2">
-              {t("common.status", "Status")}
-            </label>
-            <select
-              title="status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as OrderStatus)}
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm pl-2 pr-6 py-2 appearance-none bg-transparent font-medium"
-            >
-              {Object.values(OrderStatus).map((s) => (
-                <option key={s} value={s}>
-                  {t(`status.${s}`, s)}
-                </option>
-              ))}
-            </select>
-          </div>
+          {!isRealization && (
+            <div className="flex flex-col flex-1 pl-4 md:pl-0 sm:pr-4 md:pr-0 border-l border-gray-200 dark:border-gray-700 md:border-none min-w-[120px]">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ml-2">
+                {t("common.status", "Status")}
+              </label>
+              <select
+                title="status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as OrderStatus)}
+                className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm pl-2 pr-6 py-2 appearance-none bg-transparent font-medium"
+              >
+                {Object.values(OrderStatus).map((s) => (
+                  <option key={s} value={s}>
+                    {t(`status.${s}`, s)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Realization Settings (Warehouse) */}
