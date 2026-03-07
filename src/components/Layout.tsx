@@ -290,7 +290,7 @@ export default function Layout({ children, title }: LayoutProps) {
                     }
                   >
                     <span className="w-5 mr-3"></span>
-                    Каса банку
+                    Каса
                   </NavLink>
                   <NavLink
                     to="/finance/cashboxes"
