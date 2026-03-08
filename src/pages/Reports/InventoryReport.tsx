@@ -144,7 +144,7 @@ export default function InventoryReport() {
   return (
     <div className="space-y-6">
       {/* Header Container matching Realizations Style */}
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center bg-white p-4 shadow rounded-lg sticky top-0 z-10 dark:bg-gray-800 gap-4">
+      <div className="flex flex-col xl:flex-col justify-between items-start xl:items-start bg-white p-4 shadow rounded-lg sticky top-0 z-10 dark:bg-gray-800 gap-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center whitespace-nowrap">
           <FileText className="mr-3 shrink-0" />
           Відомість по товарах
@@ -216,7 +216,7 @@ export default function InventoryReport() {
           <thead className="bg-gray-50 dark:bg-gray-900">
             <tr>
               <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="px-6 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
                 onClick={() => handleSort("productName")}
               >
                 <div className="flex items-center gap-1 ml-6">
