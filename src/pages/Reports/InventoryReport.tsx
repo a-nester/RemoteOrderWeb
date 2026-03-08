@@ -216,7 +216,7 @@ export default function InventoryReport() {
           <thead className="bg-gray-50 dark:bg-gray-900">
             <tr>
               <th
-                className="px-6 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 w-1/2 xl:w-3/5"
                 onClick={() => handleSort("productName")}
               >
                 <div className="flex items-center gap-1 ml-6">
@@ -230,11 +230,15 @@ export default function InventoryReport() {
                 </div>
               </th>
               <th
-                className="px-6 py-1 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 w-28"
                 onClick={() => handleSort("startBalance")}
               >
                 <div className="flex items-center justify-end gap-1">
-                  На початку періоду
+                  <span className="text-right leading-tight">
+                    На початку
+                    <br />
+                    періоду
+                  </span>
                   {sortField === "startBalance" &&
                     (sortOrder === "asc" ? (
                       <ArrowUp size={14} />
@@ -244,7 +248,7 @@ export default function InventoryReport() {
                 </div>
               </th>
               <th
-                className="px-6 py-1 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 w-24"
                 onClick={() => handleSort("incoming")}
               >
                 <div className="flex items-center justify-end gap-1">
@@ -258,7 +262,7 @@ export default function InventoryReport() {
                 </div>
               </th>
               <th
-                className="px-6 py-1 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 w-24"
                 onClick={() => handleSort("outgoing")}
               >
                 <div className="flex items-center justify-end gap-1">
@@ -272,11 +276,15 @@ export default function InventoryReport() {
                 </div>
               </th>
               <th
-                className="px-6 py-1 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 w-28"
                 onClick={() => handleSort("endBalance")}
               >
                 <div className="flex items-center justify-end gap-1">
-                  На кінець періоду
+                  <span className="text-right leading-tight">
+                    На кінець
+                    <br />
+                    періоду
+                  </span>
                   {sortField === "endBalance" &&
                     (sortOrder === "asc" ? (
                       <ArrowUp size={14} />
