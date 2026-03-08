@@ -1,11 +1,19 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, Fragment } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, FileText, ArrowDown, ArrowUp } from "lucide-react";
+import {
+  Search,
+  FileText,
+  ArrowDown,
+  ArrowUp,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
 import { ReportsService } from "../../services/reports.service";
 import type { InventoryMovement } from "../../services/reports.service";
 import { OrganizationService } from "../../services/organization.service";
 import { useAuthStore } from "../../store/auth.store";
 import { AuthService } from "../../services/auth.service";
+import { Link } from "react-router-dom";
 
 export default function InventoryReport() {
   const { t } = useTranslation();
@@ -18,6 +26,7 @@ export default function InventoryReport() {
   const [data, setData] = useState<InventoryMovement[]>([]);
   const [loading, setLoading] = useState(false);
   const [warehouses, setWarehouses] = useState<any[]>([]);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   // Filters
   const [warehouseId, setWarehouseId] = useState<string>(
@@ -76,6 +85,18 @@ export default function InventoryReport() {
       setSortField(field);
       setSortOrder("asc");
     }
+  };
+
+  const toggleRow = (productId: string) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(productId)) {
+        next.delete(productId);
+      } else {
+        next.add(productId);
+      }
+      return next;
+    });
   };
 
   const filteredAndSortedData = useMemo(() => {
@@ -198,7 +219,7 @@ export default function InventoryReport() {
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
                 onClick={() => handleSort("productName")}
               >
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 ml-6">
                   Назва товару
                   {sortField === "productName" &&
                     (sortOrder === "asc" ? (
@@ -267,32 +288,104 @@ export default function InventoryReport() {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {filteredAndSortedData.map((row) => (
-              <tr
-                key={row.productId}
-                className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
-              >
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200 font-medium truncate max-w-xs xl:max-w-md">
-                  {row.productName}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300 text-right">
-                  {Number(row.startBalance).toFixed(3)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400 text-right">
-                  {Number(row.incoming) > 0
-                    ? `+${Number(row.incoming).toFixed(3)}`
-                    : "-"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400 text-right">
-                  {Number(row.outgoing) > 0
-                    ? `-${Number(row.outgoing).toFixed(3)}`
-                    : "-"}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white text-right">
-                  {Number(row.endBalance).toFixed(3)}
-                </td>
-              </tr>
-            ))}
+            {filteredAndSortedData.map((row) => {
+              const isExpanded = expandedRows.has(row.productId);
+              const hasDetails = row.details && row.details.length > 0;
+
+              return (
+                <Fragment key={row.productId}>
+                  <tr
+                    className={`hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors ${hasDetails ? "cursor-pointer" : ""}`}
+                    onClick={() => hasDetails && toggleRow(row.productId)}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200 font-medium truncate max-w-xs xl:max-w-md">
+                      <div className="flex items-center">
+                        {hasDetails ? (
+                          isExpanded ? (
+                            <ChevronDown className="h-4 w-4 mr-2 text-gray-500" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 mr-2 text-gray-500" />
+                          )
+                        ) : (
+                          <div className="w-6" /> // Placeholder spacing
+                        )}
+                        {row.productName}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300 text-right">
+                      {Number(row.startBalance).toFixed(3)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400 text-right">
+                      {Number(row.incoming) > 0
+                        ? `+${Number(row.incoming).toFixed(3)}`
+                        : "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400 text-right">
+                      {Number(row.outgoing) > 0
+                        ? `-${Number(row.outgoing).toFixed(3)}`
+                        : "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white text-right">
+                      {Number(row.endBalance).toFixed(3)}
+                    </td>
+                  </tr>
+
+                  {/* Expanded Details Sub-rows */}
+                  {isExpanded &&
+                    hasDetails &&
+                    row.details.map((detail, idx) => {
+                      const dt = new Date(detail.date);
+                      const dtStr =
+                        dt.toLocaleDateString("uk-UA") +
+                        " " +
+                        dt.toLocaleTimeString("uk-UA", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        });
+
+                      return (
+                        <tr
+                          key={`${row.productId}-detail-${idx}`}
+                          className="bg-gray-50 dark:bg-gray-700/50"
+                        >
+                          <td className="px-6 py-2 whitespace-nowrap text-sm pl-16">
+                            {detail.type === "GOODS_RECEIPT" && (
+                              <Link
+                                to={`/receipts/edit/${detail.id}`}
+                                className="text-indigo-600 dark:text-indigo-400 hover:underline"
+                              >
+                                Надходження №{detail.docNumber} від {dtStr}
+                              </Link>
+                            )}
+                            {detail.type === "REALIZATION" && (
+                              <Link
+                                to={`/realizations/${detail.id}`}
+                                className="text-indigo-600 dark:text-indigo-400 hover:underline"
+                              >
+                                Реалізація №{detail.docNumber} від {dtStr}
+                              </Link>
+                            )}
+                          </td>
+                          <td className="px-6 py-2 text-right"></td>{" "}
+                          {/* Empty Start Balance col */}
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-green-600 dark:text-green-400 text-right">
+                            {detail.type === "GOODS_RECEIPT"
+                              ? `+${Number(detail.quantity).toFixed(3)}`
+                              : ""}
+                          </td>
+                          <td className="px-6 py-2 whitespace-nowrap text-sm text-red-600 dark:text-red-400 text-right">
+                            {detail.type === "REALIZATION"
+                              ? `-${Number(detail.quantity).toFixed(3)}`
+                              : ""}
+                          </td>
+                          <td className="px-6 py-2 text-right"></td>{" "}
+                          {/* Empty End Balance col */}
+                        </tr>
+                      );
+                    })}
+                </Fragment>
+              );
+            })}
             {filteredAndSortedData.length === 0 && !loading && (
               <tr>
                 <td

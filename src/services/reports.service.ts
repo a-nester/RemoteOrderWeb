@@ -33,6 +33,14 @@ export interface SalesByProduct {
   totalProfit: string | number;
 }
 
+export interface InventoryMovementDetail {
+  id: string;
+  type: "GOODS_RECEIPT" | "REALIZATION";
+  docNumber: string;
+  date: string;
+  quantity: string | number;
+}
+
 export interface InventoryMovement {
   productId: string;
   productName: string;
@@ -42,6 +50,7 @@ export interface InventoryMovement {
   incoming: string | number;
   outgoing: string | number;
   endBalance: string | number;
+  details: InventoryMovementDetail[];
 }
 
 export const ReportsService = {
