@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, Fragment } from "react";
+import { useState, useEffect, useMemo, Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Search,
