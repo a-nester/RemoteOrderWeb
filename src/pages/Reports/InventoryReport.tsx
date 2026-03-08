@@ -230,7 +230,7 @@ export default function InventoryReport() {
                 </div>
               </th>
               <th
-                className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="px-6 py-1 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
                 onClick={() => handleSort("startBalance")}
               >
                 <div className="flex items-center justify-end gap-1">
@@ -244,7 +244,7 @@ export default function InventoryReport() {
                 </div>
               </th>
               <th
-                className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="px-6 py-1 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
                 onClick={() => handleSort("incoming")}
               >
                 <div className="flex items-center justify-end gap-1">
@@ -258,7 +258,7 @@ export default function InventoryReport() {
                 </div>
               </th>
               <th
-                className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="px-6 py-1 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
                 onClick={() => handleSort("outgoing")}
               >
                 <div className="flex items-center justify-end gap-1">
@@ -272,7 +272,7 @@ export default function InventoryReport() {
                 </div>
               </th>
               <th
-                className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="px-6 py-1 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
                 onClick={() => handleSort("endBalance")}
               >
                 <div className="flex items-center justify-end gap-1">
@@ -298,7 +298,7 @@ export default function InventoryReport() {
                     className={`hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors ${hasDetails ? "cursor-pointer" : ""}`}
                     onClick={() => hasDetails && toggleRow(row.productId)}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200 font-medium truncate max-w-xs xl:max-w-md">
+                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200 font-medium truncate max-w-xs xl:max-w-md">
                       <div className="flex items-center">
                         {hasDetails ? (
                           isExpanded ? (
@@ -312,20 +312,20 @@ export default function InventoryReport() {
                         {row.productName}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300 text-right">
+                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300 text-right">
                       {Number(row.startBalance).toFixed(3)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400 text-right">
+                    <td className="px-6 py-1 whitespace-nowrap text-sm text-green-600 dark:text-green-400 text-right">
                       {Number(row.incoming) > 0
                         ? `+${Number(row.incoming).toFixed(3)}`
                         : "-"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400 text-right">
+                    <td className="px-6 py-1 whitespace-nowrap text-sm text-red-600 dark:text-red-400 text-right">
                       {Number(row.outgoing) > 0
                         ? `-${Number(row.outgoing).toFixed(3)}`
                         : "-"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white text-right">
+                    <td className="px-6 py-1 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white text-right">
                       {Number(row.endBalance).toFixed(3)}
                     </td>
                   </tr>
