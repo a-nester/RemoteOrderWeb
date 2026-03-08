@@ -29,6 +29,7 @@ import StockBalancesReport from "./pages/Reports/StockBalances";
 import SalesReport from "./pages/Reports/SalesReport";
 import ReconciliationReport from "./pages/Reports/ReconciliationReport";
 import CashFlowReport from "./pages/Reports/CashFlowReport";
+import InventoryReport from "./pages/Reports/InventoryReport";
 import FinanceSettings from "./pages/Finance/Cashboxes";
 import CashTransactions from "./pages/Finance/CashTransactions";
 import "./i18n";
@@ -128,6 +129,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <StockBalancesReport />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports/inventory"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <InventoryReport />
                 </Layout>
               </ProtectedRoute>
             }

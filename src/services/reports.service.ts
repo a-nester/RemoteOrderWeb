@@ -33,6 +33,17 @@ export interface SalesByProduct {
   totalProfit: string | number;
 }
 
+export interface InventoryMovement {
+  productId: string;
+  productName: string;
+  productCategory: string | null;
+  warehouseName: string | null;
+  startBalance: string | number;
+  incoming: string | number;
+  outgoing: string | number;
+  endBalance: string | number;
+}
+
 export const ReportsService = {
   getStockBalances: async (date: string, warehouseId?: string, sortBy: string = 'category'): Promise<StockBalance[]> => {
     let url = `${API_URL}/reports/stock-balances?date=${encodeURIComponent(date)}&sortBy=${encodeURIComponent(sortBy)}`;
@@ -54,6 +65,14 @@ export const ReportsService = {
   getSalesByProduct: async (dateFrom?: string, dateTo?: string, counterparty?: string): Promise<SalesByProduct[]> => {
       const response = await axios.get(`${API_URL}/reports/sales/by-product`, {
           params: { dateFrom, dateTo, counterparty },
+          headers: getAuthHeader()
+      });
+      return response.data;
+  },
+
+  getInventoryMovement: async (dateFrom: string, dateTo: string, warehouseId: string, sortBy: string = 'category'): Promise<InventoryMovement[]> => {
+      const response = await axios.get(`${API_URL}/reports/inventory-movement`, {
+          params: { dateFrom, dateTo, warehouseId, sortBy },
           headers: getAuthHeader()
       });
       return response.data;
