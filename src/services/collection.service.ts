@@ -5,7 +5,7 @@ import { API_URL } from "../constants/api";
 export interface CollectionItem {
   id: number;
   date: string;
-  client_id: number;
+  client_id: string;
   client_name: string;
   status: "planned" | "in_progress" | "done";
   order_count?: number;
@@ -43,7 +43,7 @@ class CollectionService {
     return response.data;
   }
 
-  async addScheduleItem(date: string, clientId: number): Promise<CollectionItem> {
+  async addScheduleItem(date: string, clientId: string): Promise<CollectionItem> {
     const response = await axios.post(
       `${API_URL}/collection-schedule`,
       { date, clientId },

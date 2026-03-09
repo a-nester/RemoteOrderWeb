@@ -6,7 +6,7 @@ import { X, Search } from "lucide-react";
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (clientId: number, dateStr: string) => void;
+  onAdd: (clientId: string, dateStr: string) => void;
   preselectedDate: string;
 }
 
@@ -18,7 +18,7 @@ export default function AddClientModal({
 }: Props) {
   const [clients, setClients] = useState<Counterparty[]>([]);
   const [search, setSearch] = useState("");
-  const [selectedClient, setSelectedClient] = useState<number | "">("");
+  const [selectedClient, setSelectedClient] = useState<string>("");
   const [dateStr, setDateStr] = useState(preselectedDate);
   const [loading, setLoading] = useState(false);
 
@@ -48,7 +48,7 @@ export default function AddClientModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedClient && dateStr) {
-      onAdd(Number(selectedClient), dateStr);
+      onAdd(selectedClient, dateStr);
       setSelectedClient("");
       setSearch("");
     }
@@ -132,7 +132,7 @@ export default function AddClientModal({
                   <select
                     required
                     value={selectedClient}
-                    onChange={(e) => setSelectedClient(Number(e.target.value))}
+                    onChange={(e) => setSelectedClient(e.target.value)}
                     size={5}
                     className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white sm:text-sm p-2 border bg-transparent"
                   >

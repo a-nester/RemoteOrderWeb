@@ -192,7 +192,10 @@ export default function CollectionPlanner() {
                   date={date}
                   dateStr={dateStr}
                   items={dayItems}
-                  onStatusChange={(id, status) => {
+                  onStatusChange={(
+                    id: number,
+                    status: CollectionItem["status"],
+                  ) => {
                     collectionService
                       .updateStatus(id, status)
                       .catch(console.error);
@@ -202,7 +205,7 @@ export default function CollectionPlanner() {
                       ),
                     );
                   }}
-                  onDelete={(id) => {
+                  onDelete={(id: number) => {
                     if (window.confirm("Remove client from this day?")) {
                       collectionService
                         .deleteScheduleItem(id)
@@ -224,7 +227,7 @@ export default function CollectionPlanner() {
       <AddClientModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onAdd={async (clientId, dateStr) => {
+        onAdd={async (clientId: string, dateStr: string) => {
           try {
             const newItem = await collectionService.addScheduleItem(
               dateStr,
