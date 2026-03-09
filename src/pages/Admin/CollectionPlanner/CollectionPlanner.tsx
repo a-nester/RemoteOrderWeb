@@ -23,6 +23,9 @@ import PlannerToolbar from "./PlannerToolbar";
 import DayColumn from "./DayColumn";
 import ClientCard from "./ClientCard";
 import AddClientModal from "./AddClientModal";
+import ClientInfoModal from "./ClientInfoModal";
+import type { Counterparty } from "../../../types/counterparty";
+import { CounterpartyService } from "../../../services/counterparty.service";
 import { useTranslation } from "react-i18next";
 
 export default function CollectionPlanner() {
@@ -30,6 +33,9 @@ export default function CollectionPlanner() {
   const [items, setItems] = useState<CollectionItem[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [infoModalClient, setInfoModalClient] = useState<Counterparty | null>(
+    null,
+  );
 
   const weekDays = [
     { id: 1, label: t("planner.days.1") },
@@ -58,6 +64,16 @@ export default function CollectionPlanner() {
       setItems(data);
     } catch (error) {
       console.error("Failed to fetch schedule", error);
+    }
+  };
+
+  const handleClientClick = async (clientId: string) => {
+    try {
+      const clients = await CounterpartyService.getAll();
+      const client = clients.find((c) => c.id === clientId);
+      if (client) setInfoModalClient(client);
+    } catch (error) {
+      console.error("Failed to fetch client info", error);
     }
   };
 
@@ -169,6 +185,7 @@ export default function CollectionPlanner() {
                   dayOfWeek={day.id}
                   dayLabel={day.label}
                   items={dayItems}
+                  onClientClick={handleClientClick}
                   onStatusChange={(
                     id: number,
                     status: CollectionItem["status"],
@@ -218,6 +235,12 @@ export default function CollectionPlanner() {
           }
         }}
         preselectedDay={1}
+      />
+
+      <ClientInfoModal
+        isOpen={!!infoModalClient}
+        onClose={() => setInfoModalClient(null)}
+        client={infoModalClient}
       />
     </div>
   );

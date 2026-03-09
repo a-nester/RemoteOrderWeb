@@ -14,6 +14,7 @@ interface Props {
   dayLabel: string;
   items: CollectionItem[];
   onStatusChange: (id: number, status: CollectionItem["status"]) => void;
+  onClientClick: (clientId: string) => void;
   onDelete: (id: number) => void;
 }
 
@@ -22,6 +23,7 @@ export default function DayColumn({
   dayLabel,
   items,
   onStatusChange,
+  onClientClick,
   onDelete,
 }: Props) {
   const { t } = useTranslation();
@@ -90,6 +92,7 @@ export default function DayColumn({
               onStatusChange={(status: CollectionItem["status"]) =>
                 onStatusChange(item.id, status)
               }
+              onClick={() => onClientClick(item.client_id)}
               onDelete={() => onDelete(item.id)}
             />
           ))}

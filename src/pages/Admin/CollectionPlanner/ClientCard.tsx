@@ -14,6 +14,7 @@ interface Props {
   item: CollectionItem;
   isOverlay?: boolean;
   onStatusChange?: (status: CollectionItem["status"]) => void;
+  onClick?: () => void;
   onDelete?: () => void;
 }
 
@@ -21,6 +22,7 @@ export default function ClientCard({
   item,
   isOverlay,
   onStatusChange,
+  onClick,
   onDelete,
 }: Props) {
   const { t } = useTranslation();
@@ -75,11 +77,20 @@ export default function ClientCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative group bg-white dark:bg-gray-800 border ${isOverlay ? "border-indigo-500 shadow-xl scale-105" : "border-gray-200 dark:border-gray-700 shadow-sm"} rounded p-2 flex items-center gap-2 transition-shadow hover:shadow-md cursor-grab active:cursor-grabbing w-full`}
-      {...attributes}
-      {...listeners}
+      className={`relative group bg-white dark:bg-gray-800 border ${isOverlay ? "border-indigo-500 shadow-xl scale-105" : "border-gray-200 dark:border-gray-700 shadow-sm"} rounded p-2 flex items-center gap-2 transition-shadow hover:shadow-md cursor-pointer w-full group-hover:border-indigo-300 dark:group-hover:border-indigo-700`}
+      onClick={onClick}
     >
-      <GripVertical size={16} className="text-gray-400 shrink-0" />
+      <div
+        {...attributes}
+        {...listeners}
+        className="text-gray-400 shrink-0 cursor-grab active:cursor-grabbing p-1 -ml-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded touch-none"
+        onClick={(e) => {
+          // Prevent the drag handle click from opening the modal
+          e.stopPropagation();
+        }}
+      >
+        <GripVertical size={16} />
+      </div>
 
       <h4
         className="flex-1 text-sm font-semibold text-gray-900 dark:text-white truncate"
@@ -97,7 +108,10 @@ export default function ClientCard({
         </div>
 
         <button
-          onClick={handleStatusCycle}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (handleStatusCycle) handleStatusCycle(e);
+          }}
           className={`flex items-center p-1 rounded border cursor-pointer hover:opacity-80 transition-opacity ${getStatusColor(item.status)}`}
           title={t(`planner.status.${item.status}`)}
         >
