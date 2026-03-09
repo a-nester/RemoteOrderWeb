@@ -92,22 +92,20 @@ export default function Layout({ children, title }: LayoutProps) {
           </button>
         </div>
         <nav className="flex-1 overflow-y-auto mt-6 px-4 space-y-2 pb-4">
-          {user?.role === "admin" && (
-            <NavLink
-              to="/dashboard"
-              className={({ isActive }) =>
-                clsx(
-                  "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                  isActive
-                    ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                )
-              }
-            >
-              <LayoutDashboard className="mr-3 h-5 w-5" />
-              {t("menu.dashboard")}
-            </NavLink>
-          )}
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) =>
+              clsx(
+                "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                isActive
+                  ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+              )
+            }
+          >
+            <LayoutDashboard className="mr-3 h-5 w-5" />
+            {t("menu.dashboard")}
+          </NavLink>
 
           <NavLink
             to="/products"
