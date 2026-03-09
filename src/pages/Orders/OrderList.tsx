@@ -94,7 +94,7 @@ const OrderList: React.FC<OrderListProps> = ({
               </div>
             </th>
             <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              {t("common.number", "Номер")}
+              {t("common.status", "Status")}
             </th>
             <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               {t("menu.counterparties", "Counterparties")}
@@ -103,7 +103,7 @@ const OrderList: React.FC<OrderListProps> = ({
               {t("common.sum", "Sum")}
             </th>
             <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              {t("common.status", "Status")}
+              {t("common.number", "Номер")}
             </th>
             <th className="px-6 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               {t("common.actions", "Actions")}
@@ -143,15 +143,6 @@ const OrderList: React.FC<OrderListProps> = ({
                     <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {new Date(order.date).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
-                      {order.docNumber || order.id.slice(0, 8)}
-                    </td>
-                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {order.counterpartyName}
-                    </td>
-                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {order.amount.toFixed(2)} {order.currency}
-                    </td>
                     <td
                       className="px-6 py-1 whitespace-nowrap"
                       onClick={(e) => e.stopPropagation()}
@@ -166,7 +157,7 @@ const OrderList: React.FC<OrderListProps> = ({
                           )
                         }
                         disabled={!onStatusChange}
-                        className={`px-2 py-1 text-xs leading-5 font-semibold rounded-full border outline-none appearance-none cursor-pointer pr-6 ${getStatusColor(order.status)}`}
+                        className={`px-2 py-1 text-xs leading-5 font-semibold rounded-full border outline-none appearance-none cursor-pointer pr-6 w-[100px] md:w-auto truncate ${getStatusColor(order.status)}`}
                         style={{
                           backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
                           backgroundPosition: "right 0.25rem center",
@@ -180,6 +171,15 @@ const OrderList: React.FC<OrderListProps> = ({
                           </option>
                         ))}
                       </select>
+                    </td>
+                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {order.counterpartyName}
+                    </td>
+                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                      {order.amount.toFixed(2)} {order.currency}
+                    </td>
+                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
+                      {order.docNumber || order.id.slice(0, 8)}
                     </td>
                     <td className="px-6 py-1 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">

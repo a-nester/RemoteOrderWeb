@@ -77,12 +77,21 @@ export default function Orders() {
   };
 
   const handleStatusChange = async (id: string, status: string) => {
+    // Optimistic update to prevent full list render flickering
+    const previousOrders = [...orders];
+    setOrders((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, status: status as any } : o)),
+    );
+
     try {
       await OrderService.updateOrder(id, { status: status as any });
-      loadOrders();
+      // Optionally sync quietly in background
+      const filter: OrderFilter = { startDate, endDate, search: searchTerm };
+      OrderService.getOrders(filter).then(setOrders).catch(console.error);
     } catch (error) {
       console.error("Failed to update status", error);
       alert(t("common.error", "An error occurred"));
+      setOrders(previousOrders); // Rollback on error
     }
   };
 
@@ -102,23 +111,6 @@ export default function Orders() {
         </h1>
 
         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-          {/* Date Filters */}
-          <div className="flex gap-2 items-center">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
-            />
-            <span className="text-gray-500">-</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
-            />
-          </div>
-
           {/* Search Input */}
           <div className="relative flex-1 md:w-64">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -133,10 +125,27 @@ export default function Orders() {
             />
           </div>
 
+          {/* Date Filters */}
+          <div className="flex gap-2 items-center">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 h-[42px]"
+            />
+            <span className="text-gray-500">-</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 h-[42px]"
+            />
+          </div>
+
           {/* Create Button */}
           <button
             onClick={handleCreateOrder}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 whitespace-nowrap h-[42px]"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap h-[42px]"
           >
             <Plus size={18} />
             {t("order.create", "New Order")}
