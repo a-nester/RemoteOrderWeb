@@ -115,7 +115,7 @@ const OrderList: React.FC<OrderListProps> = ({
             <tr>
               <td
                 colSpan={6}
-                className="px-6 py-4 text-center text-gray-500 dark:text-gray-400"
+                className="px-2 py-4 text-center text-gray-500 dark:text-gray-400"
               >
                 {t("common.noData", "No orders found")}
               </td>
@@ -140,11 +140,11 @@ const OrderList: React.FC<OrderListProps> = ({
                         : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
                     }`}
                   >
-                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {new Date(order.date).toLocaleDateString()}
                     </td>
                     <td
-                      className="px-6 py-1 whitespace-nowrap"
+                      className="px-2 py-1 whitespace-nowrap"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <select
@@ -172,16 +172,16 @@ const OrderList: React.FC<OrderListProps> = ({
                         ))}
                       </select>
                     </td>
-                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {order.counterpartyName}
                     </td>
-                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {order.amount.toFixed(2)} {order.currency}
                     </td>
-                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
+                    <td className="px-2 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white font-medium">
                       {order.docNumber || order.id.slice(0, 8)}
                     </td>
-                    <td className="px-6 py-1 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-2 py-1 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">
                         {onView && (
                           <button
