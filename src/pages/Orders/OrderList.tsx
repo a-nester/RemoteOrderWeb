@@ -81,7 +81,7 @@ const OrderList: React.FC<OrderListProps> = ({
         <thead className="bg-gray-50 dark:bg-gray-900">
           <tr>
             <th
-              className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               onClick={toggleSort}
             >
               <div className="flex items-center gap-2">
@@ -93,10 +93,10 @@ const OrderList: React.FC<OrderListProps> = ({
                 )}
               </div>
             </th>
-            <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               {t("common.status", "Status")}
             </th>
-            <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               {t("menu.counterparties", "Counterparties")}
             </th>
             <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
