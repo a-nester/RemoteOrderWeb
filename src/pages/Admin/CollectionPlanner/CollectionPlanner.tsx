@@ -24,31 +24,20 @@ import DayColumn from "./DayColumn";
 import ClientCard from "./ClientCard";
 import AddClientModal from "./AddClientModal";
 
-// Helper to get Monday of the current week
-const getStartOfWeek = (date: Date) => {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-  d.setDate(diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
-};
-
-// Helper to format Date to YYYY-MM-DD
-const formatDate = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
 export default function CollectionPlanner() {
-  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(
-    getStartOfWeek(new Date()),
-  );
   const [items, setItems] = useState<CollectionItem[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const weekDays = [
+    { id: 1, label: "Monday" },
+    { id: 2, label: "Tuesday" },
+    { id: 3, label: "Wednesday" },
+    { id: 4, label: "Thursday" },
+    { id: 5, label: "Friday" },
+    { id: 6, label: "Saturday" },
+    { id: 7, label: "Sunday" },
+  ];
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -61,17 +50,9 @@ export default function CollectionPlanner() {
     }),
   );
 
-  const weekDays = Array.from({ length: 7 }).map((_, i) => {
-    const d = new Date(currentWeekStart);
-    d.setDate(d.getDate() + i);
-    return d;
-  });
-
   const fetchSchedule = async () => {
     try {
-      const fromStr = formatDate(weekDays[0]);
-      const toStr = formatDate(weekDays[6]);
-      const data = await collectionService.getSchedule(fromStr, toStr);
+      const data = await collectionService.getSchedule();
       setItems(data);
     } catch (error) {
       console.error("Failed to fetch schedule", error);
@@ -80,8 +61,7 @@ export default function CollectionPlanner() {
 
   useEffect(() => {
     fetchSchedule();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentWeekStart]);
+  }, []);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as number);
@@ -109,9 +89,9 @@ export default function CollectionPlanner() {
         const activeIndex = prev.findIndex((t) => t.id === activeId);
         const overIndex = prev.findIndex((t) => t.id === overId);
 
-        if (prev[activeIndex].date !== prev[overIndex].date) {
+        if (prev[activeIndex].dayOfWeek !== prev[overIndex].dayOfWeek) {
           const newItems = [...prev];
-          newItems[activeIndex].date = prev[overIndex].date;
+          newItems[activeIndex].dayOfWeek = prev[overIndex].dayOfWeek;
           return arrayMove(newItems, activeIndex, overIndex);
         }
 
@@ -123,11 +103,11 @@ export default function CollectionPlanner() {
     if (isActiveTask && isOverColumn) {
       setItems((prev) => {
         const activeIndex = prev.findIndex((t) => t.id === activeId);
-        const newDate = (overId as string).replace("day-", "");
+        const newDay = parseInt((overId as string).replace("day-", ""));
 
-        if (prev[activeIndex].date !== newDate) {
+        if (prev[activeIndex].dayOfWeek !== newDay) {
           const newItems = [...prev];
-          newItems[activeIndex].date = newDate;
+          newItems[activeIndex].dayOfWeek = newDay;
           return newItems;
         }
         return prev;
@@ -143,21 +123,21 @@ export default function CollectionPlanner() {
     const activeItem = items.find((i) => i.id === active.id);
     const overId = over.id;
 
-    let targetDate = activeItem?.date;
+    let targetDay = activeItem?.dayOfWeek;
 
     if (typeof overId === "string" && overId.startsWith("day-")) {
-      targetDate = overId.replace("day-", "");
+      targetDay = parseInt(overId.replace("day-", ""));
     } else {
       const overItem = items.find((i) => i.id === overId);
-      if (overItem) targetDate = overItem.date;
+      if (overItem) targetDay = overItem.dayOfWeek;
     }
 
-    if (activeItem && targetDate && activeItem.date !== targetDate) {
+    if (activeItem && targetDay && activeItem.dayOfWeek !== targetDay) {
       try {
-        await collectionService.updateDate(activeItem.id, targetDate);
+        await collectionService.updateDay(activeItem.id, targetDay);
         // Date is already optimistically updated in handleDragOver
       } catch (error) {
-        console.error("Failed to update date on server", error);
+        console.error("Failed to update day on server", error);
         fetchSchedule(); // Revert on failure
       }
     }
@@ -167,11 +147,7 @@ export default function CollectionPlanner() {
 
   return (
     <div className="flex flex-col h-full space-y-4">
-      <PlannerToolbar
-        currentWeekStart={currentWeekStart}
-        onWeekChange={setCurrentWeekStart}
-        onAddClient={() => setIsModalOpen(true)}
-      />
+      <PlannerToolbar onAddClient={() => setIsModalOpen(true)} />
 
       <div className="flex-1 overflow-x-auto pb-4">
         <DndContext
@@ -182,15 +158,14 @@ export default function CollectionPlanner() {
           onDragEnd={handleDragEnd}
         >
           <div className="flex gap-4 h-full min-h-[500px]">
-            {weekDays.map((date) => {
-              const dateStr = formatDate(date);
-              const dayItems = items.filter((i) => i.date === dateStr);
+            {weekDays.map((day) => {
+              const dayItems = items.filter((i) => i.dayOfWeek === day.id);
 
               return (
                 <DayColumn
-                  key={dateStr}
-                  date={date}
-                  dateStr={dateStr}
+                  key={day.id}
+                  dayOfWeek={day.id}
+                  dayLabel={day.label}
                   items={dayItems}
                   onStatusChange={(
                     id: number,
@@ -227,10 +202,10 @@ export default function CollectionPlanner() {
       <AddClientModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onAdd={async (clientId: string, dateStr: string) => {
+        onAdd={async (clientId: string, dayOfWeek: number) => {
           try {
             const newItem = await collectionService.addScheduleItem(
-              dateStr,
+              dayOfWeek,
               clientId,
             );
             setItems((prev) => [...prev, newItem]);
@@ -240,7 +215,7 @@ export default function CollectionPlanner() {
             alert("Failed to assign client");
           }
         }}
-        preselectedDate={formatDate(new Date())}
+        preselectedDay={1}
       />
     </div>
   );

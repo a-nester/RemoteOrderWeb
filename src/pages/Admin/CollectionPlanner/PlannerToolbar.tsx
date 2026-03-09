@@ -1,85 +1,63 @@
-import { ChevronLeft, ChevronRight, Download, Plus } from "lucide-react";
+import { Download, Plus } from "lucide-react";
 import { collectionService } from "../../../services/collection.service";
 
 interface Props {
-  currentWeekStart: Date;
-  onWeekChange: (date: Date) => void;
   onAddClient: () => void;
 }
 
-export default function PlannerToolbar({
-  currentWeekStart,
-  onWeekChange,
-  onAddClient,
-}: Props) {
-  const handlePrevWeek = () => {
-    const d = new Date(currentWeekStart);
-    d.setDate(d.getDate() - 7);
-    onWeekChange(d);
-  };
-
-  const handleNextWeek = () => {
-    const d = new Date(currentWeekStart);
-    d.setDate(d.getDate() + 7);
-    onWeekChange(d);
-  };
-
-  const handleToday = () => {
-    const d = new Date();
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    d.setDate(diff);
-    d.setHours(0, 0, 0, 0);
-    onWeekChange(d);
-  };
-
-  const weekEnd = new Date(currentWeekStart);
-  weekEnd.setDate(weekEnd.getDate() + 6);
-
-  const formatDateLabel = (date: Date) => {
-    return date.toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-    });
-  };
-
+export default function PlannerToolbar({ onAddClient }: Props) {
   const generatePickingList = async () => {
     // A simple interactive prompt to pick which day, defaulting to today
-    const todayStr = new Date().toISOString().split("T")[0];
-    const targetDate = window.prompt(
-      "Enter date for picking list (YYYY-MM-DD):",
-      todayStr,
+    let d = new Date().getDay();
+    if (d === 0) d = 7; // Convert Sunday 0 -> 7
+    const targetDay = parseInt(
+      window.prompt(
+        "Enter day of week for picking list (1 = Mon, 7 = Sun):",
+        d.toString(),
+      ) || "",
     );
 
-    if (!targetDate) return;
+    if (!targetDay || isNaN(targetDay) || targetDay < 1 || targetDay > 7) {
+      if (targetDay) alert("Invalid day of week. Please enter 1-7.");
+      return;
+    }
 
     try {
-      const items = await collectionService.getPickingList(targetDate);
+      const items = await collectionService.getPickingList(targetDay);
       if (items.length === 0) {
-        alert("No items scheduled for picking on this date.");
+        alert("No items scheduled for picking on this day.");
         return;
       }
 
-      // Open in a new window to print
+      // 1. Generate Print Layout
+      const dayNames = [
+        "",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+      ];
       const printWindow = window.open("", "_blank");
       if (printWindow) {
         const html = `
           <html>
             <head>
-              <title>Picking List - ${targetDate}</title>
+              <title>Picking List - ${dayNames[targetDay]}</title>
               <style>
                 body { font-family: sans-serif; padding: 20px; }
+                h1 { font-size: 24px; margin-bottom: 20px; }
                 table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-                th { background-color: #f3f4f6; }
-                .header { display: flex; justify-content: space-between; align-items: center; }
+                th, td { border: 1px solid #ddd; padding: 12px 8px; text-align: left; }
+                th { background-color: #f5f5f5; font-weight: bold; }
+                .qty { font-weight: bold; font-size: 1.1em; text-align: center; }
               </style>
             </head>
             <body>
-              <div class="header">
-                <h2>Picking List</h2>
-                <h3>Date: ${targetDate}</h3>
-              </div>
+              <h1>Warehouse Picking List: ${dayNames[targetDay]}</h1>
+              <p>Generated: ${new Date().toLocaleString()}</p>
               <table>
                 <thead>
                   <tr>
@@ -95,7 +73,7 @@ export default function PlannerToolbar({
                     <tr>
                       <td>${item.product_name}</td>
                       <td>${item.sku || "-"}</td>
-                      <td><strong>${item.total_quantity}</strong></td>
+                      <td class="qty">${item.total_quantity}</td>
                     </tr>
                   `,
                     )
@@ -118,48 +96,30 @@ export default function PlannerToolbar({
   };
 
   return (
-    <div className="flex flex-col md:flex-row justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm gap-4">
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+      <div>
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-          Collection Planner
+          Weekly Collection Planner
         </h2>
-
-        <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-md p-1">
-          <button
-            onClick={handlePrevWeek}
-            className="p-1 hover:bg-white dark:hover:bg-gray-600 rounded"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <button
-            onClick={handleToday}
-            className="px-3 py-1 text-sm font-medium hover:bg-white dark:hover:bg-gray-600 rounded"
-          >
-            {formatDateLabel(currentWeekStart)} - {formatDateLabel(weekEnd)}
-          </button>
-          <button
-            onClick={handleNextWeek}
-            className="p-1 hover:bg-white dark:hover:bg-gray-600 rounded"
-          >
-            <ChevronRight size={20} />
-          </button>
-        </div>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Manage cyclic weekly assignments for clients
+        </p>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 w-full sm:w-auto">
         <button
           onClick={generatePickingList}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 shadow-sm"
         >
-          <Download size={16} />
+          <Download className="w-4 h-4" />
           Picking List
         </button>
 
         <button
           onClick={onAddClient}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm font-medium shadow-sm"
+          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700"
         >
-          <Plus size={16} />
+          <Plus className="w-4 h-4" />
           Assign Client
         </button>
       </div>

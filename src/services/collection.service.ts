@@ -4,7 +4,7 @@ import { API_URL } from "../constants/api";
 
 export interface CollectionItem {
   id: number;
-  date: string;
+  dayOfWeek: number;
   client_id: string;
   client_name: string;
   status: "planned" | "in_progress" | "done";
@@ -35,18 +35,21 @@ class CollectionService {
     };
   }
 
-  async getSchedule(from: string, to: string): Promise<CollectionItem[]> {
+  async getSchedule(): Promise<CollectionItem[]> {
     const response = await axios.get(
-      `${API_URL}/collection-schedule?from=${from}&to=${to}`,
+      `${API_URL}/collection-schedule`,
       this.getHeaders(),
     );
     return response.data;
   }
 
-  async addScheduleItem(date: string, clientId: string): Promise<CollectionItem> {
+  async addScheduleItem(
+    dayOfWeek: number,
+    clientId: string,
+  ): Promise<CollectionItem> {
     const response = await axios.post(
       `${API_URL}/collection-schedule`,
-      { date, clientId },
+      { dayOfWeek, clientId },
       this.getHeaders(),
     );
     return response.data;
@@ -64,10 +67,10 @@ class CollectionService {
     return response.data;
   }
 
-  async updateDate(id: number, date: string): Promise<CollectionItem> {
+  async updateDay(id: number, dayOfWeek: number): Promise<CollectionItem> {
     const response = await axios.patch(
-      `${API_URL}/collection-schedule/${id}/date`,
-      { date },
+      `${API_URL}/collection-schedule/${id}/day`,
+      { dayOfWeek },
       this.getHeaders(),
     );
     return response.data;
@@ -77,17 +80,17 @@ class CollectionService {
     await axios.delete(`${API_URL}/collection-schedule/${id}`, this.getHeaders());
   }
 
-  async getDaySummary(date: string): Promise<DaySummary> {
+  async getDaySummary(dayOfWeek: number): Promise<DaySummary> {
     const response = await axios.get(
-      `${API_URL}/collection-schedule/day-summary?date=${date}`,
+      `${API_URL}/collection-schedule/day-summary?dayOfWeek=${dayOfWeek}`,
       this.getHeaders(),
     );
     return response.data;
   }
 
-  async getPickingList(date: string): Promise<PickingItem[]> {
+  async getPickingList(dayOfWeek: number): Promise<PickingItem[]> {
     const response = await axios.get(
-      `${API_URL}/picking-list?date=${date}`,
+      `${API_URL}/picking-list?dayOfWeek=${dayOfWeek}`,
       this.getHeaders(),
     );
     return response.data;

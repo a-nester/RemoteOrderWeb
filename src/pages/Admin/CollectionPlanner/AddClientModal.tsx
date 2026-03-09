@@ -6,28 +6,30 @@ import { X, Search } from "lucide-react";
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (clientId: string, dateStr: string) => void;
-  preselectedDate: string;
+  onAdd: (clientId: string, dayOfWeek: number) => void;
+  preselectedDay?: number;
 }
 
 export default function AddClientModal({
   isOpen,
   onClose,
   onAdd,
-  preselectedDate,
+  preselectedDay = 1,
 }: Props) {
   const [clients, setClients] = useState<Counterparty[]>([]);
   const [search, setSearch] = useState("");
   const [selectedClient, setSelectedClient] = useState<string>("");
-  const [dateStr, setDateStr] = useState(preselectedDate);
+  const [dayOfWeek, setDayOfWeek] = useState(preselectedDay);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       loadClients();
-      setDateStr(preselectedDate);
+      setDayOfWeek(preselectedDay);
+      setSearch("");
+      setSelectedClient("");
     }
-  }, [isOpen, preselectedDate]);
+  }, [isOpen, preselectedDay]);
 
   const loadClients = async () => {
     setLoading(true);
@@ -47,11 +49,10 @@ export default function AddClientModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedClient && dateStr) {
-      onAdd(selectedClient, dateStr);
-      setSelectedClient("");
-      setSearch("");
-    }
+    if (!selectedClient || !dayOfWeek) return;
+    onAdd(selectedClient, dayOfWeek);
+    setSelectedClient("");
+    setSearch("");
   };
 
   if (!isOpen) return null;
@@ -91,18 +92,25 @@ export default function AddClientModal({
               </div>
 
               <div className="space-y-4">
-                {/* Date Selection */}
+                {/* Day Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Date
+                    Day of Week
                   </label>
-                  <input
-                    type="date"
+                  <select
                     required
-                    value={dateStr}
-                    onChange={(e) => setDateStr(e.target.value)}
+                    value={dayOfWeek}
+                    onChange={(e) => setDayOfWeek(Number(e.target.value))}
                     className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white sm:text-sm p-2 bg-transparent border"
-                  />
+                  >
+                    <option value={1}>Monday</option>
+                    <option value={2}>Tuesday</option>
+                    <option value={3}>Wednesday</option>
+                    <option value={4}>Thursday</option>
+                    <option value={5}>Friday</option>
+                    <option value={6}>Saturday</option>
+                    <option value={7}>Sunday</option>
+                  </select>
                 </div>
 
                 {/* Search Bar */}
@@ -126,25 +134,32 @@ export default function AddClientModal({
 
                 {/* Client Select */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Select Client
                   </label>
-                  <select
-                    required
-                    value={selectedClient}
-                    onChange={(e) => setSelectedClient(e.target.value)}
-                    size={5}
-                    className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white sm:text-sm p-2 border bg-transparent"
-                  >
-                    <option value="" disabled>
-                      -- Select a counterparty --
-                    </option>
-                    {filteredClients.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="block w-full rounded-md border border-gray-300 dark:border-gray-600 shadow-sm dark:bg-gray-700 dark:text-white overflow-hidden">
+                    <div className="h-48 overflow-y-auto w-full flex flex-col">
+                      {filteredClients.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => setSelectedClient(c.id)}
+                          className={`w-full text-left px-3 py-2 text-sm focus:outline-none transition-colors border-b border-gray-100 dark:border-gray-600 last:border-0 ${
+                            selectedClient === c.id
+                              ? "bg-indigo-600 text-white"
+                              : "hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-900 dark:text-white"
+                          }`}
+                        >
+                          {c.name}
+                        </button>
+                      ))}
+                      {filteredClients.length === 0 && (
+                        <div className="p-3 text-sm text-gray-500 text-center">
+                          No clients found.
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
