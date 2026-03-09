@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { CounterpartyService } from "../../../services/counterparty.service";
 import type { Counterparty } from "../../../types/counterparty";
 import { X, Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export default function AddClientModal({
   onAdd,
   preselectedDay = 1,
 }: Props) {
+  const { t } = useTranslation();
   const [clients, setClients] = useState<Counterparty[]>([]);
   const [search, setSearch] = useState("");
   const [selectedClient, setSelectedClient] = useState<string>("");
@@ -80,7 +82,7 @@ export default function AddClientModal({
             <div className="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
               <div className="flex justify-between items-center mb-5">
                 <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                  Assign Client to Schedule
+                  {t("planner.assignClient")}
                 </h3>
                 <button
                   type="button"
@@ -95,7 +97,7 @@ export default function AddClientModal({
                 {/* Day Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Day of Week
+                    {t("planner.dayOfWeek")}
                   </label>
                   <select
                     required
@@ -103,20 +105,20 @@ export default function AddClientModal({
                     onChange={(e) => setDayOfWeek(Number(e.target.value))}
                     className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white sm:text-sm p-2 bg-transparent border"
                   >
-                    <option value={1}>Monday</option>
-                    <option value={2}>Tuesday</option>
-                    <option value={3}>Wednesday</option>
-                    <option value={4}>Thursday</option>
-                    <option value={5}>Friday</option>
-                    <option value={6}>Saturday</option>
-                    <option value={7}>Sunday</option>
+                    <option value={1}>{t("planner.days.1")}</option>
+                    <option value={2}>{t("planner.days.2")}</option>
+                    <option value={3}>{t("planner.days.3")}</option>
+                    <option value={4}>{t("planner.days.4")}</option>
+                    <option value={5}>{t("planner.days.5")}</option>
+                    <option value={6}>{t("planner.days.6")}</option>
+                    <option value={7}>{t("planner.days.7")}</option>
                   </select>
                 </div>
 
                 {/* Search Bar */}
                 <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Search Client
+                    {t("planner.searchClient")}
                   </label>
                   <div className="relative rounded-md shadow-sm">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -126,7 +128,7 @@ export default function AddClientModal({
                       type="text"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Type client name..."
+                      placeholder={t("common.search")}
                       className="block w-full pl-10 rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white sm:text-sm p-2 bg-transparent border"
                     />
                   </div>
@@ -135,7 +137,7 @@ export default function AddClientModal({
                 {/* Client Select */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Select Client
+                    {t("planner.selectClient")}
                   </label>
                   <div className="block w-full rounded-md border border-gray-300 dark:border-gray-600 shadow-sm dark:bg-gray-700 dark:text-white overflow-hidden">
                     <div className="h-48 overflow-y-auto w-full flex flex-col">
@@ -155,7 +157,7 @@ export default function AddClientModal({
                       ))}
                       {filteredClients.length === 0 && (
                         <div className="p-3 text-sm text-gray-500 text-center">
-                          No clients found.
+                          {t("planner.noClientsFound")}
                         </div>
                       )}
                     </div>
@@ -170,14 +172,14 @@ export default function AddClientModal({
                 disabled={!selectedClient || loading}
                 className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
               >
-                Assign
+                {t("planner.assign")}
               </button>
               <button
                 type="button"
                 onClick={onClose}
                 className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </form>

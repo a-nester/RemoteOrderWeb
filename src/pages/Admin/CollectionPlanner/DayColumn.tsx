@@ -7,6 +7,7 @@ import type { CollectionItem } from "../../../services/collection.service";
 import { collectionService } from "../../../services/collection.service";
 import ClientCard from "./ClientCard";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   dayOfWeek: number;
@@ -23,6 +24,7 @@ export default function DayColumn({
   onStatusChange,
   onDelete,
 }: Props) {
+  const { t } = useTranslation();
   const { setNodeRef, isOver } = useDroppable({
     id: `day-${dayOfWeek}`,
   });
@@ -46,7 +48,7 @@ export default function DayColumn({
 
   return (
     <div
-      className={`flex flex-col flex-1 min-w-[280px] bg-gray-50 dark:bg-gray-800/50 rounded-lg overflow-hidden border ${isToday ? "border-indigo-500 shadow-md" : "border-gray-200 dark:border-gray-700"}`}
+      className={`flex flex-col w-[calc(100vw-3rem)] sm:w-[280px] shrink-0 snap-center bg-gray-50 dark:bg-gray-800/50 rounded-lg overflow-hidden border ${isToday ? "border-indigo-500 shadow-md" : "border-gray-200 dark:border-gray-700"}`}
     >
       <div
         className={`p-3 border-b border-gray-200 dark:border-gray-700 ${isToday ? "bg-indigo-50 dark:bg-indigo-900/20" : "bg-white dark:bg-gray-800"}`}
@@ -57,19 +59,19 @@ export default function DayColumn({
           </h3>
           {isToday && (
             <span className="px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 rounded-full">
-              Today
+              {t("common.today", "Today")}
             </span>
           )}
         </div>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-          {items.length} client{items.length !== 1 ? "s" : ""}
+          {items.length} {t("menu.counterparties")}
         </p>
 
         {/* Workload Indicators */}
         <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
-          <span>{summary.clients} cl</span>
-          <span>{summary.orders} ord</span>
-          <span>{summary.items} itm</span>
+          <span title={t("menu.counterparties")}>{summary.clients} cl</span>
+          <span title={t("menu.orders")}>{summary.orders} ord</span>
+          <span title={t("menu.products")}>{summary.items} itm</span>
         </div>
       </div>
 
@@ -93,7 +95,7 @@ export default function DayColumn({
           ))}
           {items.length === 0 && (
             <div className="h-full min-h-[100px] flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-400 text-sm">
-              Drop here
+              {t("common.add")}
             </div>
           )}
         </SortableContext>

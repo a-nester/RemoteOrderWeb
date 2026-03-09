@@ -8,6 +8,7 @@ import {
   CircleAlert,
   Trash2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   item: CollectionItem;
@@ -22,6 +23,7 @@ export default function ClientCard({
   onStatusChange,
   onDelete,
 }: Props) {
+  const { t } = useTranslation();
   const {
     attributes,
     listeners,
@@ -52,11 +54,11 @@ export default function ClientCard({
   const getStatusIcon = (status: CollectionItem["status"]) => {
     switch (status) {
       case "planned":
-        return <CircleAlert size={14} className="mr-1" />;
+        return <CircleAlert size={14} />;
       case "in_progress":
-        return <Clock size={14} className="mr-1" />;
+        return <Clock size={14} />;
       case "done":
-        return <CheckCircle2 size={14} className="mr-1" />;
+        return <CheckCircle2 size={14} />;
     }
   };
 
@@ -73,17 +75,34 @@ export default function ClientCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={`relative group bg-white dark:bg-gray-800 border ${isOverlay ? "border-indigo-500 shadow-xl scale-105" : "border-gray-200 dark:border-gray-700 shadow-sm"} rounded-lg p-3 flex flex-col gap-2 transition-shadow hover:shadow-md cursor-grab active:cursor-grabbing`}
+      className={`relative group bg-white dark:bg-gray-800 border ${isOverlay ? "border-indigo-500 shadow-xl scale-105" : "border-gray-200 dark:border-gray-700 shadow-sm"} rounded p-2 flex items-center gap-2 transition-shadow hover:shadow-md cursor-grab active:cursor-grabbing w-full`}
       {...attributes}
       {...listeners}
     >
-      <div className="flex justify-between items-start gap-2">
-        <div className="flex items-start gap-1 flex-1">
-          <GripVertical size={16} className="text-gray-400 mt-0.5 shrink-0" />
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white leading-tight line-clamp-2">
-            {item.client_name}
-          </h4>
+      <GripVertical size={16} className="text-gray-400 shrink-0" />
+
+      <h4
+        className="flex-1 text-sm font-semibold text-gray-900 dark:text-white truncate"
+        title={item.client_name}
+      >
+        {item.client_name}
+      </h4>
+
+      <div className="flex items-center gap-2 shrink-0">
+        <div
+          className="text-xs text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap"
+          title={t("menu.orders") + " / " + t("menu.products")}
+        >
+          {item.order_count || 0}/{item.product_count || 0}
         </div>
+
+        <button
+          onClick={handleStatusCycle}
+          className={`flex items-center p-1 rounded border cursor-pointer hover:opacity-80 transition-opacity ${getStatusColor(item.status)}`}
+          title={t(`planner.status.${item.status}`)}
+        >
+          {getStatusIcon(item.status)}
+        </button>
 
         {onDelete && (
           <button
@@ -91,27 +110,12 @@ export default function ClientCard({
               e.stopPropagation();
               onDelete();
             }}
-            className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-            title="Remove"
+            className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity"
+            title={t("common.delete")}
           >
             <Trash2 size={14} />
           </button>
         )}
-      </div>
-
-      <div className="flex justify-between items-end mt-1 pl-5">
-        <button
-          onClick={handleStatusCycle}
-          className={`flex items-center px-2 py-0.5 rounded text-xs font-medium border cursor-pointer hover:opacity-80 transition-opacity ${getStatusColor(item.status)}`}
-        >
-          {getStatusIcon(item.status)}
-          <span className="capitalize">{item.status.replace("_", " ")}</span>
-        </button>
-
-        <div className="text-right text-xs text-gray-500 dark:text-gray-400 font-medium">
-          <div>{item.order_count || 0} ORD</div>
-          <div>{item.product_count || 0} ITM</div>
-        </div>
       </div>
     </div>
   );

@@ -23,20 +23,22 @@ import PlannerToolbar from "./PlannerToolbar";
 import DayColumn from "./DayColumn";
 import ClientCard from "./ClientCard";
 import AddClientModal from "./AddClientModal";
+import { useTranslation } from "react-i18next";
 
 export default function CollectionPlanner() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<CollectionItem[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const weekDays = [
-    { id: 1, label: "Monday" },
-    { id: 2, label: "Tuesday" },
-    { id: 3, label: "Wednesday" },
-    { id: 4, label: "Thursday" },
-    { id: 5, label: "Friday" },
-    { id: 6, label: "Saturday" },
-    { id: 7, label: "Sunday" },
+    { id: 1, label: t("planner.days.1") },
+    { id: 2, label: t("planner.days.2") },
+    { id: 3, label: t("planner.days.3") },
+    { id: 4, label: t("planner.days.4") },
+    { id: 5, label: t("planner.days.5") },
+    { id: 6, label: t("planner.days.6") },
+    { id: 7, label: t("planner.days.7") },
   ];
 
   const sensors = useSensors(
@@ -149,7 +151,7 @@ export default function CollectionPlanner() {
     <div className="flex flex-col h-full space-y-4">
       <PlannerToolbar onAddClient={() => setIsModalOpen(true)} />
 
-      <div className="flex-1 overflow-x-auto pb-4">
+      <div className="flex-1 overflow-x-auto pb-4 snap-x snap-mandatory">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -181,7 +183,7 @@ export default function CollectionPlanner() {
                     );
                   }}
                   onDelete={(id: number) => {
-                    if (window.confirm("Remove client from this day?")) {
+                    if (window.confirm(t("common.delete") + "?")) {
                       collectionService
                         .deleteScheduleItem(id)
                         .catch(console.error);
@@ -212,7 +214,7 @@ export default function CollectionPlanner() {
             setIsModalOpen(false);
           } catch (error) {
             console.error("Failed to add client", error);
-            alert("Failed to assign client");
+            alert(t("common.error"));
           }
         }}
         preselectedDay={1}
