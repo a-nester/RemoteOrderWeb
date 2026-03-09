@@ -8,7 +8,19 @@ import { API_URL } from '../constants/api';
 // const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 const getHeaders = () => {
-    const token = useAuthStore.getState().token;
+    // try to get from local storage directly as a fallback if zustand is slow to rehydrate
+    const localAuth = localStorage.getItem('auth-storage');
+    let token = useAuthStore.getState().token;
+    
+    if (!token && localAuth) {
+        try {
+            const parsed = JSON.parse(localAuth);
+            token = parsed?.state?.token;
+        } catch (e) {
+            // ignore
+        }
+    }
+
     return {
         headers: {
             Authorization: `Bearer ${token}`
