@@ -7,7 +7,6 @@ import {
   Copy,
   Trash2,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 export interface DocumentActionsProps {
   isPosted: boolean;
@@ -26,7 +25,6 @@ export default function DocumentActionsDropdown({
 }: DocumentActionsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -50,7 +48,7 @@ export default function DocumentActionsDropdown({
   const handlePayment = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsOpen(false);
-    navigate(paymentUrl);
+    window.open(paymentUrl, "_blank");
   };
 
   const handleCopy = (e: React.MouseEvent) => {
@@ -72,7 +70,7 @@ export default function DocumentActionsDropdown({
       </button>
 
       {isOpen && (
-        <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-[100]">
+        <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-[1000]">
           <div className="py-1" role="menu" aria-orientation="vertical">
             <button
               onClick={(e) => handleAction(e, onToggleStatus)}
