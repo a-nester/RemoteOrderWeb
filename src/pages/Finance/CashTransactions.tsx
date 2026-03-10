@@ -68,6 +68,9 @@ export default function CashTransactions() {
       const isPayment = searchParams.get("action") === "payment";
       const initialCashboxId = cbRes.length > 0 ? cbRes[0].id : "";
 
+      const paymentCategoryId =
+        catRes.find((c) => c.name === "Оплата від клієнта")?.id || "";
+
       setForm((f) => ({
         ...f,
         cashboxId: initialCashboxId,
@@ -76,6 +79,7 @@ export default function CashTransactions() {
               type: "INCOME",
               counterpartyId: searchParams.get("counterpartyId") || "",
               amount: searchParams.get("amount") || "",
+              categoryId: paymentCategoryId,
             }
           : {}),
       }));
@@ -303,7 +307,7 @@ export default function CashTransactions() {
                 type="submit"
                 className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
-                {t("common.save", "Зберегти")}
+                {t("common.save", "Провести")}
               </button>
             </div>
           </form>
