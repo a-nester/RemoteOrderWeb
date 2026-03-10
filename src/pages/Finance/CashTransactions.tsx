@@ -25,7 +25,7 @@ export default function CashTransactions() {
   const [categories, setCategories] = useState<TransactionCategory[]>([]);
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -112,6 +112,9 @@ export default function CashTransactions() {
       });
       setIsFormOpen(false);
       setForm({ ...form, amount: "", comment: "" }); // reset some fields
+      if (searchParams.get("action") === "payment") {
+        setSearchParams({});
+      }
       fetchData();
     } catch (error) {
       console.error("Error creating transaction:", error);
