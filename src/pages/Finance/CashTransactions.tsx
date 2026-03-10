@@ -49,10 +49,10 @@ export default function CashTransactions() {
   });
 
   useEffect(() => {
-    fetchData();
+    fetchData(true);
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = async (isInitialLoad = false) => {
     try {
       setLoading(true);
       const [txRes, cbRes, catRes, cpRes] = await Promise.all([
@@ -66,27 +66,30 @@ export default function CashTransactions() {
       setCategories(catRes);
       setCounterparties(cpRes);
 
-      const isPayment = searchParams.get("action") === "payment";
+      const isPayment =
+        isInitialLoad && searchParams.get("action") === "payment";
       const initialCashboxId = cbRes.length > 0 ? cbRes[0].id : "";
 
       const paymentCategoryId =
         catRes.find((c) => c.name === "Оплата від клієнта")?.id || "";
 
-      setForm((f) => ({
-        ...f,
-        cashboxId: initialCashboxId,
-        ...(isPayment
-          ? {
-              type: "INCOME",
-              counterpartyId: searchParams.get("counterpartyId") || "",
-              amount: searchParams.get("amount") || "",
-              categoryId: paymentCategoryId,
-            }
-          : {}),
-      }));
+      if (isInitialLoad) {
+        setForm((f) => ({
+          ...f,
+          cashboxId: initialCashboxId,
+          ...(isPayment
+            ? {
+                type: "INCOME",
+                counterpartyId: searchParams.get("counterpartyId") || "",
+                amount: searchParams.get("amount") || "",
+                categoryId: paymentCategoryId,
+              }
+            : {}),
+        }));
 
-      if (isPayment) {
-        setIsFormOpen(true);
+        if (isPayment) {
+          setIsFormOpen(true);
+        }
       }
     } catch (error) {
       console.error("Error fetching data:", error);
