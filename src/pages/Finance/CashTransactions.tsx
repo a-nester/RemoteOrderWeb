@@ -27,6 +27,7 @@ export default function CashTransactions() {
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
   const [form, setForm] = useState<{
@@ -96,8 +97,9 @@ export default function CashTransactions() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.cashboxId || !form.amount) return;
+    if (!form.cashboxId || !form.amount || isSubmitting) return;
 
+    setIsSubmitting(true);
     try {
       await FinanceService.createTransaction({
         date: new Date(form.date).toISOString(),
@@ -114,6 +116,8 @@ export default function CashTransactions() {
     } catch (error) {
       console.error("Error creating transaction:", error);
       alert("Помилка при створенні ордера");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -305,9 +309,11 @@ export default function CashTransactions() {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                disabled={isSubmitting}
+                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                {t("common.save", "Провести")}
+                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                Провести
               </button>
             </div>
           </form>
