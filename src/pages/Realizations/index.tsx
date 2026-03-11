@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -147,6 +147,27 @@ export default function RealizationList() {
     return (
       <div className="p-8 text-center">{t("common.loading", "Loading...")}</div>
     );
+  const filteredAndSortedRealizations = useMemo(() => {
+    return [...realizations]
+      .filter((a) => {
+        if (
+          searchTerm &&
+          !a.number.toString().includes(searchTerm) &&
+          !a.counterpartyName?.toLowerCase().includes(searchTerm.toLowerCase())
+        ) {
+          return false;
+        }
+        const date = a.date.split("T")[0];
+        if (startDate && date < startDate) return false;
+        if (endDate && date > endDate) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.date).getTime();
+        const dateB = new Date(b.date).getTime();
+        return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
+      });
+  }, [realizations, searchTerm, startDate, endDate, sortOrder]);
 
   return (
     <div className="space-y-6">
@@ -233,86 +254,65 @@ export default function RealizationList() {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {[...realizations]
-              .filter((a) => {
-                if (
-                  searchTerm &&
-                  !a.number.toString().includes(searchTerm) &&
-                  !a.counterpartyName
-                    ?.toLowerCase()
-                    .includes(searchTerm.toLowerCase())
-                ) {
-                  return false;
-                }
-                const date = a.date.split("T")[0];
-                if (startDate && date < startDate) return false;
-                if (endDate && date > endDate) return false;
-                return true;
-              })
-              .sort((a, b) => {
-                const dateA = new Date(a.date).getTime();
-                const dateB = new Date(b.date).getTime();
-                return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
-              })
-              .map((item) => {
-                const isHighlighted = item.id === highlightId;
-                return (
-                  <tr
-                    id={`row-${item.id}`}
-                    key={item.id}
-                    onClick={() => navigate(`/realizations/${item.id}`)}
-                    className={`cursor-pointer ${
-                      isHighlighted
-                        ? "bg-green-100 dark:bg-green-900/40 transition-colors duration-1000"
-                        : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                    }`}
-                  >
-                    <td className="px-6 py-1 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                      {item.number}
-                    </td>
-                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(item.date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {item.counterpartyName || "-"}
-                    </td>
-                    <td className="px-6 py-1 whitespace-nowrap">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(item.status)}`}
+            {filteredAndSortedRealizations.map((item: Realization) => {
+              const isHighlighted = item.id === highlightId;
+              return (
+                <tr
+                  id={`row-${item.id}`}
+                  key={item.id}
+                  onClick={() => navigate(`/realizations/${item.id}`)}
+                  className={`cursor-pointer ${
+                    isHighlighted
+                      ? "bg-green-100 dark:bg-green-900/40 transition-colors duration-1000"
+                      : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  }`}
+                >
+                  <td className="px-6 py-1 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    {item.number}
+                  </td>
+                  <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    {new Date(item.date).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {item.counterpartyName || "-"}
+                  </td>
+                  <td className="px-6 py-1 whitespace-nowrap">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(item.status)}`}
+                    >
+                      {t(`status.${item.status}`, item.status)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-1 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-white">
+                    {Number(item.amount).toFixed(2)} {item.currency}
+                  </td>
+                  <td className="px-6 py-1 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex justify-end space-x-3 items-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/realizations/${item.id}`);
+                        }}
+                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2"
                       >
-                        {t(`status.${item.status}`, item.status)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-1 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-white">
-                      {Number(item.amount).toFixed(2)} {item.currency}
-                    </td>
-                    <td className="px-6 py-1 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-3 items-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/realizations/${item.id}`);
-                          }}
-                          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2"
-                        >
-                          <Eye size={18} />
-                        </button>
+                        <Eye size={18} />
+                      </button>
 
-                        <DocumentActionsDropdown
-                          isPosted={item.status === "POSTED"}
-                          paymentUrl={`/finance/transactions?action=payment&counterpartyId=${item.counterpartyId || ""}&amount=${item.amount}`}
-                          copyUrl={`/realizations/create?copyFrom=${item.id}`}
-                          onToggleStatus={() =>
-                            handleToggleStatus(item.id, item.status)
-                          }
-                          onDelete={() => handleDelete(item.id, item.status)}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            {realizations.length === 0 && (
+                      <DocumentActionsDropdown
+                        isPosted={item.status === "POSTED"}
+                        paymentUrl={`/finance/transactions?action=payment&counterpartyId=${item.counterpartyId || ""}&amount=${item.amount}`}
+                        copyUrl={`/realizations/create?copyFrom=${item.id}`}
+                        onToggleStatus={() =>
+                          handleToggleStatus(item.id, item.status)
+                        }
+                        onDelete={() => handleDelete(item.id, item.status)}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {filteredAndSortedRealizations.length === 0 && (
               <tr>
                 <td
                   colSpan={6}
@@ -328,7 +328,7 @@ export default function RealizationList() {
 
       {/* Mobile View */}
       <div className="md:hidden space-y-4 px-4">
-        {realizations.map((item) => (
+        {filteredAndSortedRealizations.map((item: Realization) => (
           <div
             key={item.id}
             onClick={() => navigate(`/realizations/${item.id}`)}
@@ -385,7 +385,7 @@ export default function RealizationList() {
           </div>
         ))}
 
-        {realizations.length === 0 && (
+        {filteredAndSortedRealizations.length === 0 && (
           <div className="text-center text-gray-500 dark:text-gray-400 py-8">
             {t("common.noData", "No realizations found")}
           </div>
