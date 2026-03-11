@@ -143,10 +143,6 @@ export default function RealizationList() {
     }
   };
 
-  if (loading)
-    return (
-      <div className="p-8 text-center">{t("common.loading", "Loading...")}</div>
-    );
   const filteredAndSortedRealizations = useMemo(() => {
     return [...realizations]
       .filter((a) => {
@@ -168,6 +164,11 @@ export default function RealizationList() {
         return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
       });
   }, [realizations, searchTerm, startDate, endDate, sortOrder]);
+
+  if (loading)
+    return (
+      <div className="p-8 text-center">{t("common.loading", "Loading...")}</div>
+    );
 
   return (
     <div className="space-y-6">
