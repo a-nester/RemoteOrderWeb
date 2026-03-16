@@ -18,6 +18,10 @@ import RealizationList from "./pages/Realizations";
 import RealizationDetails from "./pages/Realizations/RealizationDetails";
 import RealizationEdit from "./pages/Realizations/RealizationEdit";
 import RealizationCreate from "./pages/Realizations/RealizationCreate";
+import BuyerReturnList from "./pages/BuyerReturns";
+import BuyerReturnDetails from "./pages/BuyerReturns/BuyerReturnDetails";
+import BuyerReturnEdit from "./pages/BuyerReturns/BuyerReturnEdit";
+import BuyerReturnCreate from "./pages/BuyerReturns/BuyerReturnCreate";
 import OrderDetails from "./pages/Orders/OrderDetails";
 import OrderEdit from "./pages/Orders/OrderEdit";
 import OrderCreate from "./pages/Orders/OrderCreate";
@@ -319,6 +323,46 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <RealizationEdit />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/buyer-returns"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <BuyerReturnList />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/buyer-returns/create"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <BuyerReturnCreate />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/buyer-returns/:id"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <BuyerReturnDetails />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/buyer-returns/:id/edit"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <BuyerReturnEdit />
                 </Layout>
               </ProtectedRoute>
             }

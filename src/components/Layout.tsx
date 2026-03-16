@@ -5,7 +5,6 @@ import {
   LogOut,
   LayoutDashboard,
   Package,
-  ShoppingCart,
   User,
   FileText,
   Settings,
@@ -45,6 +44,13 @@ export default function Layout({ children, title }: LayoutProps) {
   const [isFinanceOpen, setIsFinanceOpen] = useState(
     location.pathname.startsWith("/finance"),
   );
+  const [isDocumentsOpen, setIsDocumentsOpen] = useState(
+    location.pathname.startsWith("/orders") ||
+      location.pathname.startsWith("/realizations") ||
+      location.pathname.startsWith("/goods-receipts") ||
+      location.pathname.startsWith("/supplier-returns") ||
+      location.pathname.startsWith("/buyer-returns"),
+  );
 
   useEffect(() => {
     setIsSidebarOpen(false);
@@ -60,6 +66,7 @@ export default function Layout({ children, title }: LayoutProps) {
   const toggleOrganization = () => setIsOrganizationOpen(!isOrganizationOpen);
   const toggleArchive = () => setIsArchiveOpen(!isArchiveOpen);
   const toggleFinance = () => setIsFinanceOpen(!isFinanceOpen);
+  const toggleDocuments = () => setIsDocumentsOpen(!isDocumentsOpen);
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex transition-colors duration-200">
@@ -337,52 +344,106 @@ export default function Layout({ children, title }: LayoutProps) {
             <User className="mr-3 h-5 w-5" />
             {t("menu.counterparties", "Counterparties")}
           </NavLink>
-          <NavLink
-            to="/orders"
-            className={({ isActive }) =>
-              clsx(
-                "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                isActive
-                  ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-              )
-            }
-          >
-            <ShoppingCart className="mr-3 h-5 w-5" />
-            {t("menu.orders")}
-          </NavLink>
-
-          {user?.role === "admin" && (
-            <NavLink
-              to="/goods-receipt"
-              className={({ isActive }) =>
-                clsx(
-                  "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                  isActive
-                    ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                )
-              }
+          {/* Documents Group */}
+          <div>
+            <button
+              onClick={toggleDocuments}
+              className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-md transition-colors"
             >
-              <FileText className="mr-3 h-5 w-5" />
-              {t("menu.goodsReceipt", "Goods Receipt")}
-            </NavLink>
-          )}
+              <div className="flex items-center">
+                <FileText className="mr-3 h-5 w-5" />
+                Документи
+              </div>
+              {isDocumentsOpen ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+            </button>
 
-          <NavLink
-            to="/realizations"
-            className={({ isActive }) =>
-              clsx(
-                "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                isActive
-                  ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-              )
-            }
-          >
-            <FileText className="mr-3 h-5 w-5" />
-            {t("menu.realizations", "Realizations")}
-          </NavLink>
+            {isDocumentsOpen && (
+              <div className="ml-4 mt-1 space-y-1">
+                <NavLink
+                  to="/orders"
+                  className={({ isActive }) =>
+                    clsx(
+                      "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                      isActive
+                        ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                    )
+                  }
+                >
+                  <span className="w-5 mr-3"></span>
+                  {t("menu.orders")}
+                </NavLink>
+
+                <NavLink
+                  to="/realizations"
+                  className={({ isActive }) =>
+                    clsx(
+                      "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                      isActive
+                        ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                    )
+                  }
+                >
+                  <span className="w-5 mr-3"></span>
+                  {t("menu.realizations", "Realizations")}
+                </NavLink>
+
+                {user?.role === "admin" && (
+                  <>
+                    <NavLink
+                      to="/goods-receipt"
+                      className={({ isActive }) =>
+                        clsx(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                        )
+                      }
+                    >
+                      <span className="w-5 mr-3"></span>
+                      {t("menu.goodsReceipt", "Goods Receipt")}
+                    </NavLink>
+                    
+                    <NavLink
+                      to="/buyer-returns"
+                      className={({ isActive }) =>
+                        clsx(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                        )
+                      }
+                    >
+                      <span className="w-5 mr-3"></span>
+                      Повернення від покупця
+                    </NavLink>
+
+                    <NavLink
+                      to="/supplier-returns"
+                      className={({ isActive }) =>
+                        clsx(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                        )
+                      }
+                    >
+                      <span className="w-5 mr-3"></span>
+                      Повернення постачальнику
+                    </NavLink>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
           {user?.role === "admin" && (
             <div>
