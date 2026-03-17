@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   Wallet,
+  Terminal,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useTranslation } from "react-i18next";
@@ -48,8 +49,12 @@ export default function Layout({ children, title }: LayoutProps) {
     location.pathname.startsWith("/orders") ||
       location.pathname.startsWith("/realizations") ||
       location.pathname.startsWith("/goods-receipts") ||
+      location.pathname.startsWith("/goods-receipts") ||
       location.pathname.startsWith("/supplier-returns") ||
       location.pathname.startsWith("/buyer-returns"),
+  );
+  const [isServiceOpen, setIsServiceOpen] = useState(
+    location.pathname.startsWith("/service"),
   );
 
   useEffect(() => {
@@ -67,6 +72,7 @@ export default function Layout({ children, title }: LayoutProps) {
   const toggleArchive = () => setIsArchiveOpen(!isArchiveOpen);
   const toggleFinance = () => setIsFinanceOpen(!isFinanceOpen);
   const toggleDocuments = () => setIsDocumentsOpen(!isDocumentsOpen);
+  const toggleService = () => setIsServiceOpen(!isServiceOpen);
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex transition-colors duration-200">
@@ -563,6 +569,45 @@ export default function Layout({ children, title }: LayoutProps) {
               )}
             </div>
           )}
+
+          {user?.role === "admin" && (
+            <div>
+              <button
+                onClick={toggleService}
+                className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-md transition-colors"
+              >
+                <div className="flex items-center">
+                  <Terminal className="mr-3 h-5 w-5" />
+                  Сервіс
+                </div>
+                {isServiceOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </button>
+
+              {isServiceOpen && (
+                <div className="ml-4 mt-1 space-y-1">
+                  <NavLink
+                    to="/service/repost-documents"
+                    className={({ isActive }) =>
+                      clsx(
+                        "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                        isActive
+                          ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                      )
+                    }
+                  >
+                    <span className="w-5 mr-3"></span>
+                    Перепроведення документів
+                  </NavLink>
+                </div>
+              )}
+            </div>
+          )}
+
         </nav>
         <div className="absolute bottom-0 w-full p-4 border-t">
           <div className="flex items-center">

@@ -36,6 +36,7 @@ import CashFlowReport from "./pages/Reports/CashFlowReport";
 import InventoryReport from "./pages/Reports/InventoryReport";
 import FinanceSettings from "./pages/Finance/Cashboxes";
 import CashTransactions from "./pages/Finance/CashTransactions";
+import { RepostDocuments } from "./pages/Admin/RepostDocuments";
 import "./i18n";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -243,6 +244,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <RealizationsArchive />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/service/repost-documents"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <RepostDocuments />
                 </Layout>
               </ProtectedRoute>
             }
