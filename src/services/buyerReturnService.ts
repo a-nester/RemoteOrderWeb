@@ -74,5 +74,10 @@ export const buyerReturnService = {
     unpostDocument: async (id: string): Promise<{ success: boolean }> => {
         const response = await axios.post(`${BASE_URL}/${id}/unpost`, {}, { headers: getAuthHeader() });
         return response.data;
+    },
+
+    delete: async (id: string): Promise<{ success: boolean }> => {
+        const response = await axios.delete(`${BASE_URL}/${id}`, { headers: getAuthHeader() });
+        return response.data;
     }
 };

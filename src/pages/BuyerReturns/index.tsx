@@ -93,25 +93,23 @@ export default function BuyerReturnList() {
     }
   };
 
-  const handleDelete = async (_id: string, status: string) => {
+  const handleDelete = async (id: string, status: string) => {
     if (status === "POSTED") {
-      alert(t("common.error", "Cannot delete a posted realization"));
+      alert(t("common.error", "Cannot delete a posted return"));
       return;
     }
     if (
       !window.confirm(
         t(
           "common.confirmDelete",
-          "Are you sure you want to delete this realization?",
+          "Are you sure you want to delete this return?",
         ),
       )
     )
       return;
 
     try {
-      // NOTE: Our service doesn't have a delete method yet, but unposting takes care of status. We probably shouldn't fully delete documents without an API endpoint.
-      // But for now, since it's a clone:
-      // await BuyerReturnService.delete(id);
+      await BuyerReturnService.delete(id);
       loadData();
     } catch (error) {
       console.error(error);
