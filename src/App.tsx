@@ -22,6 +22,10 @@ import BuyerReturnList from "./pages/BuyerReturns";
 import BuyerReturnDetails from "./pages/BuyerReturns/BuyerReturnDetails";
 import BuyerReturnEdit from "./pages/BuyerReturns/BuyerReturnEdit";
 import BuyerReturnCreate from "./pages/BuyerReturns/BuyerReturnCreate";
+import SupplierReturnList from "./pages/SupplierReturns";
+import SupplierReturnDetails from "./pages/SupplierReturns/SupplierReturnDetails";
+import SupplierReturnEdit from "./pages/SupplierReturns/SupplierReturnEdit";
+import SupplierReturnCreate from "./pages/SupplierReturns/SupplierReturnCreate";
 import OrderDetails from "./pages/Orders/OrderDetails";
 import OrderEdit from "./pages/Orders/OrderEdit";
 import OrderCreate from "./pages/Orders/OrderCreate";
@@ -374,6 +378,46 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <BuyerReturnEdit />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/supplier-returns"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <SupplierReturnList />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/supplier-returns/create"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <SupplierReturnCreate />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/supplier-returns/:id"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <SupplierReturnDetails />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/supplier-returns/:id/edit"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <SupplierReturnEdit />
                 </Layout>
               </ProtectedRoute>
             }

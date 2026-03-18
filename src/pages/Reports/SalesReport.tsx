@@ -6,6 +6,8 @@ import {
   type SalesByProduct,
 } from "../../services/reports.service";
 import { useTranslation } from "react-i18next";
+import { useAuthStore } from "../../store/auth.store";
+import { AuthService } from "../../services/auth.service";
 
 interface SaleItem {
   id: string;
@@ -32,14 +34,28 @@ export default function SalesReport() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { user, setPreferences } = useAuthStore();
+
   // Filters
-  const [dateFrom, setDateFrom] = useState<string>("");
-  const [dateTo, setDateTo] = useState<string>("");
+  const [dateFrom, setDateFrom] = useState<string>(() => user?.preferences?.salesDateFrom || "");
+  const [dateTo, setDateTo] = useState<string>(() => {
+    if (user?.preferences?.salesDateTo) return user?.preferences?.salesDateTo;
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split("T")[0];
+  });
   const [counterparty, setCounterparty] = useState<string>("");
 
   const fetchSales = async () => {
     setLoading(true);
     setError(null);
+
+    // Зберігаємо налаштування дат на сервері
+    if (user) {
+      const newPrefs = { ...user.preferences, salesDateFrom: dateFrom, salesDateTo: dateTo };
+      setPreferences(newPrefs);
+      AuthService.updatePreferences(newPrefs).catch(console.error);
+    }
+
     try {
       if (activeTab === "general") {
         let data = await RealizationService.getAll();
