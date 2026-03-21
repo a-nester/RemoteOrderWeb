@@ -77,23 +77,28 @@ export default function ProductForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Construct prices object using standard price
-    const prices = { standard: parseFloat(formData.price) || 0 };
 
     try {
       if (isEditMode && id) {
         const productToUpdate = products.find((p) => p.id === id);
         if (!productToUpdate) return;
 
+        // Merge existing prices with the new standard price to prevent wiping out other tiers
+        const updatedPrices = {
+          ...productToUpdate.prices,
+          standard: parseFloat(formData.price) || 0
+        };
+
         await updateProduct({
           ...productToUpdate,
           name: formData.name,
           category: formData.category,
-          prices,
+          prices: updatedPrices,
           unit: formData.unit,
         }, imageFile || undefined); // Pass imageFile
       } else {
+        const prices = { standard: parseFloat(formData.price) || 0 };
+        
         await addProduct({
           name: formData.name,
           category: formData.category,
