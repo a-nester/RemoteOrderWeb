@@ -68,7 +68,7 @@ export default function OrderItemsTable({
   };
 
   const handlePriceChange = (id: string, price: number) => {
-    onUpdateItem(id, { price });
+    onUpdateItem(id, { price, isPriceMissing: false });
   };
 
   if (items.length === 0) {
@@ -124,7 +124,7 @@ export default function OrderItemsTable({
         </thead>
         <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
           {items.map((item, index) => (
-            <tr key={item.id}>
+            <tr key={item.id} className={item.isPriceMissing ? "bg-red-50 dark:bg-red-900/20" : ""}>
               <td className="px-2 py-2 md:px-4 md:py-3 whitespace-nowrap text-xs md:text-sm text-gray-500 dark:text-gray-400">
                 {index + 1}
               </td>
@@ -149,19 +149,34 @@ export default function OrderItemsTable({
               </td>
               <td className="px-2 py-2 md:px-4 md:py-3 whitespace-nowrap text-right text-sm text-gray-500">
                 {readonly ? (
-                  <span>{Number(item.price || 0).toFixed(2)}</span>
+                  <span>{item.isPriceMissing ? "-" : Number(item.price || 0).toFixed(2)}</span>
                 ) : (
-                  <NumberInput
-                    min="0"
-                    step="0.01"
-                    value={item.price}
-                    onChange={(val) => handlePriceChange(item.id, val)}
-                    className="w-16 md:w-20 text-right rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs md:text-sm px-1 py-1 md:px-2 md:py-2"
-                  />
+                  item.isPriceMissing ? (
+                    <div className="flex justify-end relative">
+                      <NumberInput
+                        min="0"
+                        step="0.01"
+                        value={"" as any} // Empty input to show dash as placeholder
+                        onChange={(val) => handlePriceChange(item.id, val)}
+                        className="w-16 md:w-20 text-right rounded-md border-red-300 dark:border-red-600 dark:bg-red-800 shadow-sm focus:border-red-500 focus:ring-red-500 text-xs md:text-sm px-1 py-1 md:px-2 md:py-2"
+                      />
+                      <span className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-red-500 font-bold">
+                        -
+                      </span>
+                    </div>
+                  ) : (
+                    <NumberInput
+                      min="0"
+                      step="0.01"
+                      value={item.price}
+                      onChange={(val) => handlePriceChange(item.id, val)}
+                      className="w-16 md:w-20 text-right rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs md:text-sm px-1 py-1 md:px-2 md:py-2"
+                    />
+                  )
                 )}
               </td>
               <td className="px-2 py-2 md:px-4 md:py-3 whitespace-nowrap text-right text-xs md:text-sm font-medium text-gray-900 dark:text-white">
-                {Number(item.total || 0).toFixed(2)}
+                {item.isPriceMissing ? "-" : Number(item.total || 0).toFixed(2)}
               </td>
               {!readonly && (
                 <td className="px-1 py-2 md:px-4 md:py-3 whitespace-nowrap text-center text-sm font-medium">

@@ -16,6 +16,7 @@ export interface OrderItem {
     price: number;
     unit: string;
     total: number;
+    isPriceMissing?: boolean;
 }
 
 export interface Order {

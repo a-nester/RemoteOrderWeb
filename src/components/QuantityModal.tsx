@@ -8,8 +8,9 @@ interface QuantityModalProps {
   onClose: () => void;
   product: Product | null;
   price: number;
+  isPriceMissing?: boolean;
   stockBalance: number | null;
-  onConfirm: (product: Product, quantity: number, price: number) => void;
+  onConfirm: (product: Product, quantity: number, price: number, isPriceMissing?: boolean) => void;
 }
 
 export default function QuantityModal({
@@ -17,6 +18,7 @@ export default function QuantityModal({
   onClose,
   product,
   price,
+  isPriceMissing,
   stockBalance,
   onConfirm,
 }: QuantityModalProps) {
@@ -43,7 +45,7 @@ export default function QuantityModal({
 
   const handleConfirm = () => {
     if (parsedQuantity > 0) {
-      onConfirm(product, parsedQuantity, price);
+      onConfirm(product, parsedQuantity, price, isPriceMissing);
     }
   };
 
@@ -71,7 +73,7 @@ export default function QuantityModal({
                 {t("common.price", "Price")}
               </p>
               <p className="font-semibold text-gray-900 dark:text-white">
-                {price.toFixed(2)} ₴
+                {isPriceMissing ? "-" : price.toFixed(2)} ₴
               </p>
             </div>
             <div>
@@ -127,7 +129,7 @@ export default function QuantityModal({
               {t("common.total", "Total Amount")}
             </span>
             <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-              {total.toFixed(2)}{" "}
+              {isPriceMissing ? "-" : total.toFixed(2)}{" "}
               <span className="text-sm font-normal text-gray-500">₴</span>
             </span>
           </div>

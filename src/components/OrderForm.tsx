@@ -245,6 +245,7 @@ export default function OrderForm({
     product: Product,
     quantity: number,
     price: number,
+    isPriceMissing?: boolean
   ) => {
     setItems((prev) => {
       const existingItemIndex = prev.findIndex(
@@ -262,6 +263,7 @@ export default function OrderForm({
               total: Number((newQuantity * price).toFixed(2)),
               // Optionally update price to the newly confirmed price if it differs
               price: price,
+              isPriceMissing: isPriceMissing,
             };
           }
           return item;
@@ -276,6 +278,7 @@ export default function OrderForm({
           price,
           unit: product.unit,
           total: Number((price * quantity).toFixed(2)),
+          isPriceMissing,
         };
         return [...prev, newItem];
       }
@@ -337,13 +340,13 @@ export default function OrderForm({
         }
 
         let newPrice = 0;
-        // Check specific price type first, then standard, then price property fallback
+        let isPriceMissing = false;
+        
         if (product.prices && product.prices[newSlug] !== undefined) {
           newPrice = Number(product.prices[newSlug]);
-        } else if (product.prices && product.prices["standard"] !== undefined) {
-          newPrice = Number(product.prices["standard"]);
-        } else if ((product as any).price) {
-          newPrice = Number((product as any).price);
+        } else {
+          isPriceMissing = true;
+          newPrice = 0;
         }
 
         console.log(
@@ -353,6 +356,7 @@ export default function OrderForm({
         return {
           ...item,
           price: newPrice,
+          isPriceMissing,
           total: Number((newPrice * item.quantity).toFixed(2)),
         };
       }),
@@ -380,17 +384,19 @@ export default function OrderForm({
         if (!product) return item;
 
         let newPrice = 0;
+        let isPriceMissing = false;
+        
         if (product.prices && product.prices[priceSlug] !== undefined) {
           newPrice = Number(product.prices[priceSlug]);
-        } else if (product.prices && product.prices["standard"] !== undefined) {
-          newPrice = Number(product.prices["standard"]);
-        } else if ((product as any).price) {
-          newPrice = Number((product as any).price);
+        } else {
+          isPriceMissing = true;
+          newPrice = 0;
         }
 
         return {
           ...item,
           price: newPrice,
+          isPriceMissing,
           total: Number((newPrice * item.quantity).toFixed(2)),
         };
       }),
@@ -414,6 +420,14 @@ export default function OrderForm({
           t("order.saveEmpty", "Order has no items. Save anyway?"),
         )
       ) {
+        return;
+      }
+    }
+
+    if (action === "saveAndPost") {
+      const hasMissingPrices = items.some(item => item.isPriceMissing);
+      if (hasMissingPrices) {
+        alert(t("order.errorMissingPrices", "Неможливо провести накладну: є товари без встановленої ціни для даного клієнта! Прочерк (-) у колонці Ціни означає відсутність ціни. Впишіть ціну замість прочерку вручну перед проведенням або відредагуйте картку товару."));
         return;
       }
     }
@@ -710,13 +724,19 @@ export default function OrderForm({
         onClose={() => setSelectedProductForQty(null)}
         product={selectedProductForQty}
         price={
-          selectedProductForQty
-            ? Number(
-                selectedProductForQty.prices?.[priceSlug] ||
-                  selectedProductForQty.prices?.standard ||
-                  0,
-              )
-            : 0
+          (() => {
+            if (!selectedProductForQty) return 0;
+            if (selectedProductForQty.prices && selectedProductForQty.prices[priceSlug] !== undefined) {
+              return Number(selectedProductForQty.prices[priceSlug]);
+            }
+            return 0; // missing price
+          })()
+        }
+        isPriceMissing={
+          (() => {
+            if (!selectedProductForQty) return false;
+            return !(selectedProductForQty.prices && selectedProductForQty.prices[priceSlug] !== undefined);
+          })()
         }
         stockBalance={(() => {
           if (!selectedProductForQty) return null;
