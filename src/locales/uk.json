@@ -58,7 +58,20 @@
     "total": "Сума",
     "comment": "Коментар",
     "noData": "Даних не знайдено",
-    "noResults": "Нічого не знайдено"
+    "noResults": "Нічого не знайдено",
+    "number": "Номер",
+    "customer": "Клієнт",
+    "warehouse": "Склад",
+    "amount": "Сума продажів",
+    "profit": "Прибуток",
+    "category": "Категорія",
+    "profitability": "Рент, %"
+  },
+  "reports": {
+    "generalList": "Загальний список",
+    "byClient": "По клієнтам",
+    "byProduct": "По товарам",
+    "documentsCount": "К-сть документів"
   },
   "menu": {
     "dashboard": "Дашборд",
@@ -73,7 +86,8 @@
     "counterparties": "Контрагенти",
     "groups": "Групи",
     "organizationSettings": "Організація",
-    "realizations": "Реалізації"
+    "realizations": "Реалізації",
+    "salesReport": "Звіт по продажам"
   },
   "settings": {
     "title": "Налаштування",

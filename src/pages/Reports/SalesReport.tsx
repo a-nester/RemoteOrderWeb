@@ -224,6 +224,9 @@ export default function SalesReport() {
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {t("common.profit", "Profit")}
                     </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t("common.profitability", "Рент, %")}
+                    </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {t("common.status", "Status")}
                     </th>
@@ -255,6 +258,9 @@ export default function SalesReport() {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-green-600 text-right">
                         {sale.profit?.toFixed(2) || "-"}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
+                        {sale.amount !== 0 ? ((sale.profit / sale.amount) * 100).toFixed(2) + " %" : "-"}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm">
                         <span
@@ -291,6 +297,13 @@ export default function SalesReport() {
                         {sales
                           .reduce((sum, item) => sum + item.profit, 0)
                           .toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
+                        {(() => {
+                           const totalAmt = sales.reduce((sum, item) => sum + item.amount, 0);
+                           const totalPrf = sales.reduce((sum, item) => sum + item.profit, 0);
+                           return totalAmt !== 0 ? ((totalPrf / totalAmt) * 100).toFixed(2) + " %" : "-";
+                        })()}
                       </td>
                       <td></td>
                     </tr>
