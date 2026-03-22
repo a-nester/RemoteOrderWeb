@@ -16,7 +16,81 @@ import {
   ArrowUpRight,
   FileText,
   Loader2,
+  MoreVertical,
+  Copy,
+  Filter as FilterIcon,
+  ExternalLink,
+  X,
 } from "lucide-react";
+import { useAuthStore } from "../../store/auth.store";
+import { AuthService } from "../../services/auth.service";
+
+// --- Custom Dropdown Component ---
+const CashTransactionDropdown = ({ tx, onCopy, onFilter, onOpen, onDelete }: any) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleAction = (e: React.MouseEvent, action: () => void) => {
+    e.stopPropagation();
+    setIsOpen(false);
+    action();
+  };
+
+  return (
+    <div className="relative inline-block text-left" ref={dropdownRef}>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 transition-colors"
+      >
+        <MoreVertical className="h-5 w-5" />
+      </button>
+      {isOpen && (
+        <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-50">
+          <div className="py-1">
+            <button
+              onClick={(e) => handleAction(e, onCopy)}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <Copy className="mr-3 h-4 w-4 text-indigo-500" /> Скопіювати
+            </button>
+            <button
+              onClick={(e) => handleAction(e, onFilter)}
+              disabled={!tx.counterpartyName}
+              className={`flex items-center w-full px-4 py-2 text-sm ${!tx.counterpartyName ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+            >
+              <FilterIcon className="mr-3 h-4 w-4 text-blue-500" /> Фільтр за контрагентом
+            </button>
+            <button
+              onClick={(e) => handleAction(e, onOpen)}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <ExternalLink className="mr-3 h-4 w-4 text-green-500" /> Відкрити у новому вікні
+            </button>
+            <button
+              onClick={(e) => handleAction(e, onDelete)}
+              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <Trash2 className="mr-3 h-4 w-4" /> Видалити
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function CashTransactions() {
   const { t } = useTranslation();
@@ -28,6 +102,22 @@ export default function CashTransactions() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { user, setPreferences } = useAuthStore();
+  
+  // Custom Filters
+  const [filterDocType, setFilterDocType] = useState<string>(
+    user?.preferences?.cashFilterType || "ALL"
+  );
+  const [filterCounterparty, setFilterCounterparty] = useState<string>("");
+
+  useEffect(() => {
+    if (user && filterDocType !== user.preferences?.cashFilterType) {
+      const newPrefs = { ...user.preferences, cashFilterType: filterDocType };
+      setPreferences(newPrefs);
+      AuthService.updatePreferences(newPrefs).catch(console.error);
+    }
+  }, [filterDocType, user, setPreferences]);
 
   // Form State
   const [form, setForm] = useState<{
@@ -143,6 +233,34 @@ export default function CashTransactions() {
     (c) => c.type === form.type || c.type === "BOTH",
   );
 
+  let filteredTransactions = transactions;
+  if (filterDocType !== "ALL") {
+    filteredTransactions = filteredTransactions.filter((tx) => tx.type === filterDocType);
+  }
+  if (filterCounterparty) {
+    filteredTransactions = filteredTransactions.filter((tx) => tx.counterpartyName === filterCounterparty);
+  }
+
+  const handleCopyTransaction = (tx: CashTransaction) => {
+    // Determine category ID or counterparty ID if possible
+    // Note: tx object might not have raw categoryId/counterpartyId depending on backend,
+    // but we can try to find them by name from our loaded arrays.
+    const matchedCategory = categories.find(c => c.name === tx.categoryName);
+    const matchedCP = counterparties.find(cp => cp.name === tx.counterpartyName);
+
+    setForm({
+      date: new Date().toISOString().slice(0, 16),
+      type: tx.type,
+      cashboxId: cashboxes.find(c => c.name === tx.cashboxName)?.id || "",
+      categoryId: matchedCategory?.id || "",
+      counterpartyId: matchedCP?.id || "",
+      amount: tx.amount.toString(),
+      comment: tx.comment || "",
+    });
+    setIsFormOpen(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center p-8">
@@ -153,17 +271,39 @@ export default function CashTransactions() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-gray-800 p-4 shadow-sm rounded-lg sticky top-0 z-20 border border-gray-200 dark:border-gray-700">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 whitespace-nowrap">
           <FileText className="h-6 w-6" /> Журнал касових ордерів
         </h1>
-        <button
-          onClick={() => setIsFormOpen(true)}
-          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          Створити касовий ордер
-        </button>
+        
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+          {filterCounterparty && (
+            <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium border border-blue-200 dark:border-blue-800">
+              <span className="truncate max-w-[150px]">{filterCounterparty}</span>
+              <button onClick={() => setFilterCounterparty("")} className="hover:text-blue-900 dark:hover:text-blue-100">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+          
+          <select
+            value={filterDocType}
+            onChange={(e) => setFilterDocType(e.target.value)}
+            className="w-full sm:w-auto rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 px-3"
+          >
+            <option value="ALL">Всі типи документів</option>
+            <option value="INCOME">Прибуткові ордери</option>
+            <option value="OUTCOME">Видаткові ордери</option>
+          </select>
+
+          <button
+            onClick={() => setIsFormOpen(true)}
+            className="w-full sm:w-auto flex justify-center items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Створити касовий ордер
+          </button>
+        </div>
       </div>
 
       {isFormOpen && (
@@ -328,9 +468,9 @@ export default function CashTransactions() {
 
       {/* Transactions List */}
       <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" style={{ maxHeight: "calc(100vh - 220px)" }}>
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10 shadow-sm">
               <tr>
                 <th
                   scope="col"
@@ -356,13 +496,13 @@ export default function CashTransactions() {
                 >
                   Сума
                 </th>
-                <th scope="col" className="relative px-6 py-3">
+                <th scope="col" className="relative px-6 py-3 w-16">
                   <span className="sr-only">Дії</span>
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {transactions.map((tx) => (
+              {filteredTransactions.map((tx) => (
                 <tr
                   key={tx.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
@@ -412,20 +552,21 @@ export default function CashTransactions() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => handleDelete(tx.id)}
-                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <CashTransactionDropdown
+                      tx={tx}
+                      onCopy={() => handleCopyTransaction(tx)}
+                      onFilter={() => setFilterCounterparty(tx.counterpartyName || "")}
+                      onOpen={() => window.open(window.location.href, "_blank")}
+                      onDelete={() => handleDelete(tx.id)}
+                    />
                   </td>
                 </tr>
               ))}
-              {transactions.length === 0 && (
+              {filteredTransactions.length === 0 && (
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-6 py-8 text-center text-gray-500 dark:text-gray-400"
+                    className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                   >
                     Немає касових ордерів
                   </td>
