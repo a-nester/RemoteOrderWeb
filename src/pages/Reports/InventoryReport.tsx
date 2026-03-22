@@ -59,14 +59,14 @@ export default function InventoryReport() {
   useEffect(() => {
     const currentPrefs = user?.preferences || {};
     const currentHidden = currentPrefs.reports?.hiddenInventoryCategories || [];
-    
+
     if (JSON.stringify(currentHidden) !== JSON.stringify(hiddenCategories)) {
       const newPrefs = {
         ...currentPrefs,
         reports: {
           ...(currentPrefs.reports || {}),
-          hiddenInventoryCategories: hiddenCategories
-        }
+          hiddenInventoryCategories: hiddenCategories,
+        },
       };
       setPreferences(newPrefs);
       AuthService.updatePreferences(newPrefs).catch(console.error);
@@ -74,7 +74,9 @@ export default function InventoryReport() {
   }, [hiddenCategories, setPreferences, user?.preferences]);
 
   const availableCategories = useMemo(() => {
-    return Array.from(new Set(data.map(item => item.productCategory || "Без категорії"))).sort();
+    return Array.from(
+      new Set(data.map((item) => item.productCategory || "Без категорії")),
+    ).sort();
   }, [data]);
 
   useEffect(() => {
@@ -135,7 +137,10 @@ export default function InventoryReport() {
     let result = [...data];
 
     // Category filter
-    result = result.filter(item => !hiddenCategories.includes(item.productCategory || "Без категорії"));
+    result = result.filter(
+      (item) =>
+        !hiddenCategories.includes(item.productCategory || "Без категорії"),
+    );
 
     // Search filter
     if (searchTerm) {
@@ -179,13 +184,13 @@ export default function InventoryReport() {
   const exportToExcel = () => {
     if (filteredAndSortedData.length === 0) return;
 
-    const excelData = filteredAndSortedData.map(row => ({
-      "Категорія": row.productCategory || "Без категорії",
+    const excelData = filteredAndSortedData.map((row) => ({
+      Категорія: row.productCategory || "Без категорії",
       "Назва товару": row.productName,
       "На початку періоду": Number(row.startBalance),
-      "Прихід": Number(row.incoming),
-      "Розхід": Number(row.outgoing),
-      "На кінець періоду": Number(row.endBalance)
+      Прихід: Number(row.incoming),
+      Розхід: Number(row.outgoing),
+      "На кінець періоду": Number(row.endBalance),
     }));
 
     const ws = XLSX.utils.json_to_sheet(excelData);
@@ -198,11 +203,16 @@ export default function InventoryReport() {
       { wch: 18 },
       { wch: 18 },
       { wch: 18 },
-      { wch: 18 }
+      { wch: 18 },
     ];
 
-    const warehouseName = warehouses.find(w => w.id === warehouseId)?.name || 'Всі_склади';
-    const fileName = `Vidomist_${warehouseName}_${startDate}_${endDate}.xlsx`.replace(/\s+/g, '_');
+    const warehouseName =
+      warehouses.find((w) => w.id === warehouseId)?.name || "Всі_склади";
+    const fileName =
+      `Vidomist_${warehouseName}_${startDate}_${endDate}.xlsx`.replace(
+        /\s+/g,
+        "_",
+      );
     XLSX.writeFile(wb, fileName);
   };
 
@@ -214,6 +224,25 @@ export default function InventoryReport() {
           <FileText className="mr-3 shrink-0" />
           Відомість по товарах
         </h1>
+        <div className="flex gap-2 w-full lg:w-auto mt-2 lg:mt-0">
+          <button
+            onClick={handleGenerate}
+            disabled={loading || !warehouseId}
+            className="flex-1 lg:flex-none flex items-center justify-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors h-[42px] disabled:bg-blue-400 whitespace-nowrap"
+          >
+            {loading ? t("common.loading", "Loading...") : "Зформувати"}
+          </button>
+
+          <button
+            onClick={exportToExcel}
+            disabled={filteredAndSortedData.length === 0}
+            className="flex-1 lg:flex-none flex items-center justify-center px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 transition-colors h-[42px] disabled:bg-green-400 whitespace-nowrap"
+            title="Експорт в Excel"
+          >
+            <Download className="h-5 w-5 mr-1" />
+            Експорт
+          </button>
+        </div>
 
         <div className="flex flex-col lg:flex-row gap-4 w-full xl:w-auto items-stretch lg:items-center">
           {/* Warehouse Selector */}
@@ -257,11 +286,12 @@ export default function InventoryReport() {
               <div className="flex items-center min-w-0 pr-2">
                 <Filter className="mr-2 h-4 w-4 text-gray-400 shrink-0" />
                 <span className="truncate">
-                  {hiddenCategories.length === 0 
-                     ? "Всі категорії" 
-                     : hiddenCategories.length === availableCategories.length && availableCategories.length > 0
-                       ? "Жодної" 
-                       : `Вибрано: ${Math.max(0, availableCategories.length - hiddenCategories.length)}`}
+                  {hiddenCategories.length === 0
+                    ? "Всі категорії"
+                    : hiddenCategories.length === availableCategories.length &&
+                        availableCategories.length > 0
+                      ? "Жодної"
+                      : `Вибрано: ${Math.max(0, availableCategories.length - hiddenCategories.length)}`}
                 </span>
               </div>
               <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
@@ -290,17 +320,19 @@ export default function InventoryReport() {
                     Немає даних
                   </div>
                 )}
-                {availableCategories.map(cat => {
+                {availableCategories.map((cat) => {
                   const isHidden = hiddenCategories.includes(cat);
                   return (
-                    <div 
+                    <div
                       key={cat}
                       className="px-3 py-2 flex items-center hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
                       onClick={() => {
                         if (isHidden) {
-                          setHiddenCategories(prev => prev.filter(c => c !== cat));
+                          setHiddenCategories((prev) =>
+                            prev.filter((c) => c !== cat),
+                          );
                         } else {
-                          setHiddenCategories(prev => [...prev, cat]);
+                          setHiddenCategories((prev) => [...prev, cat]);
                         }
                       }}
                     >
@@ -309,7 +341,10 @@ export default function InventoryReport() {
                       ) : (
                         <Square className="h-4 w-4 text-gray-400 mr-2 shrink-0" />
                       )}
-                      <span className="text-sm text-gray-700 dark:text-gray-200 truncate" title={cat}>
+                      <span
+                        className="text-sm text-gray-700 dark:text-gray-200 truncate"
+                        title={cat}
+                      >
                         {cat}
                       </span>
                     </div>
@@ -317,11 +352,11 @@ export default function InventoryReport() {
                 })}
               </div>
             )}
-            
+
             {/* Backdrop to close menu */}
             {isCategoryMenuOpen && (
-              <div 
-                className="fixed inset-0 z-10" 
+              <div
+                className="fixed inset-0 z-10"
                 onClick={() => setIsCategoryMenuOpen(false)}
               />
             )}
@@ -342,26 +377,6 @@ export default function InventoryReport() {
               onChange={(e) => setEndDate(e.target.value)}
               className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 h-[42px] flex-1"
             />
-          </div>
-
-          <div className="flex gap-2 w-full lg:w-auto mt-2 lg:mt-0">
-            <button
-              onClick={handleGenerate}
-              disabled={loading || !warehouseId}
-              className="flex-1 lg:flex-none flex items-center justify-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors h-[42px] disabled:bg-blue-400 whitespace-nowrap"
-            >
-              {loading ? t("common.loading", "Loading...") : "Зформувати"}
-            </button>
-            
-            <button
-              onClick={exportToExcel}
-              disabled={filteredAndSortedData.length === 0}
-              className="flex-1 lg:flex-none flex items-center justify-center px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 transition-colors h-[42px] disabled:bg-green-400 whitespace-nowrap"
-              title="Експорт в Excel"
-            >
-              <Download className="h-5 w-5 mr-1" />
-              Експорт
-            </button>
           </div>
         </div>
       </div>
@@ -560,7 +575,7 @@ export default function InventoryReport() {
                 </td>
               </tr>
             )}
-            {loading && (
+            {loading &&
               Array.from({ length: 5 }).map((_, idx) => (
                 <tr key={`skeleton-${idx}`} className="animate-pulse">
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -582,8 +597,7 @@ export default function InventoryReport() {
                     <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 ml-auto"></div>
                   </td>
                 </tr>
-              ))
-            )}
+              ))}
           </tbody>
         </table>
       </div>
