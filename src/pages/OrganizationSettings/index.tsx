@@ -12,6 +12,7 @@ export default function OrganizationSettings() {
 
   // Org Form State
   const [orgName, setOrgName] = useState("");
+  const [salesTypes, setSalesTypes] = useState<string[]>([]);
   const [savingOrg, setSavingOrg] = useState(false);
 
   // Warehouse Modal State
@@ -36,6 +37,7 @@ export default function OrganizationSettings() {
       ]);
       setOrg(orgData);
       setOrgName(orgData.name);
+      setSalesTypes(orgData.salesTypes || ["Готівковий", "р/р ФОП", "з ПДВ"]);
       setWarehouses(whData);
     } catch (error) {
       console.error("Failed to load organization settings", error);
@@ -52,6 +54,7 @@ export default function OrganizationSettings() {
       const updated = await OrganizationService.updateOrganization({
         id: org.id,
         name: orgName,
+        salesTypes,
       });
       setOrg(updated);
       alert(t("common.saved", "Saved successfully"));
@@ -148,6 +151,32 @@ export default function OrganizationSettings() {
                 ? t("common.saving", "Saving...")
                 : t("common.save", "Save")}
             </button>
+          </div>
+        </div>
+
+        {/* Sales Types Section */}
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+            {t("organization.salesTypes", "Види продажу")}
+          </h2>
+          <div className="flex flex-wrap gap-6">
+            {["Готівковий", "р/р ФОП", "з ПДВ"].map(type => (
+              <label key={type} className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={salesTypes.includes(type)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSalesTypes(prev => [...prev, type]);
+                    } else {
+                      setSalesTypes(prev => prev.filter(t => t !== type));
+                    }
+                  }}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-5 h-5"
+                />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{type}</span>
+              </label>
+            ))}
           </div>
         </div>
 

@@ -68,6 +68,14 @@ export default function OrderForm({
   const [warehouseId, setWarehouseId] = useState<string>(
     (initialData as any)?.warehouseId || "", // Type cast for realization type duck-typing
   );
+  const [salesType, setSalesType] = useState<string>(
+    (initialData as any)?.salesType || "Готівковий",
+  );
+  const [orgSalesTypes, setOrgSalesTypes] = useState<string[]>([
+    "Готівковий",
+    "р/р ФОП",
+    "з ПДВ",
+  ]);
 
   // UI State
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
@@ -103,6 +111,7 @@ export default function OrderForm({
         setStatus(initialData.status || OrderStatus.NEW);
         setCounterpartyId(initialData.counterpartyId || "");
         setComment(initialData.comment || "");
+        setSalesType((initialData as any)?.salesType || "Готівковий");
 
         // Safe items parsing with enrichment
         const rawItems = Array.isArray(initialData.items)
@@ -151,8 +160,14 @@ export default function OrderForm({
       setPriceTypes(priceTypesData.filter((pt) => !pt.isDeleted));
 
       if (isRealization) {
-        const warehousesData = await OrganizationService.getWarehouses();
+        const [warehousesData, orgData] = await Promise.all([
+          OrganizationService.getWarehouses(),
+          OrganizationService.getOrganization(),
+        ]);
         setWarehouses(warehousesData);
+        if (orgData && orgData.salesTypes) {
+          setOrgSalesTypes(orgData.salesTypes);
+        }
       }
     } catch (error) {
       console.error("Failed to load data", error);
@@ -315,6 +330,11 @@ export default function OrderForm({
     if (!newClientId) return;
 
     const client = counterparties.find((c) => c.id === newClientId);
+    
+    if (client && client.defaultSalesType) {
+      setSalesType(client.defaultSalesType);
+    }
+    
     const pt = priceTypes.find(
       (p) => String(p.id) === String(client?.priceTypeId),
     );
@@ -445,6 +465,7 @@ export default function OrderForm({
 
     if (isRealization) {
       orderData.warehouseId = warehouseId;
+      orderData.salesType = salesType;
     }
 
     console.log("OrderForm: Saving order data:", orderData);
@@ -645,6 +666,27 @@ export default function OrderForm({
                 {warehouses.map((w) => (
                   <option key={w.id} value={w.id}>
                     {w.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Realization Settings (Sales Type) */}
+          {isRealization && (
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t("organization.salesTypes", "Вид продажу")}
+              </label>
+              <select
+                aria-label="Вид продажу"
+                value={salesType}
+                onChange={(e) => setSalesType(e.target.value)}
+                className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white shadow-sm focus:ring-2 focus:ring-blue-500 p-2"
+              >
+                {orgSalesTypes.map((st) => (
+                  <option key={st} value={st}>
+                    {st}
                   </option>
                 ))}
               </select>

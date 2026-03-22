@@ -27,19 +27,25 @@ export default function CounterpartyForm({
     isSeller: false,
     priceTypeId: "",
     groupId: "",
+    defaultSalesType: "Готівковий",
   });
   const [priceTypes, setPriceTypes] = useState<PriceType[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [salesTypes, setSalesTypes] = useState<string[]>(["Готівковий", "р/р ФОП", "з ПДВ"]);
   const [error, setError] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
-      const [types, whs] = await Promise.all([
+      const [types, whs, org] = await Promise.all([
         PriceTypesService.fetchPriceTypes(),
         OrganizationService.getWarehouses(),
+        OrganizationService.getOrganization(),
       ]);
       setPriceTypes(types);
       setWarehouses(whs);
+      if (org && org.salesTypes && org.salesTypes.length > 0) {
+        setSalesTypes(org.salesTypes);
+      }
     } catch (error) {
       console.error(error);
     }
@@ -67,6 +73,7 @@ export default function CounterpartyForm({
       priceTypeId: formData.priceTypeId || undefined,
       groupId: formData.groupId || undefined,
       warehouseId: formData.warehouseId || undefined,
+      defaultSalesType: formData.defaultSalesType || "Готівковий",
     };
     await onSave(payload);
   };
@@ -191,6 +198,24 @@ export default function CounterpartyForm({
                 {warehouses.map((w) => (
                   <option key={w.id} value={w.id}>
                     {w.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Вид продажу (за зам.)
+              </label>
+              <select
+                value={formData.defaultSalesType || "Готівковий"}
+                onChange={(e) =>
+                  setFormData({ ...formData, defaultSalesType: e.target.value })
+                }
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              >
+                {salesTypes.map((st) => (
+                  <option key={st} value={st}>
+                    {st}
                   </option>
                 ))}
               </select>

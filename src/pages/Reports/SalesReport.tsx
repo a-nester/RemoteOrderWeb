@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { RealizationService } from "../../services/realization.service";
 import {
   ReportsService,
@@ -44,6 +44,7 @@ export default function SalesReport() {
     return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split("T")[0];
   });
   const [counterparty, setCounterparty] = useState<string>("");
+  const [groupBySalesType, setGroupBySalesType] = useState<boolean>(false);
 
   const fetchSales = async () => {
     setLoading(true);
@@ -88,6 +89,7 @@ export default function SalesReport() {
           dateFrom,
           dateTo,
           counterparty,
+          groupBySalesType,
         );
         setSalesByClient(data);
       } else if (activeTab === "byProduct") {
@@ -95,6 +97,7 @@ export default function SalesReport() {
           dateFrom,
           dateTo,
           counterparty,
+          groupBySalesType,
         );
         setSalesByProduct(data);
       }
@@ -155,9 +158,23 @@ export default function SalesReport() {
             className="border border-gray-300 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[250px]"
           />
         </div>
+        <div className="flex items-center mb-2 mr-4">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={groupBySalesType}
+              onChange={(e) => setGroupBySalesType(e.target.checked)}
+              className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={activeTab === "general"}
+            />
+            <span className={`text-sm font-medium ${activeTab === "general" ? "text-gray-400" : "text-gray-700"}`}>
+              {t("reports.groupBySalesType", "Сортувати за типом продаж")}
+            </span>
+          </label>
+        </div>
         <button
           onClick={fetchSales}
-          className="bg-blue-600 hover:bg-blue-700 transition-colors text-white px-6 py-1.5 rounded-md font-medium shadow-sm"
+          className="bg-blue-600 hover:bg-blue-700 transition-colors text-white px-6 py-1.5 rounded-md font-medium shadow-sm mb-1"
         >
           {t("common.filter", "Filter")}
         </button>
@@ -336,28 +353,80 @@ export default function SalesReport() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {salesByClient.map((row, index) => (
-                    <tr
-                      key={row.clientId || index}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                        {index + 1}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {row.clientName || t("common.unknown", "Unknown")}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
-                        {row.documentsCount}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                        {formatNum(row.totalAmount)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
-                        {formatNum(row.totalProfit)}
-                      </td>
-                    </tr>
-                  ))}
+                  {groupBySalesType ? (
+                    Object.entries(
+                      salesByClient.reduce((acc, row) => {
+                        const st = row.salesType || "Не визначено";
+                        if (!acc[st]) acc[st] = [];
+                        acc[st].push(row);
+                        return acc;
+                      }, {} as Record<string, SalesByClient[]>)
+                    ).map(([salesType, rows]) => (
+                      <Fragment key={salesType}>
+                        <tr className="bg-blue-50/50">
+                          <td colSpan={5} className="px-4 py-3 text-sm font-bold text-gray-900 border-y border-gray-200">
+                            {salesType}
+                          </td>
+                        </tr>
+                        {rows.map((row, index) => (
+                           <tr
+                             key={row.clientId || index}
+                             className="hover:bg-gray-50 transition-colors"
+                           >
+                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                               {index + 1}
+                             </td>
+                             <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 pl-8">
+                               {row.clientName || t("common.unknown", "Unknown")}
+                             </td>
+                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                               {row.documentsCount}
+                             </td>
+                             <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                               {formatNum(row.totalAmount)}
+                             </td>
+                             <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
+                               {formatNum(row.totalProfit)}
+                             </td>
+                           </tr>
+                        ))}
+                        <tr className="bg-gray-50 border-t border-gray-200">
+                           <td colSpan={3} className="px-4 py-2 text-right text-sm font-bold text-gray-700">
+                             {t("common.total", "Підсумок")} ({salesType}):
+                           </td>
+                           <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">
+                             {formatNum(rows.reduce((sum, item) => sum + Number(item.totalAmount), 0))}
+                           </td>
+                           <td className="px-4 py-2 text-right text-sm font-bold text-green-700">
+                             {formatNum(rows.reduce((sum, item) => sum + Number(item.totalProfit), 0))}
+                           </td>
+                        </tr>
+                      </Fragment>
+                    ))
+                  ) : (
+                    salesByClient.map((row, index) => (
+                      <tr
+                        key={row.clientId || index}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          {index + 1}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {row.clientName || t("common.unknown", "Unknown")}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                          {row.documentsCount}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                          {formatNum(row.totalAmount)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
+                          {formatNum(row.totalProfit)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                   {salesByClient.length === 0 && (
                     <tr>
                       <td colSpan={5} className="p-8 text-center text-gray-500">
@@ -424,31 +493,89 @@ export default function SalesReport() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {salesByProduct.map((row, index) => (
-                    <tr
-                      key={row.productId}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                        {index + 1}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                        {row.productCategory || "-"}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {row.productName}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {formatNum(row.totalQuantity)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                        {formatNum(row.totalAmount)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
-                        {formatNum(row.totalProfit)}
-                      </td>
-                    </tr>
-                  ))}
+                  {groupBySalesType ? (
+                    Object.entries(
+                      salesByProduct.reduce((acc, row) => {
+                        const st = row.salesType || "Не визначено";
+                        if (!acc[st]) acc[st] = [];
+                        acc[st].push(row);
+                        return acc;
+                      }, {} as Record<string, SalesByProduct[]>)
+                    ).map(([salesType, rows]) => (
+                      <Fragment key={salesType}>
+                        <tr className="bg-blue-50/50">
+                          <td colSpan={6} className="px-4 py-3 text-sm font-bold text-gray-900 border-y border-gray-200">
+                            {salesType}
+                          </td>
+                        </tr>
+                        {rows.map((row, index) => (
+                          <tr
+                            key={row.productId}
+                            className="hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                              {index + 1}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 pl-8">
+                              {row.productCategory || "-"}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {row.productName}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
+                              {formatNum(row.totalQuantity)}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                              {formatNum(row.totalAmount)}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
+                              {formatNum(row.totalProfit)}
+                            </td>
+                          </tr>
+                        ))}
+                        <tr className="bg-gray-50 border-t border-gray-200">
+                           <td colSpan={3} className="px-4 py-2 text-right text-sm font-bold text-gray-700">
+                             {t("common.total", "Підсумок")} ({salesType}):
+                           </td>
+                           <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">
+                             {formatNum(rows.reduce((sum, item) => sum + Number(item.totalQuantity), 0))}
+                           </td>
+                           <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">
+                             {formatNum(rows.reduce((sum, item) => sum + Number(item.totalAmount), 0))}
+                           </td>
+                           <td className="px-4 py-2 text-right text-sm font-bold text-green-700">
+                             {formatNum(rows.reduce((sum, item) => sum + Number(item.totalProfit), 0))}
+                           </td>
+                        </tr>
+                      </Fragment>
+                    ))
+                  ) : (
+                    salesByProduct.map((row, index) => (
+                      <tr
+                        key={row.productId}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          {index + 1}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          {row.productCategory || "-"}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {row.productName}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
+                          {formatNum(row.totalQuantity)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                          {formatNum(row.totalAmount)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
+                          {formatNum(row.totalProfit)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                   {salesByProduct.length === 0 && (
                     <tr>
                       <td colSpan={6} className="p-8 text-center text-gray-500">

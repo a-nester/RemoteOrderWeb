@@ -3,6 +3,7 @@ export interface Organization {
     id: string;
     name: string;
     fullDetails?: string;
+    salesTypes?: string[];
     createdAt?: string;
     updatedAt?: string;
 }
