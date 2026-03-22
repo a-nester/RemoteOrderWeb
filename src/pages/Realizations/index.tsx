@@ -178,7 +178,7 @@ export default function RealizationList() {
           {t("menu.realizations", "Realizations")}
         </h1>
 
-        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+        <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
           {/* Search Input */}
           <div className="relative flex-1 md:w-64">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
