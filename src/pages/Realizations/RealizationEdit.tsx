@@ -41,6 +41,7 @@ export default function RealizationEdit() {
         counterpartyId: data.counterpartyId,
         status: data.status, // OrderForm includes status, although we could ignore it for realizations
         warehouseId: data.warehouseId,
+        salesType: data.salesType,
         amount: data.amount,
         comment: data.comment,
         items: data.items.map((item: any) => ({

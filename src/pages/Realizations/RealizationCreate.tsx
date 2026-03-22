@@ -40,6 +40,7 @@ export default function RealizationCreate() {
         date: data.date,
         counterpartyId: data.counterpartyId,
         warehouseId: data.warehouseId,
+        salesType: data.salesType,
         amount: data.amount,
         comment: data.comment,
         items: data.items.map((item: any) => ({

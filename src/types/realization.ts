@@ -28,6 +28,7 @@ export interface Realization {
     amount: number;
     currency: string;
     comment?: string;
+    salesType?: string;
     createdAt?: string;
     updatedAt?: string;
     createdBy?: string;
