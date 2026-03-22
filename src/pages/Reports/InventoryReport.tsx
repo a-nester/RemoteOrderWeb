@@ -7,6 +7,9 @@ import {
   ArrowUp,
   ChevronDown,
   ChevronRight,
+  Filter,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 import { ReportsService } from "../../services/reports.service";
 import type { InventoryMovement } from "../../services/reports.service";
@@ -44,6 +47,33 @@ export default function InventoryReport() {
   const [sortField, setSortField] =
     useState<keyof InventoryMovement>("productName");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  // Category Filter
+  const [hiddenCategories, setHiddenCategories] = useState<string[]>(() => {
+    return user?.preferences?.reports?.hiddenInventoryCategories || [];
+  });
+  const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const currentPrefs = user?.preferences || {};
+    const currentHidden = currentPrefs.reports?.hiddenInventoryCategories || [];
+    
+    if (JSON.stringify(currentHidden) !== JSON.stringify(hiddenCategories)) {
+      const newPrefs = {
+        ...currentPrefs,
+        reports: {
+          ...(currentPrefs.reports || {}),
+          hiddenInventoryCategories: hiddenCategories
+        }
+      };
+      setPreferences(newPrefs);
+      AuthService.updatePreferences(newPrefs).catch(console.error);
+    }
+  }, [hiddenCategories, setPreferences, user?.preferences]);
+
+  const availableCategories = useMemo(() => {
+    return Array.from(new Set(data.map(item => item.productCategory || "Без категорії"))).sort();
+  }, [data]);
 
   useEffect(() => {
     OrganizationService.getWarehouses()
@@ -101,6 +131,9 @@ export default function InventoryReport() {
 
   const filteredAndSortedData = useMemo(() => {
     let result = [...data];
+
+    // Category filter
+    result = result.filter(item => !hiddenCategories.includes(item.productCategory || "Без категорії"));
 
     // Search filter
     if (searchTerm) {
@@ -179,8 +212,87 @@ export default function InventoryReport() {
               placeholder={t("common.search", "Search...")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white h-[42px]"
+              className="pl-10 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white h-[42px]"
             />
+          </div>
+
+          {/* Category Filter Menu */}
+          <div className="relative w-full lg:w-48 xl:w-56">
+            <button
+              onClick={() => setIsCategoryMenuOpen(!isCategoryMenuOpen)}
+              className="flex items-center justify-between w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm px-3 py-2 text-sm text-gray-700 dark:text-white h-[42px]"
+            >
+              <div className="flex items-center min-w-0 pr-2">
+                <Filter className="mr-2 h-4 w-4 text-gray-400 shrink-0" />
+                <span className="truncate">
+                  {hiddenCategories.length === 0 
+                     ? "Всі категорії" 
+                     : hiddenCategories.length === availableCategories.length && availableCategories.length > 0
+                       ? "Жодної" 
+                       : `Вибрано: ${Math.max(0, availableCategories.length - hiddenCategories.length)}`}
+                </span>
+              </div>
+              <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
+            </button>
+
+            {isCategoryMenuOpen && (
+              <div className="absolute z-20 mt-1 w-64 bg-white dark:bg-gray-800 shadow-lg rounded-md border border-gray-200 dark:border-gray-700 py-1 max-h-60 overflow-auto lg:right-auto right-0">
+                <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700 flex justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setHiddenCategories([])}
+                    className="text-xs text-indigo-600 dark:text-indigo-400 font-medium hover:underline"
+                  >
+                    Вибрати всі
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHiddenCategories(availableCategories)}
+                    className="text-xs text-gray-500 hover:underline"
+                  >
+                    Зняти всі
+                  </button>
+                </div>
+                {availableCategories.length === 0 && (
+                  <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                    Немає даних
+                  </div>
+                )}
+                {availableCategories.map(cat => {
+                  const isHidden = hiddenCategories.includes(cat);
+                  return (
+                    <div 
+                      key={cat}
+                      className="px-3 py-2 flex items-center hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                      onClick={() => {
+                        if (isHidden) {
+                          setHiddenCategories(prev => prev.filter(c => c !== cat));
+                        } else {
+                          setHiddenCategories(prev => [...prev, cat]);
+                        }
+                      }}
+                    >
+                      {!isHidden ? (
+                        <CheckSquare className="h-4 w-4 text-indigo-600 mr-2 shrink-0" />
+                      ) : (
+                        <Square className="h-4 w-4 text-gray-400 mr-2 shrink-0" />
+                      )}
+                      <span className="text-sm text-gray-700 dark:text-gray-200 truncate" title={cat}>
+                        {cat}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            
+            {/* Backdrop to close menu */}
+            {isCategoryMenuOpen && (
+              <div 
+                className="fixed inset-0 z-10" 
+                onClick={() => setIsCategoryMenuOpen(false)}
+              />
+            )}
           </div>
 
           {/* Date Filters */}
@@ -405,14 +517,28 @@ export default function InventoryReport() {
               </tr>
             )}
             {loading && (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
-                >
-                  Завантаження даних...
-                </td>
-              </tr>
+              Array.from({ length: 5 }).map((_, idx) => (
+                <tr key={`skeleton-${idx}`} className="animate-pulse">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="w-6 shrink-0"></div>
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 ml-auto"></div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 ml-auto"></div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16 ml-auto"></div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 ml-auto"></div>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>
