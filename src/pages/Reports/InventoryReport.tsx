@@ -10,7 +10,9 @@ import {
   Filter,
   CheckSquare,
   Square,
+  Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { ReportsService } from "../../services/reports.service";
 import type { InventoryMovement } from "../../services/reports.service";
 import { OrganizationService } from "../../services/organization.service";
@@ -174,6 +176,36 @@ export default function InventoryReport() {
     return result;
   }, [data, searchTerm, sortField, sortOrder]);
 
+  const exportToExcel = () => {
+    if (filteredAndSortedData.length === 0) return;
+
+    const excelData = filteredAndSortedData.map(row => ({
+      "Категорія": row.productCategory || "Без категорії",
+      "Назва товару": row.productName,
+      "На початку періоду": Number(row.startBalance),
+      "Прихід": Number(row.incoming),
+      "Розхід": Number(row.outgoing),
+      "На кінець періоду": Number(row.endBalance)
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Відомість по товарах");
+
+    ws["!cols"] = [
+      { wch: 25 },
+      { wch: 45 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 18 }
+    ];
+
+    const warehouseName = warehouses.find(w => w.id === warehouseId)?.name || 'Всі_склади';
+    const fileName = `Vidomist_${warehouseName}_${startDate}_${endDate}.xlsx`.replace(/\s+/g, '_');
+    XLSX.writeFile(wb, fileName);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Container matching Realizations Style */}
@@ -312,13 +344,25 @@ export default function InventoryReport() {
             />
           </div>
 
-          <button
-            onClick={handleGenerate}
-            disabled={loading || !warehouseId}
-            className="flex items-center justify-center px-6 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors h-[42px] disabled:bg-blue-400 w-full lg:w-auto whitespace-nowrap"
-          >
-            {loading ? t("common.loading", "Loading...") : "Зформувати"}
-          </button>
+          <div className="flex gap-2 w-full lg:w-auto mt-2 lg:mt-0">
+            <button
+              onClick={handleGenerate}
+              disabled={loading || !warehouseId}
+              className="flex-1 lg:flex-none flex items-center justify-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors h-[42px] disabled:bg-blue-400 whitespace-nowrap"
+            >
+              {loading ? t("common.loading", "Loading...") : "Зформувати"}
+            </button>
+            
+            <button
+              onClick={exportToExcel}
+              disabled={filteredAndSortedData.length === 0}
+              className="flex-1 lg:flex-none flex items-center justify-center px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 transition-colors h-[42px] disabled:bg-green-400 whitespace-nowrap"
+              title="Експорт в Excel"
+            >
+              <Download className="h-5 w-5 mr-1" />
+              Експорт
+            </button>
+          </div>
         </div>
       </div>
 
