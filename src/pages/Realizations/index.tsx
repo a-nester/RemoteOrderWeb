@@ -172,7 +172,7 @@ export default function RealizationList() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 shadow rounded-lg sticky top-0 z-10 dark:bg-gray-800 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-2 shadow rounded-lg sticky top-0 z-10 dark:bg-gray-800 gap-4">
         <h1 className="hidden lg:flex text-2xl font-bold text-gray-900 dark:text-white items-center">
           <FileText className="mr-3" />
           {t("menu.realizations", "Realizations")}
