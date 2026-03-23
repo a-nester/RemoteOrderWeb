@@ -79,6 +79,10 @@ export const FinanceService = {
     const response = await axios.post(`${BASE_URL}/transactions`, data, { headers: getAuthHeader() });
     return response.data;
   },
+  updateTransaction: async (id: string, data: Partial<CashTransaction>): Promise<CashTransaction> => {
+    const response = await axios.put(`${BASE_URL}/transactions/${id}`, data, { headers: getAuthHeader() });
+    return response.data;
+  },
   deleteTransaction: async (id: string): Promise<void> => {
     await axios.delete(`${BASE_URL}/transactions/${id}`, { headers: getAuthHeader() });
   }

@@ -6,7 +6,7 @@ import {
   CreditCard,
   Copy,
   Trash2,
-  Filter as FilterIcon,
+  UserSearch,
 } from "lucide-react";
 
 export interface DocumentActionsProps {
@@ -109,7 +109,7 @@ export default function DocumentActionsDropdown({
                 onClick={(e) => handleAction(e, onFilter)}
                 className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                <FilterIcon className="mr-3 h-4 w-4 text-emerald-500" /> Фільтр за контрагентом
+                <UserSearch className="mr-3 h-4 w-4 text-teal-600" /> Фільтр за контрагентом
               </button>
             )}
 

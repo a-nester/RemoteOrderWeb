@@ -21,12 +21,13 @@ import {
   Filter as FilterIcon,
   ExternalLink,
   X,
+  Edit,
 } from "lucide-react";
 import { useAuthStore } from "../../store/auth.store";
 import { AuthService } from "../../services/auth.service";
 
 // --- Custom Dropdown Component ---
-const CashTransactionDropdown = ({ tx, onCopy, onFilter, onOpen, onDelete }: any) => {
+const CashTransactionDropdown = ({ tx, onCopy, onFilter, onOpen, onEdit, onDelete }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
@@ -80,6 +81,12 @@ const CashTransactionDropdown = ({ tx, onCopy, onFilter, onOpen, onDelete }: any
               <ExternalLink className="mr-3 h-4 w-4 text-green-500" /> Відкрити у новому вікні
             </button>
             <button
+              onClick={(e) => handleAction(e, onEdit)}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <Edit className="mr-3 h-4 w-4 text-orange-500" /> Редагувати
+            </button>
+            <button
               onClick={(e) => handleAction(e, onDelete)}
               className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
             >
@@ -120,6 +127,7 @@ export default function CashTransactions() {
   }, [filterDocType, user, setPreferences]);
 
   // Form State
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<{
     date: string;
     type: "INCOME" | "OUTCOME";
@@ -194,7 +202,7 @@ export default function CashTransactions() {
 
     setIsSubmitting(true);
     try {
-      await FinanceService.createTransaction({
+      const payload = {
         date: new Date(form.date).toISOString(),
         type: form.type,
         cashboxId: form.cashboxId,
@@ -202,8 +210,15 @@ export default function CashTransactions() {
         categoryId: form.categoryId || null,
         counterpartyId: form.counterpartyId || null,
         comment: form.comment,
-      });
+      };
+
+      if (editingId) {
+        await FinanceService.updateTransaction(editingId, payload);
+      } else {
+        await FinanceService.createTransaction(payload);
+      }
       setIsFormOpen(false);
+      setEditingId(null);
       setForm({ ...form, amount: "", comment: "" }); // reset some fields
       if (searchParams.get("action") === "payment") {
         setSearchParams({});
@@ -248,8 +263,12 @@ export default function CashTransactions() {
     const matchedCategory = categories.find(c => c.name === tx.categoryName);
     const matchedCP = counterparties.find(cp => cp.name === tx.counterpartyName);
 
+    // Try generating local ISO
+    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(new Date(tx.date).getTime() - tzoffset)).toISOString().slice(0, 16);
+
     setForm({
-      date: new Date().toISOString().slice(0, 16),
+      date: localISOTime,
       type: tx.type,
       cashboxId: cashboxes.find(c => c.name === tx.cashboxName)?.id || "",
       categoryId: matchedCategory?.id || "",
@@ -257,6 +276,28 @@ export default function CashTransactions() {
       amount: tx.amount.toString(),
       comment: tx.comment || "",
     });
+    setEditingId(null); // Important: don't link edit state on copy
+    setIsFormOpen(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleEditTransaction = (tx: CashTransaction) => {
+    const matchedCategory = categories.find(c => c.name === tx.categoryName);
+    const matchedCP = counterparties.find(cp => cp.name === tx.counterpartyName);
+
+    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(new Date(tx.date).getTime() - tzoffset)).toISOString().slice(0, 16);
+
+    setForm({
+      date: localISOTime,
+      type: tx.type,
+      cashboxId: cashboxes.find(c => c.name === tx.cashboxName)?.id || "",
+      categoryId: matchedCategory?.id || "",
+      counterpartyId: matchedCP?.id || "",
+      amount: tx.amount.toString(),
+      comment: tx.comment || "",
+    });
+    setEditingId(tx.id);
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -309,7 +350,7 @@ export default function CashTransactions() {
       {isFormOpen && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h2 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
-            Новий касовий ордер
+            {editingId ? "Редагування касового ордеру" : "Новий касовий ордер"}
           </h2>
           <form
             onSubmit={handleSubmit}
@@ -448,7 +489,10 @@ export default function CashTransactions() {
             <div className="col-span-full flex justify-end gap-3 mt-4">
               <button
                 type="button"
-                onClick={() => setIsFormOpen(false)}
+                onClick={() => {
+                  setIsFormOpen(false);
+                  setEditingId(null);
+                }}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600"
               >
                 {t("common.cancel", "Скасувати")}
@@ -557,6 +601,7 @@ export default function CashTransactions() {
                       onCopy={() => handleCopyTransaction(tx)}
                       onFilter={() => setFilterCounterparty(tx.counterpartyName || "")}
                       onOpen={() => window.open(window.location.href, "_blank")}
+                      onEdit={() => handleEditTransaction(tx)}
                       onDelete={() => handleDelete(tx.id)}
                     />
                   </td>
