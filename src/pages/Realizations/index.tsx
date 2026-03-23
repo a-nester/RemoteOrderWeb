@@ -220,7 +220,7 @@ export default function RealizationList() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow hidden md:block rounded-lg overflow-x-auto">
+      <div className="bg-white dark:bg-gray-800 shadow hidden md:block rounded-lg">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-900">
             <tr>
