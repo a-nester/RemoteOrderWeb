@@ -118,6 +118,24 @@ export default function CashTransactions() {
   );
   const [filterCounterparty, setFilterCounterparty] = useState<string>("");
 
+  // Date filters
+  const [startDate, setStartDate] = useState(() => {
+    return localStorage.getItem("cash_startDate") || "";
+  });
+  const [endDate, setEndDate] = useState(() => {
+    const saved = localStorage.getItem("cash_endDate");
+    if (saved) return saved;
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth() + 1, 0)
+      .toISOString()
+      .split("T")[0];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("cash_startDate", startDate);
+    localStorage.setItem("cash_endDate", endDate);
+  }, [startDate, endDate]);
+
   useEffect(() => {
     if (user && filterDocType !== user.preferences?.cashFilterType) {
       const newPrefs = { ...user.preferences, cashFilterType: filterDocType };
@@ -255,6 +273,14 @@ export default function CashTransactions() {
   if (filterCounterparty) {
     filteredTransactions = filteredTransactions.filter((tx) => tx.counterpartyName === filterCounterparty);
   }
+  if (startDate || endDate) {
+    filteredTransactions = filteredTransactions.filter((tx) => {
+      const date = tx.date.split("T")[0];
+      if (startDate && date < startDate) return false;
+      if (endDate && date > endDate) return false;
+      return true;
+    });
+  }
 
   const handleCopyTransaction = (tx: CashTransaction) => {
     // Determine category ID or counterparty ID if possible
@@ -327,6 +353,22 @@ export default function CashTransactions() {
             </div>
           )}
           
+          <div className="flex gap-2 items-center w-full sm:w-auto">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full sm:w-auto rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 px-3"
+            />
+            <span className="text-gray-500">-</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full sm:w-auto rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 px-3"
+            />
+          </div>
+
           <select
             value={filterDocType}
             onChange={(e) => setFilterDocType(e.target.value)}
