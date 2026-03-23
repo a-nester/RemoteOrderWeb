@@ -6,6 +6,7 @@ import {
   CreditCard,
   Copy,
   Trash2,
+  Filter as FilterIcon,
 } from "lucide-react";
 
 export interface DocumentActionsProps {
@@ -14,6 +15,7 @@ export interface DocumentActionsProps {
   copyUrl: string;
   onToggleStatus: () => void;
   onDelete: () => void;
+  onFilter?: () => void;
 }
 
 export default function DocumentActionsDropdown({
@@ -22,6 +24,7 @@ export default function DocumentActionsDropdown({
   copyUrl,
   onToggleStatus,
   onDelete,
+  onFilter,
 }: DocumentActionsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -100,6 +103,15 @@ export default function DocumentActionsDropdown({
             >
               <Copy className="mr-3 h-4 w-4 text-indigo-500" /> Копіювати
             </button>
+            
+            {onFilter && (
+              <button
+                onClick={(e) => handleAction(e, onFilter)}
+                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <FilterIcon className="mr-3 h-4 w-4 text-emerald-500" /> Фільтр за контрагентом
+              </button>
+            )}
 
             <button
               onClick={(e) => handleAction(e, onDelete)}

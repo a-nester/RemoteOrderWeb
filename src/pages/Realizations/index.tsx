@@ -9,6 +9,7 @@ import {
   ArrowDown,
   ArrowUp,
   Search,
+  X,
 } from "lucide-react";
 import { RealizationService } from "../../services/realization.service";
 import type { Realization } from "../../types/realization";
@@ -24,6 +25,7 @@ export default function RealizationList() {
   const [realizations, setRealizations] = useState<Realization[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterCounterparty, setFilterCounterparty] = useState("");
 
   const { user, setPreferences } = useAuthStore();
   const defaultSort = user?.preferences?.realizationSort || "desc";
@@ -153,6 +155,9 @@ export default function RealizationList() {
         ) {
           return false;
         }
+        if (filterCounterparty && a.counterpartyName !== filterCounterparty) {
+          return false;
+        }
         const date = a.date.split("T")[0];
         if (startDate && date < startDate) return false;
         if (endDate && date > endDate) return false;
@@ -163,7 +168,7 @@ export default function RealizationList() {
         const dateB = new Date(b.date).getTime();
         return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
       });
-  }, [realizations, searchTerm, startDate, endDate, sortOrder]);
+  }, [realizations, searchTerm, startDate, endDate, sortOrder, filterCounterparty]);
 
   if (loading)
     return (
@@ -178,7 +183,16 @@ export default function RealizationList() {
           {t("menu.realizations", "Realizations")}
         </h1>
 
-        <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+        <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto items-center">
+          {filterCounterparty && (
+            <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium border border-blue-200 dark:border-blue-800">
+              <span className="truncate max-w-[150px]">{filterCounterparty}</span>
+              <button onClick={() => setFilterCounterparty("")} className="hover:text-blue-900 dark:hover:text-blue-100">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
           {/* Search Input */}
           <div className="relative flex-1 md:w-64">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -307,6 +321,11 @@ export default function RealizationList() {
                           handleToggleStatus(item.id, item.status)
                         }
                         onDelete={() => handleDelete(item.id, item.status)}
+                        onFilter={
+                          item.counterpartyName 
+                            ? () => setFilterCounterparty(item.counterpartyName!) 
+                            : undefined
+                        }
                       />
                     </div>
                   </td>
