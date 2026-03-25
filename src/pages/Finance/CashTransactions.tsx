@@ -27,13 +27,23 @@ import { useAuthStore } from "../../store/auth.store";
 import { AuthService } from "../../services/auth.service";
 
 // --- Custom Dropdown Component ---
-const CashTransactionDropdown = ({ tx, onCopy, onFilter, onOpen, onEdit, onDelete }: any) => {
+const CashTransactionDropdown = ({
+  tx,
+  onCopy,
+  onFilter,
+  onOpen,
+  onEdit,
+  onDelete,
+}: any) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     }
@@ -70,15 +80,17 @@ const CashTransactionDropdown = ({ tx, onCopy, onFilter, onOpen, onEdit, onDelet
             <button
               onClick={(e) => handleAction(e, onFilter)}
               disabled={!tx.counterpartyName}
-              className={`flex items-center w-full px-4 py-2 text-sm ${!tx.counterpartyName ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+              className={`flex items-center w-full px-4 py-2 text-sm ${!tx.counterpartyName ? "text-gray-400 cursor-not-allowed" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"}`}
             >
-              <FilterIcon className="mr-3 h-4 w-4 text-blue-500" /> Фільтр за контрагентом
+              <FilterIcon className="mr-3 h-4 w-4 text-blue-500" /> Фільтр за
+              контрагентом
             </button>
             <button
               onClick={(e) => handleAction(e, onOpen)}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
             >
-              <ExternalLink className="mr-3 h-4 w-4 text-green-500" /> Відкрити у новому вікні
+              <ExternalLink className="mr-3 h-4 w-4 text-green-500" /> Відкрити
+              у новому вікні
             </button>
             <button
               onClick={(e) => handleAction(e, onEdit)}
@@ -111,10 +123,10 @@ export default function CashTransactions() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { user, setPreferences } = useAuthStore();
-  
+
   // Custom Filters
   const [filterDocType, setFilterDocType] = useState<string>(
-    user?.preferences?.cashFilterType || "ALL"
+    user?.preferences?.cashFilterType || "ALL",
   );
   const [filterCounterparty, setFilterCounterparty] = useState<string>("");
 
@@ -268,10 +280,14 @@ export default function CashTransactions() {
 
   let filteredTransactions = transactions;
   if (filterDocType !== "ALL") {
-    filteredTransactions = filteredTransactions.filter((tx) => tx.type === filterDocType);
+    filteredTransactions = filteredTransactions.filter(
+      (tx) => tx.type === filterDocType,
+    );
   }
   if (filterCounterparty) {
-    filteredTransactions = filteredTransactions.filter((tx) => tx.counterpartyName === filterCounterparty);
+    filteredTransactions = filteredTransactions.filter(
+      (tx) => tx.counterpartyName === filterCounterparty,
+    );
   }
   if (startDate || endDate) {
     filteredTransactions = filteredTransactions.filter((tx) => {
@@ -286,17 +302,21 @@ export default function CashTransactions() {
     // Determine category ID or counterparty ID if possible
     // Note: tx object might not have raw categoryId/counterpartyId depending on backend,
     // but we can try to find them by name from our loaded arrays.
-    const matchedCategory = categories.find(c => c.name === tx.categoryName);
-    const matchedCP = counterparties.find(cp => cp.name === tx.counterpartyName);
+    const matchedCategory = categories.find((c) => c.name === tx.categoryName);
+    const matchedCP = counterparties.find(
+      (cp) => cp.name === tx.counterpartyName,
+    );
 
     // Try generating local ISO
-    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
-    const localISOTime = (new Date(new Date(tx.date).getTime() - tzoffset)).toISOString().slice(0, 16);
+    const tzoffset = new Date().getTimezoneOffset() * 60000;
+    const localISOTime = new Date(new Date(tx.date).getTime() - tzoffset)
+      .toISOString()
+      .slice(0, 16);
 
     setForm({
       date: localISOTime,
       type: tx.type,
-      cashboxId: cashboxes.find(c => c.name === tx.cashboxName)?.id || "",
+      cashboxId: cashboxes.find((c) => c.name === tx.cashboxName)?.id || "",
       categoryId: matchedCategory?.id || "",
       counterpartyId: matchedCP?.id || "",
       amount: tx.amount.toString(),
@@ -308,16 +328,20 @@ export default function CashTransactions() {
   };
 
   const handleEditTransaction = (tx: CashTransaction) => {
-    const matchedCategory = categories.find(c => c.name === tx.categoryName);
-    const matchedCP = counterparties.find(cp => cp.name === tx.counterpartyName);
+    const matchedCategory = categories.find((c) => c.name === tx.categoryName);
+    const matchedCP = counterparties.find(
+      (cp) => cp.name === tx.counterpartyName,
+    );
 
-    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
-    const localISOTime = (new Date(new Date(tx.date).getTime() - tzoffset)).toISOString().slice(0, 16);
+    const tzoffset = new Date().getTimezoneOffset() * 60000;
+    const localISOTime = new Date(new Date(tx.date).getTime() - tzoffset)
+      .toISOString()
+      .slice(0, 16);
 
     setForm({
       date: localISOTime,
       type: tx.type,
-      cashboxId: cashboxes.find(c => c.name === tx.cashboxName)?.id || "",
+      cashboxId: cashboxes.find((c) => c.name === tx.cashboxName)?.id || "",
       categoryId: matchedCategory?.id || "",
       counterpartyId: matchedCP?.id || "",
       amount: tx.amount.toString(),
@@ -339,20 +363,34 @@ export default function CashTransactions() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-gray-800 p-4 shadow-sm rounded-lg sticky top-0 z-20 border border-gray-200 dark:border-gray-700">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 whitespace-nowrap">
-          <FileText className="h-6 w-6" /> Журнал касових ордерів
-        </h1>
-        
+        <div className="flex flex-row">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 whitespace-nowrap">
+            <FileText className="h-6 w-6" /> Журнал касових ордерів
+          </h1>
+          <button
+            onClick={() => setIsFormOpen(true)}
+            className="w-full sm:w-auto flex justify-center items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Створити касовий ордер
+          </button>
+        </div>
+
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
           {filterCounterparty && (
             <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium border border-blue-200 dark:border-blue-800">
-              <span className="truncate max-w-[150px]">{filterCounterparty}</span>
-              <button onClick={() => setFilterCounterparty("")} className="hover:text-blue-900 dark:hover:text-blue-100">
+              <span className="truncate max-w-[150px]">
+                {filterCounterparty}
+              </span>
+              <button
+                onClick={() => setFilterCounterparty("")}
+                className="hover:text-blue-900 dark:hover:text-blue-100"
+              >
                 <X className="h-4 w-4" />
               </button>
             </div>
           )}
-          
+
           <div className="flex gap-2 items-center w-full sm:w-auto">
             <input
               type="date"
@@ -378,14 +416,6 @@ export default function CashTransactions() {
             <option value="INCOME">Прибуткові ордери</option>
             <option value="OUTCOME">Видаткові ордери</option>
           </select>
-
-          <button
-            onClick={() => setIsFormOpen(true)}
-            className="w-full sm:w-auto flex justify-center items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Створити касовий ордер
-          </button>
         </div>
       </div>
 
@@ -554,7 +584,10 @@ export default function CashTransactions() {
 
       {/* Transactions List */}
       <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto" style={{ maxHeight: "calc(100vh - 220px)" }}>
+        <div
+          className="overflow-x-auto"
+          style={{ maxHeight: "calc(100vh - 220px)" }}
+        >
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10 shadow-sm">
               <tr>
@@ -641,7 +674,9 @@ export default function CashTransactions() {
                     <CashTransactionDropdown
                       tx={tx}
                       onCopy={() => handleCopyTransaction(tx)}
-                      onFilter={() => setFilterCounterparty(tx.counterpartyName || "")}
+                      onFilter={() =>
+                        setFilterCounterparty(tx.counterpartyName || "")
+                      }
                       onOpen={() => window.open(window.location.href, "_blank")}
                       onEdit={() => handleEditTransaction(tx)}
                       onDelete={() => handleDelete(tx.id)}
