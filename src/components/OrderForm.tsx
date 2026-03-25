@@ -44,6 +44,7 @@ export default function OrderForm({
   const { t } = useTranslation();
 
   const [loading, setLoading] = useState(true);
+  const needsWarehouse = isRealization || title.toLowerCase().includes("повернення");
 
   // Data
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
@@ -186,14 +187,13 @@ export default function OrderForm({
   // Auto-set warehouse when counterparty changes, for Realizations
   useEffect(() => {
     if (
-      isRealization &&
       selectedCounterparty?.warehouseId &&
       !warehouseId &&
-      !initialData
+      needsWarehouse
     ) {
       setWarehouseId(selectedCounterparty.warehouseId);
     }
-  }, [selectedCounterparty, isRealization, warehouseId, initialData]);
+  }, [selectedCounterparty, needsWarehouse, warehouseId, initialData]);
 
   const filteredCounterparties = useMemo(() => {
     return counterparties.filter((cp) =>
@@ -211,8 +211,8 @@ export default function OrderForm({
 
   useEffect(() => {
     const fetchStock = async () => {
-      // Use explicit warehouseId if it's a realization, otherwise fallback to counterparty's warehouse.
-      const activeWarehouseId = isRealization
+      // Use explicit warehouseId if it needs a warehouse, otherwise fallback to counterparty's warehouse.
+      const activeWarehouseId = needsWarehouse
         ? warehouseId
         : selectedCounterparty?.warehouseId;
       if (activeWarehouseId) {
@@ -230,7 +230,7 @@ export default function OrderForm({
       }
     };
     fetchStock();
-  }, [warehouseId, selectedCounterparty?.warehouseId, date, isRealization]);
+  }, [warehouseId, selectedCounterparty?.warehouseId, date, needsWarehouse]);
 
   const priceSlug = useMemo(() => {
     if (!selectedCounterparty?.priceTypeId) {
@@ -430,7 +430,7 @@ export default function OrderForm({
       alert(t("order.selectClient", "Please select a client"));
       return;
     }
-    if (isRealization && !warehouseId) {
+    if (needsWarehouse && !warehouseId) {
       alert(t("order.selectWarehouse", "Будь ласка, оберіть склад"));
       return;
     }
@@ -463,7 +463,7 @@ export default function OrderForm({
       currency,
     };
 
-    if (isRealization) {
+    if (needsWarehouse) {
       orderData.warehouseId = warehouseId;
       orderData.salesType = salesType;
     }
@@ -649,7 +649,7 @@ export default function OrderForm({
           )}
 
           {/* Realization Settings (Warehouse) */}
-          {isRealization && (
+          {needsWarehouse && (
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t("common.warehouse", "Склад")}
