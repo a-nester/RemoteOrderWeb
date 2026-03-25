@@ -160,7 +160,7 @@ export default function OrderForm({
       setProducts(productsData.products.filter((p) => !p.isDeleted));
       setPriceTypes(priceTypesData.filter((pt) => !pt.isDeleted));
 
-      if (isRealization) {
+      if (needsWarehouse) {
         const [warehousesData, orgData] = await Promise.all([
           OrganizationService.getWarehouses(),
           OrganizationService.getOrganization(),
