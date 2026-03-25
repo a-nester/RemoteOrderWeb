@@ -362,7 +362,7 @@ export default function CashTransactions() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-gray-800 p-4 shadow-sm rounded-lg sticky top-0 z-20 border border-gray-200 dark:border-gray-700">
+      <div className="flex flex-col justify-between items-start md:items-center gap-4 bg-white dark:bg-gray-800 p-4 shadow-sm rounded-lg sticky top-0 z-20 border border-gray-200 dark:border-gray-700">
         <div className="flex flex-row">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 whitespace-nowrap">
             <FileText className="h-6 w-6" /> Журнал касових ордерів
