@@ -12,6 +12,7 @@ export default function RealizationDetails() {
   const { t } = useTranslation();
   const [realization, setRealization] = useState<Realization | null>(null);
   const [loading, setLoading] = useState(true);
+  const [stockError, setStockError] = useState<{productName: string, needed: number, missing: number} | null>(null);
 
   useEffect(() => {
     loadData();
@@ -63,10 +64,20 @@ export default function RealizationDetails() {
       await loadData(); // Reload to get updated status and profit
     } catch (error: any) {
       console.error("Failed to post realization", error);
-      alert(
-        error.response?.data?.message ||
-          t("common.error", "Failed to post realization"),
-      );
+      const errData = error.response?.data?.error;
+      
+      if (errData && errData.code === 'INSUFFICIENT_STOCK') {
+        setStockError({
+          productName: errData.productName,
+          needed: errData.needed,
+          missing: errData.missing
+        });
+      } else {
+        alert(
+          errData || error.response?.data?.message ||
+            t("common.error", "Failed to post realization"),
+        );
+      }
       setLoading(false);
     }
   };
@@ -112,7 +123,35 @@ export default function RealizationDetails() {
   const isPosted = realization.status === "POSTED";
 
   return (
-    <div className="max-w-4xl mx-auto p-4 md:p-8 bg-white dark:bg-gray-800 shadow-lg rounded-lg print:shadow-none print:w-full print:m-0 print:p-0">
+    <>
+      {/* Insufficient Stock Modal */}
+      {stockError && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-500 bg-opacity-75">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
+              <svg className="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-2">Недостатньо товару на залишку</h3>
+            <div className="mt-2 text-sm text-gray-500 dark:text-gray-400 text-left space-y-2 bg-gray-50 dark:bg-gray-700 p-4 rounded-md">
+                <p><span className="font-semibold text-gray-700 dark:text-gray-300">Товар:</span> {stockError.productName}</p>
+                <p><span className="font-semibold text-gray-700 dark:text-gray-300">Необхідно для списання:</span> {stockError.needed}</p>
+                <p><span className="font-semibold text-red-600 dark:text-red-400">Не вистачає:</span> {stockError.missing}</p>
+            </div>
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={() => setStockError(null)}
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:w-auto sm:text-sm"
+              >
+                Зрозуміло
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-4xl mx-auto p-4 md:p-8 bg-white dark:bg-gray-800 shadow-lg rounded-lg print:shadow-none print:w-full print:m-0 print:p-0">
       {/* Header / Actions */}
       <div className="flex justify-between items-center mb-8 print:hidden">
         <button
@@ -399,5 +438,6 @@ export default function RealizationDetails() {
                 `}
       </style>
     </div>
+    </>
   );
 }
