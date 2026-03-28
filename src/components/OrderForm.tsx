@@ -47,6 +47,13 @@ export default function OrderForm({
   const needsWarehouse = isRealization || title.toLowerCase().includes("повернення");
 
   // Data
+  const backUrl = useMemo(() => {
+    const tLower = title.toLowerCase();
+    if (tLower.includes("повернення постачальнику")) return "/supplier-returns";
+    if (tLower.includes("повернення від покупця")) return "/buyer-returns";
+    return isRealization ? "/realizations" : "/orders";
+  }, [title, isRealization]);
+
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [priceTypes, setPriceTypes] = useState<PriceType[]>([]);
@@ -496,9 +503,7 @@ export default function OrderForm({
       <div className="flex items-center justify-between px-4 sm:px-0 mt-4 sm:mt-0">
         <div className="flex items-center">
           <button
-            onClick={() =>
-              navigate(isRealization ? "/realizations" : "/orders")
-            }
+            onClick={() => navigate(backUrl)}
             className="mr-4 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
           >
             <ArrowLeft size={24} />
