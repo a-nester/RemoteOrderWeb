@@ -5,6 +5,7 @@ import {
   type SalesByClient,
   type SalesByProduct,
 } from "../../services/reports.service";
+import { buyerReturnService } from "../../services/buyerReturnService";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/auth.store";
 import { AuthService } from "../../services/auth.service";
@@ -59,30 +60,45 @@ export default function SalesReport() {
 
     try {
       if (activeTab === "general") {
-        let data = await RealizationService.getAll();
+        const [realizations, returns] = await Promise.all([
+          RealizationService.getAll(),
+          buyerReturnService.getAll()
+        ]);
+
+        let combined = [
+          ...realizations.map(r => ({ ...r, type: 'REALIZATION' as const })),
+          ...returns.map(r => ({ ...r, type: 'RETURN' as const, amount: r.totalAmount, currency: 'UAH' }))
+        ];
 
         if (dateFrom)
-          data = data.filter((d) => new Date(d.date) >= new Date(dateFrom));
+          combined = combined.filter((d) => new Date(d.date) >= new Date(dateFrom));
         if (dateTo)
-          data = data.filter((d) => new Date(d.date) <= new Date(dateTo));
+          combined = combined.filter((d) => new Date(d.date) <= new Date(dateTo));
         if (counterparty)
-          data = data.filter((d) =>
+          combined = combined.filter((d) =>
             (d.counterpartyName ?? "")
               .toLowerCase()
               .includes(counterparty.toLowerCase()),
           );
 
-        const mapped: SaleItem[] = data.map((r) => ({
-          id: r.id,
-          number: r.number,
-          date: r.date,
-          counterpartyName: r.counterpartyName ?? "",
-          warehouseName: r.warehouseName ?? "",
-          amount: Number(r.amount),
-          currency: r.currency,
-          status: r.status,
-          profit: Number(r.profit ?? 0),
-        }));
+        // Sort by date DESC
+        combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        const mapped: SaleItem[] = combined.map((r) => {
+          const isReturn = r.type === 'RETURN';
+          const sign = isReturn && r.status === 'POSTED' ? -1 : 1;
+          return {
+            id: r.id,
+            number: isReturn ? `Пов. #${r.number}` : r.number,
+            date: r.date,
+            counterpartyName: r.counterpartyName ?? "",
+            warehouseName: r.warehouseName ?? "",
+            amount: Number(r.amount) * sign,
+            currency: r.currency,
+            status: r.status,
+            profit: Number(r.profit ?? 0) * sign,
+          };
+        });
         setSales(mapped);
       } else if (activeTab === "byClient") {
         const data = await ReportsService.getSalesByClient(
