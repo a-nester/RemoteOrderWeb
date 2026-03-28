@@ -96,7 +96,7 @@ export default function SalesReport() {
             amount: Number(r.amount) * sign,
             currency: r.currency,
             status: r.status,
-            profit: Number(r.profit ?? 0) * sign,
+            profit: Number(r.profit ?? 0), // Profit is already net-changed in DB
           };
         });
         setSales(mapped);
