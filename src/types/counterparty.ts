@@ -18,9 +18,11 @@ export interface Counterparty {
     groupId?: string;
     warehouseId?: string;
     defaultSalesType?: string;
+    organizationId?: string;
     // Expanded fields
     groupName?: string;
     priceTypeName?: string;
+    organizationName?: string;
     createdAt?: string;
     updatedAt?: string;
 }

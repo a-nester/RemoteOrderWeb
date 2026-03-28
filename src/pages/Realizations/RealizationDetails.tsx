@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Printer, Edit, CheckCircle } from "lucide-react";
+import { ArrowLeft, Printer, Edit, CheckCircle, FileText, Download } from "lucide-react";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
+import * as XLSX from "xlsx";
 import { RealizationService } from "../../services/realization.service";
 import type { Realization } from "../../types/realization";
 import { numberToWordsUk } from "../../utils/numberToWords";
@@ -111,6 +114,62 @@ export default function RealizationDetails() {
     }
   };
 
+  const handleExportPDF = async () => {
+    const printArea = document.getElementById("realization-print-area");
+    if (!printArea) return;
+
+    // Temporarily show for canvas rendering
+    printArea.classList.toggle("hidden");
+    printArea.classList.toggle("print:block");
+    
+    try {
+      const canvas = await html2canvas(printArea, { scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Накладна_${realization?.number || "нова"}.pdf`);
+    } finally {
+      printArea.classList.toggle("hidden");
+      printArea.classList.toggle("print:block");
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (!realization) return;
+    
+    const wsData: any[][] = [
+      [`Видаткова накладна №${realization.number}`],
+      [`від ${formatDateForPrint(realization.date)}`],
+      [],
+      ["Постачальник:", realization.organizationName || 'МілКрай'],
+      ["Одержувач:", realization.counterpartyName],
+      ["Умова продажу:", realization.salesType || "Готівковий розрахунок"],
+      [],
+      ["№", "Товар", "Кількість", "Ціна", "Сума"]
+    ];
+
+    realization.items?.forEach((item, index) => {
+      wsData.push([
+        index + 1,
+        item.productName || item.productId,
+        Number(item.quantity).toFixed(3),
+        Number(item.price).toFixed(2),
+        Number(item.total).toFixed(2)
+      ]);
+    });
+
+    wsData.push([]);
+    wsData.push(["", "", "", "Разом:", Number(realization.amount).toFixed(2) + " " + realization.currency]);
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Накладна");
+    XLSX.writeFile(wb, `Накладна_${realization.number}.xlsx`);
+  };
+
   if (loading)
     return (
       <div className="p-8 text-center">{t("common.loading", "Loading...")}</div>
@@ -187,6 +246,20 @@ export default function RealizationDetails() {
             <Printer className="mr-2" size={20} />
             {t("common.print", "Print")}
           </button>
+          <button
+            onClick={handleExportPDF}
+            className="flex items-center px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 mx-2"
+          >
+            <FileText className="mr-2" size={20} />
+            PDF
+          </button>
+          <button
+            onClick={handleExportExcel}
+            className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            <Download className="mr-2" size={20} />
+            Excel
+          </button>
         </div>
 
         {isPosted && (
@@ -225,7 +298,7 @@ export default function RealizationDetails() {
               {t("print.supplier", "Supplier")}
             </h3>
             <p className="text-lg font-bold text-gray-900 dark:text-white">
-              МілКрай
+              {realization.organizationName || 'МілКрай'}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {realization.warehouseName}
@@ -309,7 +382,7 @@ export default function RealizationDetails() {
             <div className="w-40 font-bold italic text-left">
               {t("print.supplier", "Постачальник")}
             </div>
-            <div className="text-left">МілКрай</div>
+            <div className="text-left">{realization.organizationName || 'МілКрай'}</div>
           </div>
           <div className="flex mb-2">
             <div className="w-40 font-bold underline text-left">
@@ -322,7 +395,7 @@ export default function RealizationDetails() {
               {t("print.saleCondition", "Умова продажу")}
             </div>
             <div className="text-left">
-              {t("print.cash", "Готівковий розрахунок")}
+              {realization.salesType || t("print.cash", "Готівковий розрахунок")}
             </div>
           </div>
         </div>

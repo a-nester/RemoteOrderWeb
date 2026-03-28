@@ -37,6 +37,7 @@ export interface Realization {
     // Enriched
     counterpartyName?: string;
     warehouseName?: string;
+    organizationName?: string;
     items?: RealizationItem[];
     isDeleted?: boolean;
 }

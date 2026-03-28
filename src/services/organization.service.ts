@@ -17,6 +17,16 @@ export const OrganizationService = {
         return response.data;
     },
 
+    getAllOrganizations: async (): Promise<Organization[]> => {
+        const response = await axios.get(`${BASE_URL}/all`, { headers: getAuthHeader() });
+        return response.data;
+    },
+
+    createOrganization: async (data: Partial<Organization>): Promise<Organization> => {
+        const response = await axios.post(BASE_URL, data, { headers: getAuthHeader() });
+        return response.data;
+    },
+
     updateOrganization: async (data: Partial<Organization>): Promise<Organization> => {
         const response = await axios.put(BASE_URL, data, { headers: getAuthHeader() });
         return response.data;

@@ -7,6 +7,7 @@ import type { Organization, Warehouse } from "../../types/organization";
 export default function OrganizationSettings() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [org, setOrg] = useState<Organization | null>(null);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
 
@@ -32,31 +33,47 @@ export default function OrganizationSettings() {
     setLoading(true);
     try {
       const [orgData, whData] = await Promise.all([
-        OrganizationService.getOrganization(),
+        OrganizationService.getAllOrganizations(),
         OrganizationService.getWarehouses(),
       ]);
-      setOrg(orgData);
-      setOrgName(orgData.name);
-      setSalesTypes(orgData.salesTypes || ["Готівковий", "р/р ФОП", "з ПДВ"]);
+      setOrganizations(orgData);
+      if (orgData.length > 0) {
+        setOrg(orgData[0]);
+        setOrgName(orgData[0].name);
+        setSalesTypes(orgData[0].salesTypes || ["Готівковий", "р/р ФОП", "з ПДВ"]);
+      } else {
+        setOrg(null);
+        setOrgName("");
+        setSalesTypes(["Готівковий", "р/р ФОП", "з ПДВ"]);
+      }
       setWarehouses(whData);
     } catch (error) {
       console.error("Failed to load organization settings", error);
-      // Default blank if not found/error
     } finally {
       setLoading(false);
     }
   };
 
   const handleSaveOrg = async () => {
-    if (!org) return;
+    if (!orgName.trim()) return;
     setSavingOrg(true);
     try {
-      const updated = await OrganizationService.updateOrganization({
-        id: org.id,
-        name: orgName,
-        salesTypes,
-      });
-      setOrg(updated);
+      if (org) {
+        const updated = await OrganizationService.updateOrganization({
+          id: org.id,
+          name: orgName,
+          salesTypes,
+        });
+        setOrg(updated);
+        setOrganizations((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+      } else {
+        const created = await OrganizationService.createOrganization({
+          name: orgName,
+          salesTypes,
+        });
+        setOrg(created);
+        setOrganizations((prev) => [...prev, created]);
+      }
       alert(t("common.saved", "Saved successfully"));
     } catch (error) {
       console.error("Failed to save org", error);
@@ -64,6 +81,12 @@ export default function OrganizationSettings() {
     } finally {
       setSavingOrg(false);
     }
+  };
+
+  const handleCreateNew = () => {
+    setOrg(null);
+    setOrgName("");
+    setSalesTypes(["Готівковий", "р/р ФОП", "з ПДВ"]);
   };
 
   const handleOpenModal = (warehouse?: Warehouse) => {
@@ -124,6 +147,41 @@ export default function OrganizationSettings() {
       </h1>
 
       <div className="space-y-8">
+        {/* Organization Selection Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-gray-800 shadow rounded-lg p-6 gap-4">
+          <div className="flex-1 w-full">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Оберіть організацію для налаштування
+            </label>
+            <select
+              value={org?.id || ""}
+              onChange={(e) => {
+                const selected = organizations.find((o) => o.id === e.target.value);
+                if (selected) {
+                  setOrg(selected);
+                  setOrgName(selected.name);
+                  setSalesTypes(selected.salesTypes || ["Готівковий", "р/р ФОП", "з ПДВ"]);
+                }
+              }}
+              className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            >
+              {organizations.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name}
+                </option>
+              ))}
+              {!org && <option value="">Створення нової організації...</option>}
+            </select>
+          </div>
+          <button
+            onClick={handleCreateNew}
+            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 whitespace-nowrap"
+          >
+            <Plus className="mr-2" size={18} />
+            Додати нову організацію
+          </button>
+        </div>
+
         {/* Organization Name Section */}
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
@@ -149,7 +207,9 @@ export default function OrganizationSettings() {
               <Save className="mr-2" size={18} />
               {savingOrg
                 ? t("common.saving", "Saving...")
-                : t("common.save", "Save")}
+                : org 
+                  ? t("common.save", "Save") 
+                  : "Створити"}
             </button>
           </div>
         </div>

@@ -3,7 +3,7 @@ import type { Counterparty, CounterpartyGroup } from "../../types/counterparty";
 import type { PriceType } from "../../types/priceType";
 import { PriceTypesService } from "../../services/priceTypes.service";
 import { OrganizationService } from "../../services/organization.service";
-import type { Warehouse } from "../../types/organization";
+import type { Organization, Warehouse } from "../../types/organization";
 
 interface Props {
   counterparty?: Counterparty | null;
@@ -28,23 +28,26 @@ export default function CounterpartyForm({
     priceTypeId: "",
     groupId: "",
     defaultSalesType: "Готівковий",
+    organizationId: "",
   });
   const [priceTypes, setPriceTypes] = useState<PriceType[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [salesTypes, setSalesTypes] = useState<string[]>(["Готівковий", "р/р ФОП", "з ПДВ"]);
   const [error, setError] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
-      const [types, whs, org] = await Promise.all([
+      const [types, whs, orgs] = await Promise.all([
         PriceTypesService.fetchPriceTypes(),
         OrganizationService.getWarehouses(),
-        OrganizationService.getOrganization(),
+        OrganizationService.getAllOrganizations(),
       ]);
       setPriceTypes(types);
       setWarehouses(whs);
-      if (org && org.salesTypes && org.salesTypes.length > 0) {
-        setSalesTypes(org.salesTypes);
+      setOrganizations(orgs);
+      if (orgs.length > 0 && orgs[0].salesTypes && orgs[0].salesTypes.length > 0) {
+        setSalesTypes(orgs[0].salesTypes);
       }
     } catch (error) {
       console.error(error);
@@ -73,6 +76,7 @@ export default function CounterpartyForm({
       priceTypeId: formData.priceTypeId || undefined,
       groupId: formData.groupId || undefined,
       warehouseId: formData.warehouseId || undefined,
+      organizationId: formData.organizationId || undefined,
       defaultSalesType: formData.defaultSalesType || "Готівковий",
     };
     await onSave(payload);
@@ -159,6 +163,25 @@ export default function CounterpartyForm({
                 {groups.map((g) => (
                   <option key={g.id} value={g.id}>
                     {g.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Організація
+              </label>
+              <select
+                value={formData.organizationId || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, organizationId: e.target.value })
+                }
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              >
+                <option value="">Не обрано</option>
+                {organizations.map((org) => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
                   </option>
                 ))}
               </select>
