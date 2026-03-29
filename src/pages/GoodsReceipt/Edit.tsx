@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   Save,
@@ -168,6 +168,8 @@ function SortableRow({
 export default function GoodsReceiptEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const copyFromId = new URLSearchParams(location.search).get("copyFrom");
   const isNew = !id || id === "new";
 
   const [loading, setLoading] = useState(true);
@@ -208,6 +210,16 @@ export default function GoodsReceiptEdit() {
       if (!isNew && id) {
         const existing = await GoodsReceiptService.getById(id);
         setDoc(existing);
+      } else if (copyFromId) {
+        const existing = await GoodsReceiptService.getById(copyFromId);
+        setDoc({
+            ...existing,
+            id: undefined,
+            date: new Date().toISOString(),
+            status: "SAVED",
+            number: `GR-${Date.now().toString().slice(-6)}`,
+            items: existing.items?.map(i => ({ ...i, id: crypto.randomUUID() })) || []
+        });
       } else {
         // Set default number?
         setDoc((prev) => ({

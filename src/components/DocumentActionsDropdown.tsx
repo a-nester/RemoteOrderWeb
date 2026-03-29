@@ -11,7 +11,7 @@ import {
 
 export interface DocumentActionsProps {
   isPosted: boolean;
-  paymentUrl: string;
+  paymentUrl?: string;
   copyUrl: string;
   onToggleStatus: () => void;
   onDelete: () => void;
@@ -50,6 +50,7 @@ export default function DocumentActionsDropdown({
 
   const handlePayment = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!paymentUrl) return;
     setIsOpen(false);
     window.open(paymentUrl, "_blank");
   };
@@ -91,12 +92,14 @@ export default function DocumentActionsDropdown({
                 </>
               )}
             </button>
-            <button
-              onClick={handlePayment}
-              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <CreditCard className="mr-3 h-4 w-4 text-blue-500" /> Оплата
-            </button>
+            {paymentUrl && (
+              <button
+                onClick={handlePayment}
+                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <CreditCard className="mr-3 h-4 w-4 text-blue-500" /> Оплата
+              </button>
+            )}
             <button
               onClick={handleCopy}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"

@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, FileText, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, FileText, ArrowUp, ArrowDown, Eye } from "lucide-react";
 import { GoodsReceiptService } from "../../services/goodsReceipt.service";
 import type { GoodsReceipt } from "../../types/goodsReceipt";
 import { format } from "date-fns";
+import DocumentActionsDropdown from "../../components/DocumentActionsDropdown";
 
 export default function GoodsReceiptList() {
   const navigate = useNavigate();
@@ -29,27 +30,33 @@ export default function GoodsReceiptList() {
     }
   };
 
-  const handlePost = async (id: string) => {
-    if (!window.confirm("Провести документ (зарахувати товари на склад)?"))
-      return;
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
     try {
-      await GoodsReceiptService.post(id);
+      if (currentStatus === "POSTED") {
+        await GoodsReceiptService.unpost(id);
+      } else {
+        await GoodsReceiptService.post(id);
+      }
       loadDocs();
     } catch (error: any) {
-      console.error(error);
-      alert(error.response?.data?.error || "Помилка проведення");
+      console.error("Error toggling status", error);
+      alert(error.response?.data?.error || "Помилка зміни статусу");
     }
   };
 
-  const handleUnpost = async (id: string) => {
-    if (!window.confirm("Скасувати проведення (зняти товари зі складу)?"))
+  const handleDelete = async (id: string, status: string) => {
+    if (status === "POSTED") {
+      alert("Не можна видалити проведений документ");
       return;
+    }
+    if (!window.confirm("Ви дійсно хочете видалити цей документ?")) return;
+
     try {
-      await GoodsReceiptService.unpost(id);
+      await GoodsReceiptService.delete(id);
       loadDocs();
     } catch (error: any) {
       console.error(error);
-      alert(error.response?.data?.error || "Помилка скасування");
+      alert(error.response?.data?.error || "Помилка видалення");
     }
   };
 
@@ -139,7 +146,7 @@ export default function GoodsReceiptList() {
             {loading ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-6 py-4 text-center text-sm text-gray-500"
                 >
                   Завантаження...
@@ -148,7 +155,7 @@ export default function GoodsReceiptList() {
             ) : docs.length === 0 ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-6 py-4 text-center text-sm text-gray-500"
                 >
                   Документів не знайдено
@@ -189,29 +196,25 @@ export default function GoodsReceiptList() {
                         {doc.status === "POSTED" ? "Проведено" : "Збережено"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
-                      <button
-                        onClick={() => navigate(`/goods-receipt/${doc.id}`)}
-                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-                      >
-                        {doc.status === "POSTED" ? "Переглянути" : "Редагувати"}
-                      </button>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex justify-end space-x-3 items-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/goods-receipt/${doc.id}`);
+                          }}
+                          className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-2"
+                        >
+                          <Eye size={18} />
+                        </button>
 
-                      {doc.status === "POSTED" ? (
-                        <button
-                          onClick={() => handleUnpost(doc.id)}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                        >
-                          Скасувати
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handlePost(doc.id)}
-                          className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
-                        >
-                          Провести
-                        </button>
-                      )}
+                        <DocumentActionsDropdown
+                          isPosted={doc.status === "POSTED"}
+                          copyUrl={`/goods-receipt/new?copyFrom=${doc.id}`}
+                          onToggleStatus={() => handleToggleStatus(doc.id, doc.status)}
+                          onDelete={() => handleDelete(doc.id, doc.status)}
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))
