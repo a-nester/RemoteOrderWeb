@@ -118,19 +118,15 @@ export default function SupplierReturnList() {
   };
 
   const handleToggleStatus = async (id: string, currentStatus: string) => {
-    console.log(`[SupplierReturnsList] Виклик handleToggleStatus для ${id}, поточний статус: ${currentStatus}`);
     try {
       if (currentStatus === "POSTED") {
-        console.log(`[SupplierReturnsList] Відправляємо запит UNPOST...`);
         await SupplierReturnService.unpostDocument(id);
       } else {
-        console.log(`[SupplierReturnsList] Відправляємо запит POST...`);
         await SupplierReturnService.postDocument(id);
       }
-      console.log(`[SupplierReturnsList] Запит успішний. Оновлюємо список...`);
       loadData();
     } catch (error) {
-      console.error(`[SupplierReturnsList] ПОМИЛКА зміни статусу для ${id}:`, error);
+      console.error("Error toggling status", error);
       alert(t("common.error", "Failed to change status"));
     }
   };

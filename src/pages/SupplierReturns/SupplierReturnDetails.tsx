@@ -46,7 +46,6 @@ export default function SupplierReturnDetails() {
   };
 
   const handlePost = async () => {
-    console.log(`[SupplierReturnDetails] Клік по кнопці "Провести" для документа ${id}`);
     if (!id) return;
     if (
       !window.confirm(
@@ -56,18 +55,14 @@ export default function SupplierReturnDetails() {
         ),
       )
     ) {
-      console.log(`[SupplierReturnDetails] Користувач скасував проведення документа ${id}`);
       return;
     }
     
-    console.log(`[SupplierReturnDetails] Починаємо запит до API для проведення...`);
     setLoading(true);
     try {
       await SupplierReturnService.postDocument(id);
-      console.log(`[SupplierReturnDetails] УСПІХ! Документ ${id} проведено. Завантажуємо оновлені дані...`);
       await loadData(); // Reload to get updated status and profit
     } catch (error: any) {
-      console.error(`[SupplierReturnDetails] ПОМИЛКА під час проведення документа ${id}:`, error);
       console.error("Failed to post return", error);
       const errData = error.response?.data?.error;
       
@@ -88,7 +83,6 @@ export default function SupplierReturnDetails() {
   };
 
   const handleUnpost = async () => {
-    console.log(`[SupplierReturnDetails] Клік по кнопці "Розпровести" для документа ${id}`);
     if (!id) return;
 
     if (
@@ -99,16 +93,13 @@ export default function SupplierReturnDetails() {
         ),
       )
     ) {
-      console.log(`[SupplierReturnDetails] Користувач скасував розпроведення документа ${id}`);
       return;
     }
 
-    console.log(`[SupplierReturnDetails] Починаємо запит до API для РОЗПРОВЕДЕННЯ...`);
     setLoading(true);
 
     try {
       await SupplierReturnService.unpostDocument(id);
-      console.log(`[SupplierReturnDetails] УСПІХ! Документ ${id} розпроведено. Завантажуємо оновлені дані...`);
       await loadData();
     } catch (error: any) {
       console.log("UNPOST ERROR:", error.response?.data);
