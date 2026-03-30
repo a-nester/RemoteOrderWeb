@@ -21,6 +21,7 @@ interface SaleItem {
   currency: string;
   status: string;
   profit: number;
+  salesType?: string;
 }
 
 type TabType = "general" | "byClient" | "byProduct";
@@ -100,7 +101,18 @@ export default function SalesReport() {
           );
 
         // Sort by date DESC
-        combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        combined.sort((a, b) => {
+          if (groupBySalesType) {
+            const stA = (a as any).salesType || "";
+            const stB = (b as any).salesType || "";
+            if (stA !== stB) {
+              if (!stA) return 1;
+              if (!stB) return -1;
+              return stA.localeCompare(stB);
+            }
+          }
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        });
 
         const mapped: SaleItem[] = combined.map((r) => {
           const isReturn = r.type === 'RETURN';
@@ -115,6 +127,7 @@ export default function SalesReport() {
             currency: r.currency,
             status: r.status,
             profit: Number(r.profit ?? 0), // Profit is already net-changed in DB
+            salesType: (r as any).salesType || "-",
           };
         });
         setSales(mapped);
@@ -217,10 +230,9 @@ export default function SalesReport() {
               type="checkbox"
               checked={groupBySalesType}
               onChange={(e) => setGroupBySalesType(e.target.checked)}
-              className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={activeTab === "general"}
+              className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
             />
-            <span className={`text-sm font-medium ${activeTab === "general" ? "text-gray-400" : "text-gray-700"}`}>
+            <span className="text-sm font-medium text-gray-700">
               {t("reports.groupBySalesType", "Сортувати за типом продаж")}
             </span>
           </label>
@@ -286,6 +298,9 @@ export default function SalesReport() {
                       {t("common.customer", "Customer")}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t("reports.salesType", "Вид")}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {t("common.warehouse", "Warehouse")}
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -321,6 +336,9 @@ export default function SalesReport() {
                         {sale.counterpartyName}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                        {sale.salesType}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                         {sale.warehouseName}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
@@ -353,7 +371,7 @@ export default function SalesReport() {
                   <tfoot className="bg-gray-50 border-t-2 border-gray-200">
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={6}
                         className="px-4 py-3 text-right text-sm font-bold text-gray-700"
                       >
                         {t("common.total", "Всього")}:
@@ -403,6 +421,9 @@ export default function SalesReport() {
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {t("common.profit", "Прибуток")} (₴)
                     </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t("common.profitability", "Рент, %")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -417,7 +438,7 @@ export default function SalesReport() {
                     ).map(([salesType, rows]) => (
                       <Fragment key={salesType}>
                         <tr className="bg-blue-50/50">
-                          <td colSpan={5} className="px-4 py-3 text-sm font-bold text-gray-900 border-y border-gray-200">
+                          <td colSpan={6} className="px-4 py-3 text-sm font-bold text-gray-900 border-y border-gray-200">
                             {salesType}
                           </td>
                         </tr>
@@ -441,6 +462,9 @@ export default function SalesReport() {
                              <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
                                {formatNum(row.totalProfit)}
                              </td>
+                             <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                               {Number(row.totalAmount) !== 0 ? ((Number(row.totalProfit) / Number(row.totalAmount)) * 100).toFixed(2) + " %" : "-"}
+                             </td>
                            </tr>
                         ))}
                         <tr className="bg-gray-50 border-t border-gray-200">
@@ -452,6 +476,13 @@ export default function SalesReport() {
                            </td>
                            <td className="px-4 py-2 text-right text-sm font-bold text-green-700">
                              {formatNum(rows.reduce((sum, item) => sum + Number(item.totalProfit), 0))}
+                           </td>
+                           <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">
+                             {(() => {
+                               const totalAmt = rows.reduce((sum, item) => sum + Number(item.totalAmount), 0);
+                               const totalPrf = rows.reduce((sum, item) => sum + Number(item.totalProfit), 0);
+                               return totalAmt !== 0 ? ((totalPrf / totalAmt) * 100).toFixed(2) + " %" : "-";
+                             })()}
                            </td>
                         </tr>
                       </Fragment>
@@ -482,7 +513,7 @@ export default function SalesReport() {
                   )}
                   {salesByClient.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-gray-500">
+                      <td colSpan={6} className="p-8 text-center text-gray-500">
                         {t("common.noData", "Немає даних")}
                       </td>
                     </tr>
@@ -512,6 +543,13 @@ export default function SalesReport() {
                             0,
                           ),
                         )}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
+                        {(() => {
+                           const totalAmt = salesByClient.reduce((sum, item) => sum + Number(item.totalAmount), 0);
+                           const totalPrf = salesByClient.reduce((sum, item) => sum + Number(item.totalProfit), 0);
+                           return totalAmt !== 0 ? ((totalPrf / totalAmt) * 100).toFixed(2) + " %" : "-";
+                        })()}
                       </td>
                     </tr>
                   </tfoot>
@@ -543,6 +581,9 @@ export default function SalesReport() {
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {t("common.profit", "Прибуток")} (₴)
                     </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t("common.profitability", "Рент, %")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -557,7 +598,7 @@ export default function SalesReport() {
                     ).map(([salesType, rows]) => (
                       <Fragment key={salesType}>
                         <tr className="bg-blue-50/50">
-                          <td colSpan={6} className="px-4 py-3 text-sm font-bold text-gray-900 border-y border-gray-200">
+                          <td colSpan={7} className="px-4 py-3 text-sm font-bold text-gray-900 border-y border-gray-200">
                             {salesType}
                           </td>
                         </tr>
@@ -584,6 +625,9 @@ export default function SalesReport() {
                             <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
                               {formatNum(row.totalProfit)}
                             </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                              {Number(row.totalAmount) !== 0 ? ((Number(row.totalProfit) / Number(row.totalAmount)) * 100).toFixed(2) + " %" : "-"}
+                            </td>
                           </tr>
                         ))}
                         <tr className="bg-gray-50 border-t border-gray-200">
@@ -598,6 +642,13 @@ export default function SalesReport() {
                            </td>
                            <td className="px-4 py-2 text-right text-sm font-bold text-green-700">
                              {formatNum(rows.reduce((sum, item) => sum + Number(item.totalProfit), 0))}
+                           </td>
+                           <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">
+                             {(() => {
+                               const totalAmt = rows.reduce((sum, item) => sum + Number(item.totalAmount), 0);
+                               const totalPrf = rows.reduce((sum, item) => sum + Number(item.totalProfit), 0);
+                               return totalAmt !== 0 ? ((totalPrf / totalAmt) * 100).toFixed(2) + " %" : "-";
+                             })()}
                            </td>
                         </tr>
                       </Fragment>
@@ -631,7 +682,7 @@ export default function SalesReport() {
                   )}
                   {salesByProduct.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-gray-500">
+                      <td colSpan={7} className="p-8 text-center text-gray-500">
                         {t("common.noData", "Немає даних")}
                       </td>
                     </tr>
@@ -669,6 +720,13 @@ export default function SalesReport() {
                             0,
                           ),
                         )}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
+                        {(() => {
+                           const totalAmt = salesByProduct.reduce((sum, item) => sum + Number(item.totalAmount), 0);
+                           const totalPrf = salesByProduct.reduce((sum, item) => sum + Number(item.totalProfit), 0);
+                           return totalAmt !== 0 ? ((totalPrf / totalAmt) * 100).toFixed(2) + " %" : "-";
+                        })()}
                       </td>
                     </tr>
                   </tfoot>
