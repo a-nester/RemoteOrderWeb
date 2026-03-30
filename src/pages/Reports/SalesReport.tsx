@@ -9,6 +9,7 @@ import { buyerReturnService } from "../../services/buyerReturnService";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/auth.store";
 import { AuthService } from "../../services/auth.service";
+import { OrganizationService } from "../../services/organization.service";
 
 interface SaleItem {
   id: string;
@@ -46,6 +47,19 @@ export default function SalesReport() {
   });
   const [counterparty, setCounterparty] = useState<string>("");
   const [groupBySalesType, setGroupBySalesType] = useState<boolean>(false);
+  const [salesType, setSalesType] = useState<string>("");
+  const [salesTypesList, setSalesTypesList] = useState<string[]>([]);
+
+  useEffect(() => {
+    OrganizationService.getOrganization()
+      .then((orgs) => {
+        const org = Array.isArray(orgs) ? orgs[0] : orgs;
+        if (org && org.salesTypes) {
+          setSalesTypesList(org.salesTypes);
+        }
+      })
+      .catch((err) => console.error("Failed to load sales types", err));
+  }, []);
 
   const fetchSales = async () => {
     setLoading(true);
@@ -80,6 +94,10 @@ export default function SalesReport() {
               .toLowerCase()
               .includes(counterparty.toLowerCase()),
           );
+        if (salesType)
+          combined = combined.filter(
+            (d) => d.type === "REALIZATION" && (d as any).salesType === salesType
+          );
 
         // Sort by date DESC
         combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -106,6 +124,7 @@ export default function SalesReport() {
           dateTo,
           counterparty,
           groupBySalesType,
+          salesType
         );
         setSalesByClient(data);
       } else if (activeTab === "byProduct") {
@@ -114,6 +133,7 @@ export default function SalesReport() {
           dateTo,
           counterparty,
           groupBySalesType,
+          salesType
         );
         setSalesByProduct(data);
       }
@@ -173,6 +193,23 @@ export default function SalesReport() {
             placeholder={t("common.customer", "Customer")}
             className="border border-gray-300 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[250px]"
           />
+        </div>
+        <div>
+          <label className="block text-sm mb-1 text-gray-600 font-medium">
+            {t("reports.salesType", "Вид продажу")}
+          </label>
+          <select
+            value={salesType}
+            onChange={(e) => setSalesType(e.target.value)}
+            className="border border-gray-300 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white min-w-[150px]"
+          >
+            <option value="">{t("reports.allSalesTypes", "Всі види")}</option>
+            {salesTypesList.map((st) => (
+              <option key={st} value={st}>
+                {st}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="flex items-center mb-2 mr-4">
           <label className="flex items-center cursor-pointer">
