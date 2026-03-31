@@ -10,6 +10,8 @@ export const RepostDocuments: React.FC = () => {
 
     // Filters
     const [startDate, setStartDate] = useState<string>('');
+    const [endDate, setEndDate] = useState<string>('');
+    const [action, setAction] = useState<'REPOST' | 'POST' | 'UNPOST'>('REPOST');
     const [selectedTypes, setSelectedTypes] = useState({
         REALIZATION: true,
         GOODS_RECEIPT: true,
@@ -69,7 +71,7 @@ export const RepostDocuments: React.FC = () => {
 
             // Then send the trigger request
             const types = Object.keys(selectedTypes).filter(k => selectedTypes[k as keyof typeof selectedTypes]);
-            await RepostService.startReposting({ startDate: startDate || undefined, types });
+            await RepostService.startReposting({ startDate: startDate || undefined, endDate: endDate || undefined, types, action: action as 'REPOST' | 'POST' | 'UNPOST' });
 
         } catch (error: any) {
             console.error('Failed to start reposting:', error);
@@ -87,8 +89,8 @@ export const RepostDocuments: React.FC = () => {
                 <div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Перепроведення документів (Service)</h2>
                     <p className="text-sm text-slate-400 mt-2 max-w-xl">
-                        Цей інструмент послідовно розпроводить і проводить всі проведені документи (Прибуткові накладні, Реалізації, Повернення, Встановлення цін) в хронологічному порядку.
-                        Це повністю відновлює партійний облік по FIFO та перераховує прибуток по кожній позиції. Запуск заблокує систему для інших користувачів на час виконання.
+                        Цей інструмент дозволяє масово перепроводити, проводити (лише непроведені) або розпроводити документи за вибраний період.
+                        Виконання відбувається зі збереженням хронологічного порядку (для перепроведення/проведення). Запуск заблокує систему для інших користувачів на час виконання.
                     </p>
                 </div>
                 <div>
@@ -106,15 +108,41 @@ export const RepostDocuments: React.FC = () => {
                 <h3 className="text-lg font-semibold text-white mb-4">Параметри вибірки</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-2">Перепровести починаючи з дати:</label>
-                        <input 
-                            type="date" 
+                        <div className="flex gap-4">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-slate-300 mb-2">Період (З):</label>
+                                <input 
+                                    type="date" 
+                                    className="w-full bg-slate-800/80 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-indigo-500"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    disabled={isReposting}
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-slate-300 mb-2">Період (По):</label>
+                                <input 
+                                    type="date" 
+                                    className="w-full bg-slate-800/80 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-indigo-500"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    disabled={isReposting}
+                                />
+                            </div>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-2">Залиште пустим, щоб не обмежувати дати.</p>
+
+                        <label className="block text-sm font-medium text-slate-300 mt-4 mb-2">Дія:</label>
+                        <select
                             className="w-full bg-slate-800/80 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-indigo-500"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
+                            value={action}
+                            onChange={(e) => setAction(e.target.value as 'REPOST' | 'POST' | 'UNPOST')}
                             disabled={isReposting}
-                        />
-                        <p className="text-xs text-slate-500 mt-2">Залиште пустим, щоб перепровести всі документи за весь час.</p>
+                        >
+                            <option value="REPOST">Перепровести (Розпровести всі наявні і знову провести)</option>
+                            <option value="POST">Провести (Тільки те що не проведено - чернетки)</option>
+                            <option value="UNPOST">Розпровести (Розпровести проведене і зупинитись)</option>
+                        </select>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">Обробляти типи документів:</label>
