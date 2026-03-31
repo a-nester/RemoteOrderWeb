@@ -20,7 +20,17 @@ export const RepostService = {
         
         let url = `${API_URL}/service/repost-documents/logs`;
         // if token passed, we append query param
-        const activeToken = token || localStorage.getItem('token');
+        let activeToken = token;
+        if (!activeToken) {
+            try {
+                const storageStr = localStorage.getItem('auth-storage');
+                if (storageStr) {
+                    const storageObj = JSON.parse(storageStr);
+                    activeToken = storageObj?.state?.token;
+                }
+            } catch (e) {}
+        }
+
         if (activeToken) {
             url += `?token=${activeToken}`;
         }
