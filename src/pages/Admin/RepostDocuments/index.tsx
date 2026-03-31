@@ -8,6 +8,15 @@ export const RepostDocuments: React.FC = () => {
     const terminalEndRef = useRef<HTMLDivElement>(null);
     const eventSourceRef = useRef<EventSource | null>(null);
 
+    // Filters
+    const [startDate, setStartDate] = useState<string>('');
+    const [selectedTypes, setSelectedTypes] = useState({
+        REALIZATION: true,
+        GOODS_RECEIPT: true,
+        BUYER_RETURN: true,
+        PRICE_DOCUMENT: true
+    });
+
     // Auto-scroll to bottom of logs
     useEffect(() => {
         if (terminalEndRef.current) {
@@ -59,7 +68,8 @@ export const RepostDocuments: React.FC = () => {
             }
 
             // Then send the trigger request
-            await RepostService.startReposting();
+            const types = Object.keys(selectedTypes).filter(k => selectedTypes[k as keyof typeof selectedTypes]);
+            await RepostService.startReposting({ startDate: startDate || undefined, types });
 
         } catch (error: any) {
             console.error('Failed to start reposting:', error);
@@ -89,6 +99,44 @@ export const RepostDocuments: React.FC = () => {
                     >
                         {isReposting ? 'Виконується...' : 'Запустити процес'}
                     </button>
+                </div>
+            </div>
+
+            <div className="glass-panel p-6 rounded-2xl border border-slate-700/50">
+                <h3 className="text-lg font-semibold text-white mb-4">Параметри вибірки</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">Перепровести починаючи з дати:</label>
+                        <input 
+                            type="date" 
+                            className="w-full bg-slate-800/80 border border-slate-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-indigo-500"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            disabled={isReposting}
+                        />
+                        <p className="text-xs text-slate-500 mt-2">Залиште пустим, щоб перепровести всі документи за весь час.</p>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-300 mb-2">Обробляти типи документів:</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label className="flex items-center text-slate-300 cursor-pointer">
+                                <input type="checkbox" className="form-checkbox text-indigo-500 rounded mr-3 h-4 w-4 bg-slate-800 border-slate-600" disabled={isReposting} checked={selectedTypes.REALIZATION} onChange={(e) => setSelectedTypes(prev => ({ ...prev, REALIZATION: e.target.checked }))} /> 
+                                Реалізації
+                            </label>
+                            <label className="flex items-center text-slate-300 cursor-pointer">
+                                <input type="checkbox" className="form-checkbox text-indigo-500 rounded mr-3 h-4 w-4 bg-slate-800 border-slate-600" disabled={isReposting} checked={selectedTypes.GOODS_RECEIPT} onChange={(e) => setSelectedTypes(prev => ({ ...prev, GOODS_RECEIPT: e.target.checked }))} /> 
+                                Прибуткові накладні
+                            </label>
+                            <label className="flex items-center text-slate-300 cursor-pointer">
+                                <input type="checkbox" className="form-checkbox text-indigo-500 rounded mr-3 h-4 w-4 bg-slate-800 border-slate-600" disabled={isReposting} checked={selectedTypes.BUYER_RETURN} onChange={(e) => setSelectedTypes(prev => ({ ...prev, BUYER_RETURN: e.target.checked }))} /> 
+                                Повернення покупця
+                            </label>
+                            <label className="flex items-center text-slate-300 cursor-pointer">
+                                <input type="checkbox" className="form-checkbox text-indigo-500 rounded mr-3 h-4 w-4 bg-slate-800 border-slate-600" disabled={isReposting} checked={selectedTypes.PRICE_DOCUMENT} onChange={(e) => setSelectedTypes(prev => ({ ...prev, PRICE_DOCUMENT: e.target.checked }))} /> 
+                                Встановлення цін
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
 

@@ -3,8 +3,8 @@ import { API_URL } from '../constants/api';
 import { getAuthHeader } from './auth.service';
 
 export const RepostService = {
-    startReposting: async () => {
-        const response = await axios.post<{ message: string }>(`${API_URL}/service/repost-documents`, {}, { headers: getAuthHeader() });
+    startReposting: async (options?: { startDate?: string, types?: string[] }) => {
+        const response = await axios.post<{ message: string }>(`${API_URL}/service/repost-documents`, options || {}, { headers: getAuthHeader() });
         return response.data;
     },
 
