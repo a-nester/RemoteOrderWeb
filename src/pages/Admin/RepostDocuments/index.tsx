@@ -56,8 +56,9 @@ export const RepostDocuments: React.FC = () => {
                     const data = JSON.parse(event.data);
                     setLogs((prev) => [...prev, data.message]);
 
-                    if (data.message.includes('process completed successfully') || data.message.includes('ERROR:')) {
+                    if (data.message.includes('process completed successfully') || data.message.toLowerCase().includes('error:')) {
                         setIsReposting(false);
+                        eventSourceRef.current?.close();
                     }
                 };
 
