@@ -39,7 +39,6 @@ import type { PriceType } from "../../types/priceType";
 interface SortableRowProps {
   item: GoodsReceiptItem;
   index: number;
-  isPosted: boolean;
   products: Product[];
   handleItemChange: (
     index: number,
@@ -52,7 +51,6 @@ interface SortableRowProps {
 function SortableRow({
   item,
   index,
-  isPosted,
   products,
   handleItemChange,
   removeItem,
@@ -82,24 +80,19 @@ function SortableRow({
       }
     >
       <td className="px-4 py-2 text-center text-gray-500">
-        {!isPosted ? (
-          <button
-            type="button"
-            {...attributes}
-            {...listeners}
-            className="cursor-grab hover:text-gray-700 dark:hover:text-gray-300"
-          >
-            <GripVertical size={18} />
-          </button>
-        ) : (
-          index + 1
-        )}
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          className="cursor-grab hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          <GripVertical size={18} />
+        </button>
       </td>
       <td className="px-4 py-2">
         <select
           value={item.productId}
           onChange={(e) => handleItemChange(index, "productId", e.target.value)}
-          disabled={isPosted}
           className="w-full rounded border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         >
           <option value="">Оберіть товар</option>
@@ -133,7 +126,6 @@ function SortableRow({
           step="0.001"
           value={item.quantity}
           onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
-          disabled={isPosted}
           className="w-full rounded border-gray-300 text-sm text-right dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         />
       </td>
@@ -144,7 +136,6 @@ function SortableRow({
           step="0.01"
           value={item.price}
           onChange={(e) => handleItemChange(index, "price", e.target.value)}
-          disabled={isPosted}
           className="w-full rounded border-gray-300 text-sm text-right dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         />
       </td>
@@ -152,14 +143,12 @@ function SortableRow({
         {Number(item.total).toFixed(2)}
       </td>
       <td className="px-4 py-2 text-center">
-        {!isPosted && (
-          <button
-            onClick={() => removeItem(index)}
-            className="text-red-500 hover:text-red-700"
-          >
-            <Trash2 size={18} />
-          </button>
-        )}
+        <button
+          onClick={() => removeItem(index)}
+          className="text-red-500 hover:text-red-700"
+        >
+          <Trash2 size={18} />
+        </button>
       </td>
     </tr>
   );
@@ -401,25 +390,23 @@ export default function GoodsReceiptEdit() {
           </span>
         </div>
         <div className="flex gap-2 w-full sm:w-auto justify-end">
+          <button
+            onClick={() => save(false)}
+            disabled={saving}
+            className="flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white"
+          >
+            <Save className="mr-2" size={18} />
+            <span className="hidden sm:inline">Зберегти</span>
+          </button>
           {!isPosted && (
-            <>
-              <button
-                onClick={() => save(false)}
-                disabled={saving}
-                className="flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white"
-              >
-                <Save className="mr-2" size={18} />
-                <span className="hidden sm:inline">Зберегти</span>
-              </button>
-              <button
-                onClick={() => save(true)}
-                disabled={saving}
-                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-              >
-                <CheckCircle className="mr-2" size={18} />
-                <span className="hidden sm:inline">Провести</span>
-              </button>
-            </>
+            <button
+              onClick={() => save(true)}
+              disabled={saving}
+              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            >
+              <CheckCircle className="mr-2" size={18} />
+              <span className="hidden sm:inline">Провести</span>
+            </button>
           )}
         </div>
       </div>
@@ -434,7 +421,6 @@ export default function GoodsReceiptEdit() {
             type="text"
             value={doc.number || ""}
             onChange={(e) => handleHeaderChange("number", e.target.value)}
-            disabled={isPosted}
             className="w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
         </div>
@@ -446,7 +432,6 @@ export default function GoodsReceiptEdit() {
             type="datetime-local"
             value={doc.date ? doc.date.slice(0, 16) : ""}
             onChange={(e) => handleHeaderChange("date", e.target.value)}
-            disabled={isPosted}
             className="w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
         </div>
@@ -457,7 +442,6 @@ export default function GoodsReceiptEdit() {
           <select
             value={doc.providerId || ""}
             onChange={(e) => handleHeaderChange("providerId", e.target.value)}
-            disabled={isPosted}
             className="w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           >
             <option value="">Оберіть постачальника</option>
@@ -475,7 +459,6 @@ export default function GoodsReceiptEdit() {
           <select
             value={doc.warehouseId || ""}
             onChange={(e) => handleHeaderChange("warehouseId", e.target.value)}
-            disabled={isPosted}
             className="w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           >
             <option value="">Оберіть склад</option>
@@ -493,7 +476,6 @@ export default function GoodsReceiptEdit() {
           <select
             value={doc.priceTypeId || ""}
             onChange={(e) => handlePriceTypeChange(e.target.value)}
-            disabled={isPosted}
             className="w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           >
             <option value="">Без авто-ціни</option>
@@ -511,7 +493,6 @@ export default function GoodsReceiptEdit() {
           <textarea
             value={doc.comment || ""}
             onChange={(e) => handleHeaderChange("comment", e.target.value)}
-            disabled={isPosted}
             rows={2}
             className="w-full rounded-md border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
@@ -553,7 +534,6 @@ export default function GoodsReceiptEdit() {
                       key={item.id}
                       item={item}
                       index={index}
-                      isPosted={isPosted}
                       products={products}
                       handleItemChange={handleItemChange}
                       removeItem={removeItem}
@@ -578,17 +558,15 @@ export default function GoodsReceiptEdit() {
             </table>
           </DndContext>
         </div>
-        {!isPosted && (
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <button
-              onClick={addItem}
-              className="flex items-center text-blue-600 hover:text-blue-800"
-            >
-              <Plus size={18} className="mr-1" />
-              Додати рядок
-            </button>
-          </div>
-        )}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <button
+            onClick={addItem}
+            className="flex items-center text-blue-600 hover:text-blue-800"
+          >
+            <Plus size={18} className="mr-1" />
+            Додати рядок
+          </button>
+        </div>
       </div>
     </div>
   );
