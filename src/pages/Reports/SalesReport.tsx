@@ -10,7 +10,8 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/auth.store";
 import { AuthService } from "../../services/auth.service";
 import { OrganizationService } from "../../services/organization.service";
-
+import * as XLSX from "xlsx";
+import { Download, Printer } from "lucide-react";
 interface SaleItem {
   id: string;
   number: string;
@@ -165,14 +166,85 @@ export default function SalesReport() {
 
   const formatNum = (num: any) => Number(num || 0).toFixed(2);
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const exportToExcel = () => {
+    if (sales.length === 0 && activeTab === "general") return;
+
+    let excelData: any[] = [];
+    let sheetName = "Звіт_По_Продажам";
+
+    if (activeTab === "general") {
+      excelData = sales.map((row) => ({
+        "Номер": row.number,
+        "Дата": new Date(row.date).toLocaleString('uk-UA'),
+        "Клієнт": row.counterpartyName,
+        "Склад": row.warehouseName,
+        "Вид продажу": row.salesType,
+        "Статус": row.status === "POSTED" ? "Проведено" : "Збережено",
+        "Сума": Number(row.amount),
+        "Валюта": row.currency,
+        "Прибуток": Number(row.profit)
+      }));
+    } else if (activeTab === "byClient") {
+      excelData = salesByClient.map(row => ({
+        "Клієнт": row.clientName,
+        "К-ть Документів": Number(row.documentsCount),
+        "Вид продажу": row.salesType || "-",
+        "Сума Продажу": Number(row.totalAmount),
+        "Прибуток": Number(row.totalProfit)
+      }));
+      sheetName = "По_Клієнтам";
+    } else if (activeTab === "byProduct") {
+      excelData = salesByProduct.map(row => ({
+        "Товар": row.productName,
+        "Категорія": row.productCategory || "Без категорії",
+        "Вид продажу": row.salesType || "-",
+        "К-ть": Number(row.totalQuantity),
+        "Сума Продажу": Number(row.totalAmount),
+        "Прибуток": Number(row.totalProfit)
+      }));
+      sheetName = "По_Товарам";
+    }
+
+    if (excelData.length === 0) return;
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+    const fileName = `Продажі_${sheetName}_${dateFrom || 'start'}_${dateTo || 'end'}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
   return (
-    <div className="p-4 max-w-[1400px] mx-auto">
-      <h1 className="text-2xl font-bold mb-4">
-        {t("menu.salesReport", "Звіт по продажам")}
-      </h1>
+    <div className="p-4 max-w-[1400px] mx-auto print:p-0 print:max-w-none">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">
+          {t("menu.salesReport", "Звіт по продажам")}
+        </h1>
+        <div className="flex gap-2 print:hidden">
+          <button
+            onClick={handlePrint}
+            className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm font-medium"
+          >
+            <Printer size={18} className="mr-2" />
+            {t("action.print", "Друк / PDF")}
+          </button>
+          <button
+            onClick={exportToExcel}
+            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
+          >
+            <Download size={18} className="mr-2" />
+            Експорт Excel
+          </button>
+        </div>
+      </div>
 
       {/* Фільтри */}
-      <div className="flex gap-4 mb-4 flex-wrap items-end border-b pb-4 border-gray-200 shadow-sm rounded-lg p-4 bg-white">
+      <div className="flex gap-4 mb-4 flex-wrap items-end border-b pb-4 border-gray-200 shadow-sm rounded-lg p-4 bg-white print:hidden">
         <div>
           <label className="block text-sm mb-1 text-gray-600 font-medium">
             {t("common.dateFrom", "Date From")}
@@ -246,7 +318,7 @@ export default function SalesReport() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-6 border-b border-gray-200 mb-6">
+      <div className="flex gap-6 border-b border-gray-200 mb-6 print:hidden">
         <button
           className={`pb-3 px-2 transition-all duration-200 border-b-2 ${activeTab === "general" ? "border-blue-600 text-blue-600 font-semibold" : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"}`}
           onClick={() => setActiveTab("general")}

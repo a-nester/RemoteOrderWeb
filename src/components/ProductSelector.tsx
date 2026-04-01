@@ -11,6 +11,7 @@ interface ProductSelectorProps {
   onSelect: (product: Product) => void;
   priceSlug: string;
   stockBalances?: StockBalance[];
+  addedItemsMap?: Record<string, number>;
 }
 
 export default function ProductSelector({
@@ -20,6 +21,7 @@ export default function ProductSelector({
   onSelect,
   priceSlug,
   stockBalances = [],
+  addedItemsMap = {},
 }: ProductSelectorProps) {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
@@ -156,7 +158,14 @@ export default function ProductSelector({
                       className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
                     >
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                        <div className="font-medium">{product.name}</div>
+                        <div className="font-medium flex items-center gap-2">
+                          {product.name}
+                          {addedItemsMap[product.id] ? (
+                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                               ✓ {addedItemsMap[product.id]}
+                             </span>
+                          ) : null}
+                        </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
                           {product.unit}
                         </div>

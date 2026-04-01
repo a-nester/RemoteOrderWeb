@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
@@ -35,6 +35,8 @@ import type { Product } from "../../types/product";
 import type { Warehouse } from "../../types/organization";
 import type { Counterparty } from "../../types/counterparty";
 import type { PriceType } from "../../types/priceType";
+import ProductSelector from "../../components/ProductSelector";
+import QuantityModal from "../../components/QuantityModal";
 
 interface SortableRowProps {
   item: GoodsReceiptItem;
@@ -89,35 +91,8 @@ function SortableRow({
           <GripVertical size={18} />
         </button>
       </td>
-      <td className="px-4 py-2">
-        <select
-          value={item.productId}
-          onChange={(e) => handleItemChange(index, "productId", e.target.value)}
-          className="w-full rounded border-gray-300 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-        >
-          <option value="">Оберіть товар</option>
-          {Object.entries(
-            products.reduce(
-              (acc, p) => {
-                const cat = p.category || "Без категорії";
-                if (!acc[cat]) acc[cat] = [];
-                acc[cat].push(p);
-                return acc;
-              },
-              {} as Record<string, Product[]>,
-            ),
-          )
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([category, items]) => (
-              <optgroup key={category} label={category}>
-                {items.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-        </select>
+      <td className="px-4 py-2 text-sm text-gray-900 dark:text-white font-medium">
+        {products.find((p) => p.id === item.productId)?.name || "—"}
       </td>
       <td className="px-4 py-2">
         <input
@@ -176,6 +151,17 @@ export default function GoodsReceiptEdit() {
     status: "SAVED",
     items: [],
   });
+
+  // UI State
+  const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
+  const [selectedProductForQty, setSelectedProductForQty] = useState<Product | null>(null);
+
+  // Derived
+  const priceSlug = useMemo(() => {
+    if (!doc.priceTypeId) return "standard";
+    const pt = priceTypes.find((p) => p.id === doc.priceTypeId);
+    return pt ? pt.slug : "standard";
+  }, [doc.priceTypeId, priceTypes]);
 
   useEffect(() => {
     loadData();
@@ -281,19 +267,35 @@ export default function GoodsReceiptEdit() {
   };
 
   const addItem = () => {
-    setDoc((prev) => ({
-      ...prev,
-      items: [
-        ...(prev.items || []),
-        {
-          id: crypto.randomUUID(), // Temp ID
-          productId: "",
-          quantity: 1,
-          price: 0,
-          total: 0,
-        } as GoodsReceiptItem,
-      ],
-    }));
+    setIsProductSelectorOpen(true);
+  };
+
+  const handleConfirmQuantity = (product: Product, quantity: number, price: number) => {
+    setDoc((prev) => {
+      const existingItems = prev.items || [];
+      const existingItemIndex = existingItems.findIndex(i => i.productId === product.id);
+      
+      const newItems = [...existingItems];
+      if (existingItemIndex >= 0) {
+        newItems[existingItemIndex] = {
+          ...newItems[existingItemIndex],
+          quantity: newItems[existingItemIndex].quantity + quantity,
+          price: price,
+          total: Number((newItems[existingItemIndex].quantity + quantity) * price).toFixed(2) as any
+        };
+      } else {
+        newItems.push({
+          id: crypto.randomUUID(),
+          goodsReceiptId: id === "new" ? undefined : id,
+          productId: product.id,
+          quantity,
+          price,
+          total: Number(quantity * price).toFixed(2) as any
+        } as GoodsReceiptItem);
+      }
+      return { ...prev, items: newItems };
+    });
+    setSelectedProductForQty(null);
   };
 
   const removeItem = (index: number) => {
@@ -559,15 +561,46 @@ export default function GoodsReceiptEdit() {
           </DndContext>
         </div>
         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          <button
-            onClick={addItem}
-            className="flex items-center text-blue-600 hover:text-blue-800"
-          >
-            <Plus size={18} className="mr-1" />
-            Додати рядок
-          </button>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white"></h3>
+            <button
+              onClick={addItem}
+              className="flex items-center px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
+            >
+              <Plus size={18} className="mr-2" />
+              Додати товар (підбір)
+            </button>
+          </div>
         </div>
       </div>
+
+      <ProductSelector
+        isOpen={isProductSelectorOpen}
+        onClose={() => setIsProductSelectorOpen(false)}
+        products={products}
+        onSelect={(prod) => setSelectedProductForQty(prod)}
+        priceSlug={priceSlug}
+        addedItemsMap={(doc.items || []).reduce((acc, item) => {
+          acc[item.productId] = (acc[item.productId] || 0) + item.quantity;
+          return acc;
+        }, {} as Record<string, number>)}
+      />
+
+      <QuantityModal
+        isOpen={selectedProductForQty !== null}
+        onClose={() => setSelectedProductForQty(null)}
+        product={selectedProductForQty}
+        price={(() => {
+          if (!selectedProductForQty) return 0;
+          if (doc.priceTypeId && selectedProductForQty.prices && selectedProductForQty.prices[priceSlug] !== undefined) {
+            return Number(selectedProductForQty.prices[priceSlug]);
+          }
+          return 0;
+        })()}
+        isPriceMissing={false}
+        stockBalance={null}
+        onConfirm={handleConfirmQuantity}
+      />
     </div>
   );
 }

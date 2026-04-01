@@ -8,6 +8,7 @@ import { ProductsService } from '../../services/products.service';
 import type { PriceDocument, PriceDocumentItem } from '../../types/priceDocument';
 import type { PriceType } from '../../types/priceType';
 import type { Product } from '../../types/product';
+import ProductSelector from '../../components/ProductSelector';
 
 export default function PriceDocumentEditor() {
     const { t } = useTranslation();
@@ -32,7 +33,7 @@ export default function PriceDocumentEditor() {
     const [priceTypes, setPriceTypes] = useState<PriceType[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedProduct, setSelectedProduct] = useState<string>('');
+    const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
     const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
     useEffect(() => {
@@ -166,18 +167,18 @@ export default function PriceDocumentEditor() {
         setNotification({ type: 'success', message: 'Prices recalculated successfully' });
     };
 
-    const handleAddItem = () => {
-        if (!selectedProduct) return;
-        const prod = products.find(p => p.id === selectedProduct);
+    const handleAddItem = (prod: Product) => {
         if (!prod) return;
 
         const currentPriceObj = prod.prices as any;
         const targetSlug = priceTypes.find(pt => String(pt.id) === String(document.targetPriceTypeId))?.slug || 'standard';
         
-        // Use existing price if available, or just keeping manual entry
-        // If we are in 'MANUAL' mode, user inputs price.
-        // We initialize with current price if exists.
-        
+        // Prevent duplicate addition, just to be safe
+        if ((document.items || []).some(i => i.productId === prod.id)) {
+            setNotification({ type: 'error', message: 'Product is already in the list' });
+            return;
+        }
+
         const newItem: PriceDocumentItem = {
             id: Math.random().toString(), // temp id
             documentId: id || '',
@@ -192,7 +193,6 @@ export default function PriceDocumentEditor() {
             ...prev,
             items: [...(prev.items || []), newItem]
         }));
-        setSelectedProduct('');
     };
 
     const handleUpdateItemPrice = (index: number, price: number) => {
@@ -385,22 +385,13 @@ export default function PriceDocumentEditor() {
                     
                     {isEditing && (
                         <div className="flex space-x-2">
-                            <select
-                                className="block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                value={selectedProduct}
-                                onChange={e => setSelectedProduct(e.target.value)}
-                            >
-                                <option value="">{t('action.addProduct', 'Select Product to Add...')}</option>
-                                {products.map(p => (
-                                    <option key={p.id} value={p.id}>{p.name}</option>
-                                ))}
-                            </select>
                             <button
-                                onClick={handleAddItem}
-                                disabled={!selectedProduct || !document.targetPriceTypeId}
-                                className="inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 disabled:opacity-50"
+                                onClick={() => setIsProductSelectorOpen(true)}
+                                disabled={!document.targetPriceTypeId}
+                                className="inline-flex items-center px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 transition-colors shadow-sm font-medium disabled:opacity-50"
                             >
-                                <Plus className="h-4 w-4" />
+                                <Plus className="h-5 w-5 mr-2" />
+                                Підібрати товар
                             </button>
                         </div>
                     )}
@@ -492,6 +483,18 @@ export default function PriceDocumentEditor() {
                     </div>
                 </div>
             </div>
+
+            <ProductSelector
+                isOpen={isProductSelectorOpen}
+                onClose={() => setIsProductSelectorOpen(false)}
+                products={products}
+                onSelect={(prod) => handleAddItem(prod)}
+                priceSlug={document.targetPriceTypeId ? priceTypes.find(pt => String(pt.id) === String(document.targetPriceTypeId))?.slug || 'standard' : 'standard'}
+                addedItemsMap={(document.items || []).reduce((acc, item) => {
+                    acc[item.productId] = 1;
+                    return acc;
+                }, {} as Record<string, number>)}
+            />
         </div>
     );
 }

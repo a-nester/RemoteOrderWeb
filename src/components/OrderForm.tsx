@@ -307,7 +307,6 @@ export default function OrderForm({
     });
 
     setSelectedProductForQty(null);
-    setIsProductSelectorOpen(false); // Close product selector too
   };
 
   const handleUpdateItem = (id: string, updates: Partial<OrderItem>) => {
@@ -764,6 +763,10 @@ export default function OrderForm({
         onSelect={handleAddProduct}
         priceSlug={priceSlug}
         stockBalances={stockBalances}
+        addedItemsMap={items.reduce((acc, item) => {
+          acc[item.productId] = (acc[item.productId] || 0) + item.quantity;
+          return acc;
+        }, {} as Record<string, number>)}
       />
 
       <QuantityModal
