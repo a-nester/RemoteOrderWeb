@@ -60,7 +60,7 @@ export default function ProductSelector({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-0 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4">
       <div className="bg-white dark:bg-gray-800 rounded-none sm:rounded-lg shadow-xl w-full max-w-4xl h-full sm:h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
