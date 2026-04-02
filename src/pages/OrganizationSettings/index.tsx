@@ -3,9 +3,11 @@ import { useTranslation } from "react-i18next";
 import { Save, Plus, Store, Edit } from "lucide-react";
 import { OrganizationService } from "../../services/organization.service";
 import type { Organization, Warehouse } from "../../types/organization";
+import UsersList from "./UsersList";
 
 export default function OrganizationSettings() {
   const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<"general" | "users">("general");
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [org, setOrg] = useState<Organization | null>(null);
@@ -146,8 +148,33 @@ export default function OrganizationSettings() {
         {t("menu.organizationSettings", "Organization Settings")}
       </h1>
 
-      <div className="space-y-8">
-        {/* Organization Selection Header */}
+      <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
+        <button
+          onClick={() => setActiveTab("general")}
+          className={`py-2 px-4 border-b-2 font-medium text-sm ${
+            activeTab === "general"
+              ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"
+          }`}
+        >
+          {t("menu.organizationSettings", "Загальні")}
+        </button>
+        <button
+          onClick={() => setActiveTab("users")}
+          className={`py-2 px-4 border-b-2 font-medium text-sm ${
+            activeTab === "users"
+              ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"
+          }`}
+        >
+          Користувачі
+        </button>
+      </div>
+
+      {activeTab === "general" ? (
+        <>
+          <div className="space-y-8">
+            {/* Organization Selection Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-gray-800 shadow rounded-lg p-6 gap-4">
           <div className="flex-1 w-full">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -359,6 +386,12 @@ export default function OrganizationSettings() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+        </>
+      ) : (
+        <div className="-mx-4 md:mx-0">
+           <UsersList />
         </div>
       )}
     </div>
