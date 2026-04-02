@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { buyerReturnService as BuyerReturnService } from "../../services/buyerReturnService";
+import { RealizationService } from "../../services/realization.service";
 import OrderForm from "../../components/OrderForm";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
 
@@ -11,10 +12,12 @@ export default function BuyerReturnCreate() {
   const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
   const [initialData, setInitialData] = useState<any>(null);
-  const [loading, setLoading] = useState(!!searchParams.get("copyFrom"));
+  const [loading, setLoading] = useState(!!searchParams.get("copyFrom") || !!searchParams.get("fromRealization"));
 
   useEffect(() => {
     const copyFrom = searchParams.get("copyFrom");
+    const fromRealization = searchParams.get("fromRealization");
+
     if (copyFrom) {
       BuyerReturnService.getById(copyFrom)
         .then((doc) => {
@@ -29,6 +32,20 @@ export default function BuyerReturnCreate() {
         })
         .catch((err) =>
           console.error("Failed to fetch buyer return to copy", err),
+        )
+        .finally(() => setLoading(false));
+    } else if (fromRealization) {
+      RealizationService.getById(fromRealization)
+        .then((doc) => {
+          const { id, number, status, ...rest } = doc as any;
+          setInitialData({
+            ...rest,
+            status: "NEW", 
+            date: new Date().toISOString(),
+          });
+        })
+        .catch((err) =>
+          console.error("Failed to fetch realization", err),
         )
         .finally(() => setLoading(false));
     }

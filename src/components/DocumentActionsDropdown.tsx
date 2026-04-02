@@ -7,6 +7,7 @@ import {
   Copy,
   Trash2,
   UserSearch,
+  CornerUpLeft,
 } from "lucide-react";
 
 export interface DocumentActionsProps {
@@ -16,6 +17,7 @@ export interface DocumentActionsProps {
   onToggleStatus: () => void;
   onDelete: () => void;
   onFilter?: () => void;
+  onBuyerReturn?: () => void;
 }
 
 export default function DocumentActionsDropdown({
@@ -25,6 +27,7 @@ export default function DocumentActionsDropdown({
   onToggleStatus,
   onDelete,
   onFilter,
+  onBuyerReturn,
 }: DocumentActionsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -113,6 +116,15 @@ export default function DocumentActionsDropdown({
                 className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <UserSearch className="mr-3 h-4 w-4 text-teal-600" /> Фільтр за контрагентом
+              </button>
+            )}
+
+            {onBuyerReturn && (
+              <button
+                onClick={(e) => handleAction(e, onBuyerReturn)}
+                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+              >
+                <CornerUpLeft className="mr-3 h-4 w-4 text-orange-600" /> Повернення від покупця
               </button>
             )}
 

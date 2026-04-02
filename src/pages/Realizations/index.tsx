@@ -4,7 +4,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   Plus,
   Eye,
-  Trash2,
   FileText,
   ArrowDown,
   ArrowUp,
@@ -338,6 +337,7 @@ export default function RealizationList() {
                           handleToggleStatus(item.id, item.status)
                         }
                         onDelete={() => handleDelete(item.id, item.status)}
+                        onBuyerReturn={() => navigate(`/buyer-returns/create?fromRealization=${item.id}`)}
                         onFilter={
                           item.counterpartyName
                             ? () =>
@@ -404,20 +404,22 @@ export default function RealizationList() {
                 >
                   <Eye size={20} />
                 </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete(item.id, item.status);
-                  }}
-                  disabled={item.status === "POSTED"}
-                  className={
-                    item.status === "POSTED"
-                      ? "p-2 text-gray-300 dark:text-gray-600 cursor-not-allowed"
-                      : "p-2 text-red-600 dark:text-red-400"
+                <DocumentActionsDropdown
+                  isPosted={item.status === "POSTED"}
+                  paymentUrl={`/finance/transactions?action=payment&counterpartyId=${item.counterpartyId || ""}&amount=${item.amount}`}
+                  copyUrl={`/realizations/create?copyFrom=${item.id}`}
+                  onToggleStatus={() =>
+                    handleToggleStatus(item.id, item.status)
                   }
-                >
-                  <Trash2 size={20} />
-                </button>
+                  onDelete={() => handleDelete(item.id, item.status)}
+                  onBuyerReturn={() => navigate(`/buyer-returns/create?fromRealization=${item.id}`)}
+                  onFilter={
+                    item.counterpartyName
+                      ? () =>
+                          setFilterCounterparty(item.counterpartyName!)
+                      : undefined
+                  }
+                />
               </div>
             </div>
           </div>
