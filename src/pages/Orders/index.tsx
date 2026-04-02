@@ -28,11 +28,12 @@ export default function Orders() {
       .toISOString()
       .split("T")[0];
   });
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(() => sessionStorage.getItem("orders_search") || "");
 
   useEffect(() => {
     localStorage.setItem("orders_startDate", startDate);
     localStorage.setItem("orders_endDate", endDate);
+    sessionStorage.setItem("orders_search", searchTerm);
     loadOrders();
   }, [startDate, endDate, searchTerm]); // Reload when filters change
 

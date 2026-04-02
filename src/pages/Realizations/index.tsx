@@ -24,8 +24,8 @@ export default function RealizationList() {
 
   const [realizations, setRealizations] = useState<Realization[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterCounterparty, setFilterCounterparty] = useState("");
+  const [searchTerm, setSearchTerm] = useState(() => sessionStorage.getItem("realizations_search") || "");
+  const [filterCounterparty, setFilterCounterparty] = useState(() => sessionStorage.getItem("realizations_counterparty") || "");
 
   const { user, setPreferences } = useAuthStore();
   const defaultSort = user?.preferences?.realizationSort || "desc";
@@ -79,6 +79,11 @@ export default function RealizationList() {
     localStorage.setItem("realization_startDate", startDate);
     localStorage.setItem("realization_endDate", endDate);
   }, [startDate, endDate]);
+
+  useEffect(() => {
+    sessionStorage.setItem("realizations_search", searchTerm);
+    sessionStorage.setItem("realizations_counterparty", filterCounterparty);
+  }, [searchTerm, filterCounterparty]);
 
   useEffect(() => {
     loadData();
