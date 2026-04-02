@@ -4,9 +4,11 @@ import { Save, Plus, Store, Edit } from "lucide-react";
 import { OrganizationService } from "../../services/organization.service";
 import type { Organization, Warehouse } from "../../types/organization";
 import UsersList from "./UsersList";
+import { useAuthStore } from "../../store/auth.store";
 
 export default function OrganizationSettings() {
   const { t } = useTranslation();
+  const user = useAuthStore((state) => state.user);
   const [activeTab, setActiveTab] = useState<"general" | "users">("general");
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -159,16 +161,18 @@ export default function OrganizationSettings() {
         >
           {t("menu.organizationSettings", "Загальні")}
         </button>
-        <button
-          onClick={() => setActiveTab("users")}
-          className={`py-2 px-4 border-b-2 font-medium text-sm ${
-            activeTab === "users"
-              ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"
-          }`}
-        >
-          Користувачі
-        </button>
+        {user?.role === 'admin' && (
+          <button
+            onClick={() => setActiveTab("users")}
+            className={`py-2 px-4 border-b-2 font-medium text-sm ${
+              activeTab === "users"
+                ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"
+            }`}
+          >
+            Користувачі
+          </button>
+        )}
       </div>
 
       {activeTab === "general" ? (
