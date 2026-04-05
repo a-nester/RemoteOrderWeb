@@ -11,7 +11,9 @@ import {
   Printer,
   ArrowDownRight,
   ArrowUpRight,
+  Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 
 interface CashFlowRow {
   id: string;
@@ -96,19 +98,73 @@ export default function CashFlowReport() {
     parseFloat(m.toString()).toFixed(2);
   const selectedCb = cashboxes.find((c) => c.id === filters.cashboxId);
 
+  const exportToExcel = () => {
+    if (!hasData) return;
+
+    let excelData: any[] = [];
+    
+    excelData.push({
+      "Дата": `Початковий залишок (${filters.dateFrom})`,
+      "Ордер": "",
+      "Каса": "",
+      "Стаття / Контрагент": "",
+      "Надходження (+)": "",
+      "Витрата (-)": "",
+      "Залишок": formatMoney(totals.startBalance)
+    });
+
+    ledger.forEach(row => {
+      excelData.push({
+        "Дата": dtFormat(row.date),
+        "Ордер": `№${row.number}`,
+        "Каса": row.cashboxName,
+        "Стаття / Контрагент": `${row.categoryName} ${row.counterpartyName ? `(${row.counterpartyName})` : ''}`,
+        "Надходження (+)": row.type === "INCOME" ? formatMoney(row.amount) : "",
+        "Витрата (-)": row.type === "OUTCOME" ? formatMoney(row.amount) : "",
+        "Залишок": formatMoney(row.runningBalance)
+      });
+    });
+
+    excelData.push({
+      "Дата": "Підсумок:",
+      "Ордер": "",
+      "Каса": "",
+      "Стаття / Контрагент": "",
+      "Надходження (+)": formatMoney(totals.totalIncome),
+      "Витрата (-)": formatMoney(totals.totalOutcome),
+      "Залишок": formatMoney(totals.endBalance)
+    });
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Рух_Коштів");
+
+    const fileName = `Рух_Коштів_${filters.dateFrom || 'start'}_${filters.dateTo || 'end'}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
   return (
     <div className="space-y-6 print:space-y-0">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <Wallet className="h-6 w-6" /> Рух коштів
         </h1>
-        <button
-          onClick={handlePrint}
-          className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-        >
-          <Printer className="h-5 w-5 mr-2" />
-          {t("common.print")}
-        </button>
+        <div className="flex gap-2 print:hidden">
+            <button
+            onClick={handlePrint}
+            className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            >
+            <Printer className="h-5 w-5 mr-2" />
+            {t("common.print")}
+            </button>
+            <button
+            onClick={exportToExcel}
+            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
+            >
+            <Download className="h-5 w-5 mr-2" />
+            Експорт Excel
+            </button>
+        </div>
       </div>
 
       {/* Filters */}

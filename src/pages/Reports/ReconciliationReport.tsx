@@ -6,7 +6,8 @@ import { API_URL } from "../../constants/api";
 import { useAuthStore } from "../../store/auth.store";
 import { CounterpartyService } from "../../services/counterparty.service";
 import type { Counterparty, CounterpartyGroup } from "../../types/counterparty";
-import { FileText, Search, Printer, Plus, Minus } from "lucide-react";
+import { FileText, Search, Printer, Plus, Minus, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 
 interface LedgerRow {
   documentId: string;
@@ -135,19 +136,89 @@ export default function ReconciliationReport() {
     0,
   );
 
+  const getDocName = (row: any) => {
+    if (row.type === "REALIZATION") return `Реалізація №${row.docNumber}`;
+    if (row.type === "GOODS_RECEIPT") return `Надходження №${row.docNumber}`;
+    if (row.type === "INCOME") return `Прибутковий ордер №${row.docNumber}`;
+    if (row.type === "OUTCOME") return `Видатковий ордер №${row.docNumber}`;
+    if (row.type === "BUYER_RETURN") return `Повернення від покупця №${row.docNumber}`;
+    if (row.type === "SUPPLIER_RETURN") return `Повернення постачальнику №${row.docNumber}`;
+    return row.docNumber;
+  };
+
+  const exportToExcel = () => {
+    if (groupedData.length === 0) return;
+
+    let excelData: any[] = [];
+    
+    groupedData.forEach(group => {
+      excelData.push({
+        "Дата": "КЛІЄНТ:",
+        "Документ": getCpName(group.counterpartyId),
+        "Дебет (+)": "",
+        "Кредит (-)": "",
+        "Борг контрагента": formatMoney(group.endBalance)
+      });
+      if (group.ledger.length === 0) {
+        excelData.push({
+          "Дата": `Сальдо на початок (${filters.dateFrom})`,
+          "Документ": "",
+          "Дебет (+)": "",
+          "Кредит (-)": "",
+          "Борг контрагента": formatMoney(group.startBalance)
+        });
+      }
+      group.ledger.forEach((row, i) => {
+          if (i === 0) {
+            excelData.push({
+              "Дата": `Сальдо на початок (${filters.dateFrom})`,
+              "Документ": "",
+              "Дебет (+)": "",
+              "Кредит (-)": "",
+              "Борг контрагента": formatMoney(group.startBalance)
+            });
+          }
+          excelData.push({
+            "Дата": dtFormat(row.date),
+            "Документ": getDocName(row),
+            "Дебет (+)": parseFloat(row.debit) !== 0 ? formatMoney(row.debit) : "",
+            "Кредит (-)": parseFloat(row.credit) !== 0 ? formatMoney(row.credit) : "",
+            "Борг контрагента": formatMoney(row.runningBalance)
+          });
+      })
+      excelData.push({});
+    });
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Акт_Звірки");
+
+    const fileName = `Акт_Звірки_${filters.dateFrom || 'start'}_${filters.dateTo || 'end'}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
   return (
     <div className="space-y-6 print:space-y-0">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <FileText className="h-6 w-6" /> Акт звірки взаєморозрахунків
         </h1>
-        <button
-          onClick={handlePrint}
-          className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-        >
-          <Printer className="h-5 w-5 mr-2" />
-          {t("common.print")}
-        </button>
+        <div className="flex gap-2 print:hidden">
+            <button
+            onClick={handlePrint}
+            className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            >
+            <Printer className="h-5 w-5 mr-2" />
+            {t("common.print")}
+            </button>
+            <button
+            onClick={exportToExcel}
+            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
+            >
+            <Download className="h-5 w-5 mr-2" />
+            Експорт Excel
+            </button>
+        </div>
       </div>
 
       {/* Filters */}

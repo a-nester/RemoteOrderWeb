@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { FileText, Filter, CheckSquare, Square, ChevronDown } from "lucide-react";
+import { FileText, Filter, CheckSquare, Square, ChevronDown, Download, Printer } from "lucide-react";
+import * as XLSX from "xlsx";
 import {
   ReportsService,
   type StockBalance,
@@ -95,6 +96,30 @@ export default function StockBalancesReport() {
     }
   };
 
+  const exportToExcel = () => {
+    if (filteredBalances.length === 0) return;
+
+    const excelData = filteredBalances.map(row => ({
+      "Категорія": row.productCategory || "Без категорії",
+      "Товар": row.productName,
+      "Склад": row.warehouseName || "Без складу",
+      "В наявності": Number(row.balance),
+      "Вартість": Number(row.totalValue || 0)
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Залишки");
+
+    const wname = warehouses.find(w => w.id === warehouseId)?.name || 'Всі_склади';
+    const fileName = `Залишки_${date}_${wname}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -102,6 +127,22 @@ export default function StockBalancesReport() {
           <FileText className="mr-2" />
           Звіт: Залишки товарів на складах
         </h1>
+        <div className="flex gap-2 print:hidden">
+            <button
+            onClick={handlePrint}
+            className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+            >
+            <Printer className="h-5 w-5 mr-2" />
+            Друк / PDF
+            </button>
+            <button
+            onClick={exportToExcel}
+            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
+            >
+            <Download className="h-5 w-5 mr-2" />
+            Експорт Excel
+            </button>
+        </div>
       </div>
 
       {/* Filters */}
