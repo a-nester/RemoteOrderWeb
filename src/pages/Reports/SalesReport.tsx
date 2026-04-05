@@ -204,6 +204,7 @@ export default function SalesReport() {
         "Вид продажу": row.salesType || "-",
         "К-ть": Number(row.totalQuantity),
         "Сума Продажу": Number(row.totalAmount),
+        "Закупівельна вартість": Number(row.totalPurchaseCost),
         "Прибуток": Number(row.totalProfit)
       }));
       sheetName = "По_Товарам";
@@ -651,6 +652,9 @@ export default function SalesReport() {
                       {t("common.amount", "Сума")} (₴)
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Закупівельна вартість (₴)
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {t("common.profit", "Прибуток")} (₴)
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -670,7 +674,7 @@ export default function SalesReport() {
                     ).map(([salesType, rows]) => (
                       <Fragment key={salesType}>
                         <tr className="bg-blue-50/50">
-                          <td colSpan={7} className="px-4 py-3 text-sm font-bold text-gray-900 border-y border-gray-200">
+                          <td colSpan={8} className="px-4 py-3 text-sm font-bold text-gray-900 border-y border-gray-200">
                             {salesType}
                           </td>
                         </tr>
@@ -694,6 +698,9 @@ export default function SalesReport() {
                             <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                               {formatNum(row.totalAmount)}
                             </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-600 text-right">
+                              {formatNum(row.totalPurchaseCost)}
+                            </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
                               {formatNum(row.totalProfit)}
                             </td>
@@ -711,6 +718,9 @@ export default function SalesReport() {
                            </td>
                            <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">
                              {formatNum(rows.reduce((sum, item) => sum + Number(item.totalAmount), 0))}
+                           </td>
+                           <td className="px-4 py-2 text-right text-sm font-bold text-gray-700">
+                             {formatNum(rows.reduce((sum, item) => sum + Number(item.totalPurchaseCost), 0))}
                            </td>
                            <td className="px-4 py-2 text-right text-sm font-bold text-green-700">
                              {formatNum(rows.reduce((sum, item) => sum + Number(item.totalProfit), 0))}
@@ -746,6 +756,9 @@ export default function SalesReport() {
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                           {formatNum(row.totalAmount)}
                         </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-600 text-right">
+                          {formatNum(row.totalPurchaseCost)}
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
                           {formatNum(row.totalProfit)}
                         </td>
@@ -754,7 +767,7 @@ export default function SalesReport() {
                   )}
                   {salesByProduct.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-gray-500">
+                      <td colSpan={8} className="p-8 text-center text-gray-500">
                         {t("common.noData", "Немає даних")}
                       </td>
                     </tr>
@@ -781,6 +794,14 @@ export default function SalesReport() {
                         {formatNum(
                           salesByProduct.reduce(
                             (sum, item) => sum + Number(item.totalAmount),
+                            0,
+                          ),
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-700">
+                        {formatNum(
+                          salesByProduct.reduce(
+                            (sum, item) => sum + Number(item.totalPurchaseCost),
                             0,
                           ),
                         )}

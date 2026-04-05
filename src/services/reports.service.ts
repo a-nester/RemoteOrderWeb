@@ -31,6 +31,7 @@ export interface SalesByProduct {
   productCategory: string;
   totalQuantity: string | number;
   totalAmount: string | number;
+  totalPurchaseCost: string | number;
   totalProfit: string | number;
   salesType?: string;
 }
