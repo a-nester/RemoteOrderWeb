@@ -3,7 +3,9 @@ import { useTranslation } from "react-i18next";
 import { X, Save } from "lucide-react";
 import type { User } from "../../services/users.service";
 import { CounterpartyService } from "../../services/counterparty.service";
+import { OrganizationService } from "../../services/organization.service";
 import type { Counterparty } from "../../types/counterparty";
+import type { Warehouse } from "../../types/organization";
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -23,11 +25,14 @@ export default function UserFormModal({
   const [role, setRole] = useState<"admin" | "manager" | "client">("client");
   const [password, setPassword] = useState("");
   const [counterpartyId, setCounterpartyId] = useState("");
+  const [warehouseId, setWarehouseId] = useState("");
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     CounterpartyService.getAll().then(setCounterparties).catch(console.error);
+    OrganizationService.getWarehouses().then(setWarehouses).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -35,11 +40,13 @@ export default function UserFormModal({
       setEmail(initialData.email || "");
       setRole(initialData.role || "client");
       setCounterpartyId(initialData.counterpartyId || "");
+      setWarehouseId(initialData.warehouseId || "");
       setPassword(""); // Never populate password
     } else {
       setEmail("");
       setRole("client");
       setCounterpartyId("");
+      setWarehouseId("");
       setPassword("");
     }
   }, [initialData, isOpen]);
@@ -51,6 +58,9 @@ export default function UserFormModal({
     setSaving(true);
     try {
       const data: any = { email, role };
+      if (role === "client" || role === "manager") {
+        data.warehouseId = warehouseId;
+      }
       if (role === "client" && counterpartyId) {
         data.counterpartyId = counterpartyId;
       }
@@ -106,6 +116,27 @@ export default function UserFormModal({
               <option value="client">Клієнт (Client)</option>
             </select>
           </div>
+
+          {(role === "client" || role === "manager") && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Склад (Обов'язково для менеджерів і клієнтів)
+              </label>
+              <select
+                value={warehouseId}
+                onChange={(e) => setWarehouseId(e.target.value)}
+                required={role === "client" || role === "manager"}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              >
+                <option value="">-- Оберіть склад --</option>
+                {warehouses.map((wh) => (
+                  <option key={wh.id} value={wh.id}>
+                    {wh.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {role === "client" && (
             <div>
