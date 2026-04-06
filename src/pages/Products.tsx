@@ -8,6 +8,7 @@ import { PriceTypesService } from '../services/priceTypes.service';
 import type { PriceType } from '../types/priceType';
 import PriceListModal from '../components/PriceListModal';
 import { generateExcelPriceList, generatePdfPriceList } from '../utils/priceList.utils';
+import { BASE_URL } from '../constants/api';
 
 export default function Products() {
   return (
@@ -117,7 +118,9 @@ function ProductsContent() {
                   <div className="flex items-center">
                     <div className="h-10 w-10 flex-shrink-0">
                       {product.photos && product.photos.length > 0 ? (
-                        <img className="h-10 w-10 rounded-full object-cover" src={product.photos[0]} alt="" />
+                        <img className="h-10 w-10 rounded-full object-cover" 
+                             src={product.photos[0].startsWith('http') ? product.photos[0] : `${BASE_URL}${product.photos[0]}`} 
+                             alt="" />
                       ) : (
                          <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-gray-400 dark:text-gray-300">
                              N/A
