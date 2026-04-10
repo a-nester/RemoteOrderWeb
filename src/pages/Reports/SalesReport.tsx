@@ -4,14 +4,15 @@ import {
   ReportsService,
   type SalesByClient,
   type SalesByProduct,
+  type SalesByClientDetail,
 } from "../../services/reports.service";
 import { buyerReturnService } from "../../services/buyerReturnService";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/auth.store";
 import { AuthService } from "../../services/auth.service";
 import { OrganizationService } from "../../services/organization.service";
-import * as XLSX from "xlsx";
-import { Download, Printer } from "lucide-react";
+import * as XLSX from "xlsx-js-style";
+import { Download, Printer, ChevronDown, ChevronRight } from "lucide-react";
 interface SaleItem {
   id: string;
   number: string;
@@ -37,6 +38,32 @@ export default function SalesReport() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Drill-down states
+  const [expandedClients, setExpandedClients] = useState<Record<string, boolean>>({});
+  const [clientDetails, setClientDetails] = useState<Record<string, SalesByClientDetail[]>>({});
+  const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({});
+
+  const toggleClientDetails = async (clientRow: SalesByClient) => {
+    const key = `${clientRow.clientId}_${clientRow.salesType || ''}`;
+    const isExpanded = !!expandedClients[key];
+    
+    setExpandedClients(prev => ({ ...prev, [key]: !isExpanded }));
+
+    if (!isExpanded && !clientDetails[key]) {
+        setLoadingDetails(prev => ({ ...prev, [key]: true }));
+        try {
+            const data = await ReportsService.getSalesByClientDetails(
+                clientRow.clientId, dateFrom || undefined, dateTo || undefined, clientRow.salesType
+            );
+            setClientDetails(prev => ({ ...prev, [key]: data }));
+        } catch (e) {
+            console.error('Failed to load client details:', e);
+        } finally {
+            setLoadingDetails(prev => ({ ...prev, [key]: false }));
+        }
+    }
+  };
 
   const { user, setPreferences } = useAuthStore();
 
@@ -218,6 +245,77 @@ export default function SalesReport() {
 
     const fileName = `Продажі_${sheetName}_${dateFrom || 'start'}_${dateTo || 'end'}.xlsx`;
     XLSX.writeFile(wb, fileName);
+  };
+
+  const renderClientRow = (row: SalesByClient, index: number) => {
+    const key = `${row.clientId}_${row.salesType || ''}`;
+    const isExpanded = !!expandedClients[key];
+    const details = clientDetails[key];
+    const isLoading = loadingDetails[key];
+
+    return (
+      <Fragment key={key}>
+        <tr className="hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => toggleClientDetails(row)}>
+          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+            <div className="flex items-center gap-2">
+                <button className="text-gray-400 hover:text-gray-600 focus:outline-none">
+                    {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                </button>
+                {index + 1}
+            </div>
+          </td>
+          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+            {row.clientName || t("common.unknown", "Unknown")}
+          </td>
+          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+            {row.documentsCount}
+          </td>
+          <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+            {formatNum(row.totalAmount)}
+          </td>
+          <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
+            {formatNum(row.totalProfit)}
+          </td>
+          {groupBySalesType && (
+            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+              {Number(row.totalAmount) !== 0 ? ((Number(row.totalProfit) / Number(row.totalAmount)) * 100).toFixed(2) + " %" : "-"}
+            </td>
+          )}
+        </tr>
+        {isExpanded && (
+            <tr className="bg-gray-50/50">
+                <td colSpan={groupBySalesType ? 6 : 5} className="px-8 py-4">
+                    {isLoading ? (
+                        <div className="text-sm text-gray-500 text-center py-2">Завантаження деталей...</div>
+                    ) : details && details.length > 0 ? (
+                        <table className="min-w-full divide-y divide-gray-200 border border-gray-200 shadow-sm rounded-lg overflow-hidden">
+                            <thead className="bg-gray-100">
+                                <tr>
+                                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Товар</th>
+                                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">К-сть</th>
+                                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Сума</th>
+                                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Прибуток</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {details.map((d, i) => (
+                                    <tr key={i} className="hover:bg-gray-50">
+                                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{d.productName || "Невідомий товар"}</td>
+                                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 text-right">{Number(d.quantity).toFixed(2)} {d.unit}</td>
+                                        <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatNum(d.amount)}</td>
+                                        <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-green-600 text-right">{formatNum(d.profit)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="text-sm text-gray-500 text-center py-2">Немає товарів</div>
+                    )}
+                </td>
+            </tr>
+        )}
+      </Fragment>
+    );
   };
 
   return (
@@ -515,31 +613,7 @@ export default function SalesReport() {
                             {salesType}
                           </td>
                         </tr>
-                        {rows.map((row, index) => (
-                           <tr
-                             key={row.clientId || index}
-                             className="hover:bg-gray-50 transition-colors"
-                           >
-                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                               {index + 1}
-                             </td>
-                             <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 pl-8">
-                               {row.clientName || t("common.unknown", "Unknown")}
-                             </td>
-                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
-                               {row.documentsCount}
-                             </td>
-                             <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                               {formatNum(row.totalAmount)}
-                             </td>
-                             <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
-                               {formatNum(row.totalProfit)}
-                             </td>
-                             <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                               {Number(row.totalAmount) !== 0 ? ((Number(row.totalProfit) / Number(row.totalAmount)) * 100).toFixed(2) + " %" : "-"}
-                             </td>
-                           </tr>
-                        ))}
+                        {rows.map((row, index) => renderClientRow(row, index))}
                         <tr className="bg-gray-50 border-t border-gray-200">
                            <td colSpan={3} className="px-4 py-2 text-right text-sm font-bold text-gray-700">
                              {t("common.total", "Підсумок")} ({salesType}):
@@ -561,28 +635,7 @@ export default function SalesReport() {
                       </Fragment>
                     ))
                   ) : (
-                    salesByClient.map((row, index) => (
-                      <tr
-                        key={row.clientId || index}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {index + 1}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {row.clientName || t("common.unknown", "Unknown")}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
-                          {row.documentsCount}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                          {formatNum(row.totalAmount)}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
-                          {formatNum(row.totalProfit)}
-                        </td>
-                      </tr>
-                    ))
+                    salesByClient.map((row, index) => renderClientRow(row, index))
                   )}
                   {salesByClient.length === 0 && (
                     <tr>

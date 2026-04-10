@@ -25,6 +25,15 @@ export interface SalesByClient {
   salesType?: string;
 }
 
+export interface SalesByClientDetail {
+  productName: string;
+  unit: string;
+  quantity: string | number;
+  amount: string | number;
+  profit: string | number;
+  averagePrice: string | number;
+}
+
 export interface SalesByProduct {
   productId: string;
   productName: string;
@@ -69,6 +78,14 @@ export const ReportsService = {
   getSalesByClient: async (dateFrom?: string, dateTo?: string, counterparty?: string, groupBySalesType?: boolean, salesType?: string): Promise<SalesByClient[]> => {
       const response = await axios.get(`${API_URL}/reports/sales/by-client`, {
           params: { dateFrom, dateTo, counterparty, groupBySalesType, salesType },
+          headers: getAuthHeader()
+      });
+      return response.data;
+  },
+
+  getSalesByClientDetails: async (clientId: string, dateFrom?: string, dateTo?: string, salesType?: string): Promise<SalesByClientDetail[]> => {
+      const response = await axios.get(`${API_URL}/reports/sales/by-client/details`, {
+          params: { clientId, dateFrom, dateTo, salesType },
           headers: getAuthHeader()
       });
       return response.data;

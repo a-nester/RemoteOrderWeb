@@ -7,7 +7,7 @@ import { useAuthStore } from "../../store/auth.store";
 import { CounterpartyService } from "../../services/counterparty.service";
 import type { Counterparty, CounterpartyGroup } from "../../types/counterparty";
 import { FileText, Search, Printer, Plus, Minus, Download } from "lucide-react";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 
 interface LedgerRow {
   documentId: string;
@@ -161,8 +161,8 @@ export default function ReconciliationReport() {
       });
       if (group.ledger.length === 0) {
         excelData.push({
-          "Дата": `Сальдо на початок (${filters.dateFrom})`,
-          "Документ": "",
+          "Дата": "",
+          "Документ": `Сальдо на початок (${filters.dateFrom})`,
           "Дебет (+)": "",
           "Кредит (-)": "",
           "Борг контрагента": formatMoney(group.startBalance)
@@ -171,8 +171,8 @@ export default function ReconciliationReport() {
       group.ledger.forEach((row, i) => {
           if (i === 0) {
             excelData.push({
-              "Дата": `Сальдо на початок (${filters.dateFrom})`,
-              "Документ": "",
+              "Дата": "",
+              "Документ": `Сальдо на початок (${filters.dateFrom})`,
               "Дебет (+)": "",
               "Кредит (-)": "",
               "Борг контрагента": formatMoney(group.startBalance)
@@ -190,6 +190,45 @@ export default function ReconciliationReport() {
     });
 
     const ws = XLSX.utils.json_to_sheet(excelData);
+
+    const range = XLSX.utils.decode_range(ws['!ref'] || "A1:A1");
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
+        if (!ws[cellRef]) continue;
+
+        ws[cellRef].s = ws[cellRef].s || {};
+
+        if (ws[cellRef].v !== undefined && ws[cellRef].v !== null && String(ws[cellRef].v).trim() !== '') {
+            ws[cellRef].s.border = {
+                top: { style: "thin", color: { rgb: "000000" } },
+                bottom: { style: "thin", color: { rgb: "000000" } },
+                left: { style: "thin", color: { rgb: "000000" } },
+                right: { style: "thin", color: { rgb: "000000" } }
+            };
+        }
+
+        if (R === 0) {
+            ws[cellRef].s.fill = { fgColor: { rgb: "E0E0E0" } };
+            ws[cellRef].s.font = { bold: true };
+            ws[cellRef].s.border = {
+                top: { style: "thin", color: { rgb: "000000" } },
+                bottom: { style: "thin", color: { rgb: "000000" } },
+                left: { style: "thin", color: { rgb: "000000" } },
+                right: { style: "thin", color: { rgb: "000000" } }
+            };
+        }
+      }
+    }
+
+    ws['!cols'] = [
+      { wch: 15 },
+      { wch: 50 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 20 }
+    ];
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Акт_Звірки");
 
