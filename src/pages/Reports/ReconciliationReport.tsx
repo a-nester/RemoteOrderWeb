@@ -199,14 +199,12 @@ export default function ReconciliationReport() {
 
         ws[cellRef].s = ws[cellRef].s || {};
 
-        if (ws[cellRef].v !== undefined && ws[cellRef].v !== null && String(ws[cellRef].v).trim() !== '') {
-            ws[cellRef].s.border = {
-                top: { style: "thin", color: { rgb: "000000" } },
-                bottom: { style: "thin", color: { rgb: "000000" } },
-                left: { style: "thin", color: { rgb: "000000" } },
-                right: { style: "thin", color: { rgb: "000000" } }
-            };
-        }
+        ws[cellRef].s.border = {
+            top: { style: "thin", color: { rgb: "000000" } },
+            bottom: { style: "thin", color: { rgb: "000000" } },
+            left: { style: "thin", color: { rgb: "000000" } },
+            right: { style: "thin", color: { rgb: "000000" } }
+        };
 
         if (R === 0) {
             ws[cellRef].s.fill = { fgColor: { rgb: "E0E0E0" } };
