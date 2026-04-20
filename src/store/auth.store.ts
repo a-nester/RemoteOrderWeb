@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { AuthService } from "../services/auth.service";
 
+import type { UserPermissions } from "../services/users.service";
+
 export type Role = "admin" | "manager" | "client";
 
 export type User = {
@@ -10,6 +12,7 @@ export type User = {
     role: Role;
     warehouseId?: string;
     preferences?: any;
+    permissions?: UserPermissions;
 };
 
 type AuthState = {

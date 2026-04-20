@@ -14,6 +14,13 @@ interface UserFormModalProps {
   initialData: User | null;
 }
 
+const defaultPermissions = {
+  priceEditor: { priceSettings: false, priceTypes: false },
+  reports: { stockBalances: false, inventory: false, sales: false, reconciliation: false, cashflow: false },
+  finance: { transactions: false, cashboxes: false },
+  documents: { orders: true, realizations: true, goodsReceipts: false, buyerReturns: false, supplierReturns: false }
+};
+
 export default function UserFormModal({
   isOpen,
   onClose,
@@ -29,6 +36,7 @@ export default function UserFormModal({
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [saving, setSaving] = useState(false);
+  const [permissions, setPermissions] = useState<any>(defaultPermissions);
 
   useEffect(() => {
     CounterpartyService.getAll().then(setCounterparties).catch(console.error);
@@ -42,12 +50,24 @@ export default function UserFormModal({
       setCounterpartyId(initialData.counterpartyId || "");
       setWarehouseId(initialData.warehouseId || "");
       setPassword(""); // Never populate password
+
+      if (initialData.permissions) {
+          setPermissions({
+              priceEditor: { ...defaultPermissions.priceEditor, ...(initialData.permissions.priceEditor || {}) },
+              reports: { ...defaultPermissions.reports, ...(initialData.permissions.reports || {}) },
+              finance: { ...defaultPermissions.finance, ...(initialData.permissions.finance || {}) },
+              documents: { ...defaultPermissions.documents, ...(initialData.permissions.documents || {}) }
+          });
+      } else {
+          setPermissions(defaultPermissions);
+      }
     } else {
       setEmail("");
       setRole("client");
       setCounterpartyId("");
       setWarehouseId("");
       setPassword("");
+      setPermissions(defaultPermissions);
     }
   }, [initialData, isOpen]);
 
@@ -57,7 +77,7 @@ export default function UserFormModal({
     e.preventDefault();
     setSaving(true);
     try {
-      const data: any = { email, role };
+      const data: any = { email, role, permissions };
       if (role === "client" || role === "manager") {
         data.warehouseId = warehouseId;
       }
@@ -179,6 +199,112 @@ export default function UserFormModal({
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 Введіть пароль лише якщо бажаєте його змінити.
               </p>
+            )}
+          </div>
+
+          {/* Дозволи - Permissions Block */}
+          <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+              Дозволи (Permisses)
+            </h4>
+            {role === "admin" ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                Адміністратор має повний доступ до всіх розділів за замовчуванням.
+              </p>
+            ) : (
+              <div className="space-y-4 max-h-64 overflow-y-auto pr-2">
+                
+                {/* Редактор цін */}
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-md">
+                  <span className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">Редактор цін</span>
+                  <div className="space-y-2 pl-2 text-sm">
+                    {Object.entries({
+                      priceSettings: "Налаштування цін",
+                      priceTypes: "Типи цін"
+                    }).map(([key, label]) => (
+                      <label key={key} className="flex items-center text-gray-700 dark:text-gray-300">
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mr-2"
+                          checked={permissions.priceEditor[key] || false}
+                          onChange={(e) => setPermissions((p: any) => ({ ...p, priceEditor: { ...p.priceEditor, [key]: e.target.checked } }))}
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Звіти */}
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-md">
+                  <span className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">Звіти</span>
+                  <div className="space-y-2 pl-2 text-sm">
+                    {Object.entries({
+                      stockBalances: "Залишки на складах",
+                      inventory: "Відомість по товарах",
+                      sales: "Продажі",
+                      reconciliation: "Акт звірки",
+                      cashflow: "Рух коштів"
+                    }).map(([key, label]) => (
+                      <label key={key} className="flex items-center text-gray-700 dark:text-gray-300">
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mr-2"
+                          checked={permissions.reports[key] || false}
+                          onChange={(e) => setPermissions((p: any) => ({ ...p, reports: { ...p.reports, [key]: e.target.checked } }))}
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Фінанси */}
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-md">
+                  <span className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">Фінанси</span>
+                  <div className="space-y-2 pl-2 text-sm">
+                    {Object.entries({
+                      transactions: "Каса",
+                      cashboxes: "Налаштування каси"
+                    }).map(([key, label]) => (
+                      <label key={key} className="flex items-center text-gray-700 dark:text-gray-300">
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mr-2"
+                          checked={permissions.finance[key] || false}
+                          onChange={(e) => setPermissions((p: any) => ({ ...p, finance: { ...p.finance, [key]: e.target.checked } }))}
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Документи */}
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-md">
+                  <span className="block text-sm font-medium text-gray-800 dark:text-gray-200 mb-2">Документи</span>
+                  <div className="space-y-2 pl-2 text-sm">
+                    {Object.entries({
+                      orders: "Замовлення",
+                      realizations: "Реалізації",
+                      goodsReceipts: "Поступлення",
+                      buyerReturns: "Повернення від покупця",
+                      supplierReturns: "Повернення постачальнику"
+                    }).map(([key, label]) => (
+                      <label key={key} className="flex items-center text-gray-700 dark:text-gray-300">
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 mr-2"
+                          checked={permissions.documents[key] || false}
+                          onChange={(e) => setPermissions((p: any) => ({ ...p, documents: { ...p.documents, [key]: e.target.checked } }))}
+                        />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
             )}
           </div>
 

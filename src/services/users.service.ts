@@ -2,6 +2,31 @@ import axios from 'axios';
 import { getAuthHeader } from '../services/auth.service';
 import { API_URL } from '../constants/api';
 
+export interface UserPermissions {
+    priceEditor?: {
+        priceSettings?: boolean;
+        priceTypes?: boolean;
+    };
+    reports?: {
+        stockBalances?: boolean;
+        inventory?: boolean;
+        sales?: boolean;
+        reconciliation?: boolean;
+        cashflow?: boolean;
+    };
+    finance?: {
+        transactions?: boolean;
+        cashboxes?: boolean;
+    };
+    documents?: {
+        orders?: boolean;
+        realizations?: boolean;
+        goodsReceipts?: boolean;
+        buyerReturns?: boolean;
+        supplierReturns?: boolean;
+    };
+}
+
 export interface User {
     id: string;
     email: string;
@@ -9,6 +34,7 @@ export interface User {
     warehouseId?: string | null;
     counterpartyId?: string | null;
     organizationId?: number | null;
+    permissions?: UserPermissions;
 }
 
 export const UsersService = {

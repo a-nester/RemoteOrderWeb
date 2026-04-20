@@ -66,6 +66,20 @@ export default function Layout({ children, title }: LayoutProps) {
     navigate("/login");
   };
 
+  const hasAccess = (group: string, item?: string) => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    if (!user.permissions) return false;
+    const groupPerms = (user.permissions as any)[group];
+    if (!groupPerms) return false;
+    
+    if (item) {
+       return !!groupPerms[item];
+    }
+    
+    return Object.values(groupPerms).some(val => val === true);
+  };
+
   const togglePriceEditor = () => setIsPriceEditorOpen(!isPriceEditorOpen);
   const toggleReports = () => setIsReportsOpen(!isReportsOpen);
   const toggleOrganization = () => setIsOrganizationOpen(!isOrganizationOpen);
@@ -135,8 +149,8 @@ export default function Layout({ children, title }: LayoutProps) {
             {t("menu.products")}
           </NavLink>
 
-          {/* Price Editor Group - Admin Only */}
-          {user?.role === "admin" && (
+          {/* Price Editor Group */}
+          {hasAccess("priceEditor") && (
             <div>
               <button
                 onClick={togglePriceEditor}
@@ -155,6 +169,7 @@ export default function Layout({ children, title }: LayoutProps) {
 
               {isPriceEditorOpen && (
                 <div className="ml-4 mt-1 space-y-1">
+                  {hasAccess("priceEditor", "priceSettings") && (
                   <NavLink
                     to="/price-documents"
                     className={({ isActive }) =>
@@ -170,7 +185,9 @@ export default function Layout({ children, title }: LayoutProps) {
                     {/* Indent placeholder */}
                     {t("menu.priceSettings")}
                   </NavLink>
+                  )}
                   {/* Price Types - Assuming route /price-types exists or will exist */}
+                  {hasAccess("priceEditor", "priceTypes") && (
                   <NavLink
                     to="/price-types" // TODO: Create this route if not exists
                     className={({ isActive }) =>
@@ -185,12 +202,14 @@ export default function Layout({ children, title }: LayoutProps) {
                     <span className="w-5 mr-3"></span>
                     {t("menu.priceTypes")}
                   </NavLink>
+                  )}
                 </div>
               )}
             </div>
           )}
 
           {/* Reports Group */}
+          {hasAccess("reports") && (
           <div>
             <button
               onClick={toggleReports}
@@ -207,8 +226,9 @@ export default function Layout({ children, title }: LayoutProps) {
               )}
             </button>
 
-            {isReportsOpen && user?.role === "admin" && (
+            {isReportsOpen && (
               <div className="ml-4 mt-1 space-y-1">
+                {hasAccess("reports", "stockBalances") && (
                 <NavLink
                   to="/reports/stock-balances"
                   className={({ isActive }) =>
@@ -223,6 +243,9 @@ export default function Layout({ children, title }: LayoutProps) {
                   <span className="w-5 mr-3"></span>
                   Залишки на складах
                 </NavLink>
+                )}
+
+                {hasAccess("reports", "inventory") && (
                 <NavLink
                   to="/reports/inventory"
                   className={({ isActive }) =>
@@ -237,6 +260,9 @@ export default function Layout({ children, title }: LayoutProps) {
                   <span className="w-5 mr-3"></span>
                   Відомість по товарах
                 </NavLink>
+                )}
+
+                {hasAccess("reports", "sales") && (
                 <NavLink
                   to="/reports/sales"
                   className={({ isActive }) =>
@@ -251,6 +277,9 @@ export default function Layout({ children, title }: LayoutProps) {
                   <span className="w-5 mr-3"></span>
                   Продажі
                 </NavLink>
+                )}
+
+                {hasAccess("reports", "reconciliation") && (
                 <NavLink
                   to="/reports/reconciliation"
                   className={({ isActive }) =>
@@ -265,6 +294,9 @@ export default function Layout({ children, title }: LayoutProps) {
                   <span className="w-5 mr-3"></span>
                   Акт звірки
                 </NavLink>
+                )}
+
+                {hasAccess("reports", "cashflow") && (
                 <NavLink
                   to="/reports/cashflow"
                   className={({ isActive }) =>
@@ -279,12 +311,14 @@ export default function Layout({ children, title }: LayoutProps) {
                   <span className="w-5 mr-3"></span>
                   Рух коштів
                 </NavLink>
+                )}
               </div>
             )}
           </div>
+          )}
 
-          {/* Finance Group - Admin Only */}
-          {user?.role === "admin" && (
+          {/* Finance Group */}
+          {hasAccess("finance") && (
             <div>
               <button
                 onClick={toggleFinance}
@@ -303,6 +337,7 @@ export default function Layout({ children, title }: LayoutProps) {
 
               {isFinanceOpen && (
                 <div className="ml-4 mt-1 space-y-1">
+                  {hasAccess("finance", "transactions") && (
                   <NavLink
                     to="/finance/transactions"
                     className={({ isActive }) =>
@@ -317,6 +352,8 @@ export default function Layout({ children, title }: LayoutProps) {
                     <span className="w-5 mr-3"></span>
                     Каса
                   </NavLink>
+                  )}
+                  {hasAccess("finance", "cashboxes") && (
                   <NavLink
                     to="/finance/cashboxes"
                     className={({ isActive }) =>
@@ -331,6 +368,7 @@ export default function Layout({ children, title }: LayoutProps) {
                     <span className="w-5 mr-3"></span>
                     Налаштування каси
                   </NavLink>
+                  )}
                 </div>
               )}
             </div>
@@ -351,6 +389,7 @@ export default function Layout({ children, title }: LayoutProps) {
             {t("menu.counterparties", "Counterparties")}
           </NavLink>
           {/* Documents Group */}
+          {hasAccess("documents") && (
           <div>
             <button
               onClick={toggleDocuments}
@@ -369,6 +408,7 @@ export default function Layout({ children, title }: LayoutProps) {
 
             {isDocumentsOpen && (
               <div className="ml-4 mt-1 space-y-1">
+                {hasAccess("documents", "orders") && (
                 <NavLink
                   to="/orders"
                   className={({ isActive }) =>
@@ -383,7 +423,9 @@ export default function Layout({ children, title }: LayoutProps) {
                   <span className="w-5 mr-3"></span>
                   {t("menu.orders")}
                 </NavLink>
+                )}
 
+                {hasAccess("documents", "realizations") && (
                 <NavLink
                   to="/realizations"
                   className={({ isActive }) =>
@@ -398,9 +440,9 @@ export default function Layout({ children, title }: LayoutProps) {
                   <span className="w-5 mr-3"></span>
                   {t("menu.realizations", "Realizations")}
                 </NavLink>
+                )}
 
-                {user?.role === "admin" && (
-                  <>
+                {hasAccess("documents", "goodsReceipts") && (
                     <NavLink
                       to="/goods-receipt"
                       className={({ isActive }) =>
@@ -415,7 +457,9 @@ export default function Layout({ children, title }: LayoutProps) {
                       <span className="w-5 mr-3"></span>
                       {t("menu.goodsReceipt", "Goods Receipt")}
                     </NavLink>
+                )}
                     
+                {hasAccess("documents", "buyerReturns") && (
                     <NavLink
                       to="/buyer-returns"
                       className={({ isActive }) =>
@@ -430,7 +474,9 @@ export default function Layout({ children, title }: LayoutProps) {
                       <span className="w-5 mr-3"></span>
                       Повернення від покупця
                     </NavLink>
+                )}
 
+                {hasAccess("documents", "supplierReturns") && (
                     <NavLink
                       to="/supplier-returns"
                       className={({ isActive }) =>
@@ -445,11 +491,11 @@ export default function Layout({ children, title }: LayoutProps) {
                       <span className="w-5 mr-3"></span>
                       Повернення постачальнику
                     </NavLink>
-                  </>
                 )}
               </div>
             )}
           </div>
+          )}
 
           {user?.role === "admin" && (
             <div>
