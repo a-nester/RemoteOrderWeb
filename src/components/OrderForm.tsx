@@ -272,12 +272,30 @@ export default function OrderForm({
   const handleImportBuyerReturns = (imported: BuyerReturnItem[]) => {
     setItems((prev) => {
       const next = [...prev];
+      
+      // Determine "enter price" slug if it's a supplier return
+      let enterPriceSlug = priceSlug;
+      if (isSupplierReturn) {
+        const enterType = priceTypes.find(pt => 
+          pt.name.toLowerCase().includes("прихідн") || 
+          pt.slug.toLowerCase().includes("enter") || 
+          pt.name.toLowerCase().includes("закупів")
+        );
+        if (enterType) enterPriceSlug = enterType.slug;
+      }
+
       imported.forEach(impItem => {
         const prod = products.find(p => p.id === impItem.productId);
         const existingIndex = next.findIndex(i => i.productId === impItem.productId);
         
+        let itemPrice = Number(impItem.price) || 0;
+        
+        if (isSupplierReturn && prod?.prices && prod.prices[enterPriceSlug] !== undefined) {
+           itemPrice = Number(prod.prices[enterPriceSlug]) || 0;
+        }
+
         const safeQuantity = Number(impItem.quantity) || 0;
-        const safePrice = Number(impItem.price) || 0;
+        const safePrice = itemPrice;
         
         if (existingIndex >= 0) {
           const item = next[existingIndex];
