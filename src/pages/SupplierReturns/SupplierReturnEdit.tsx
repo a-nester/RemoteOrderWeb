@@ -129,6 +129,7 @@ export default function SupplierReturnEdit() {
         saving={saving}
         title={"Редагування Повернення постачальнику"}
         isRealization={false} 
+        isSupplierReturn={true}
       />
       <ErrorModal
         isOpen={errorModalOpen}

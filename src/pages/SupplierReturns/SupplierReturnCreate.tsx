@@ -104,6 +104,7 @@ export default function SupplierReturnCreate() {
         saving={saving}
         title={"Створення Повернення постачальнику"}
         isRealization={false} // Different logic might apply if we need it
+        isSupplierReturn={true}
       />
       <ErrorModal
         isOpen={errorModalOpen}

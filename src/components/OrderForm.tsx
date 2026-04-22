@@ -8,6 +8,7 @@ import {
   Check,
   ChevronDown,
   Plus,
+  FileDown,
 } from "lucide-react";
 import { CounterpartyService } from "../services/counterparty.service";
 import { ProductsService } from "../services/products.service";
@@ -24,6 +25,8 @@ import type { Warehouse } from "../types/organization";
 import ProductSelector from "./ProductSelector";
 import OrderItemsTable from "./OrderItemsTable";
 import QuantityModal from "./QuantityModal";
+import ImportBuyerReturnsModal from "./modals/ImportBuyerReturnsModal";
+import type { BuyerReturnItem } from "../services/buyerReturnService";
 
 interface OrderFormProps {
   initialData?: Order;
@@ -31,6 +34,7 @@ interface OrderFormProps {
   saving: boolean;
   title: string;
   isRealization?: boolean;
+  isSupplierReturn?: boolean;
 }
 
 export default function OrderForm({
@@ -39,6 +43,7 @@ export default function OrderForm({
   saving,
   title,
   isRealization = false,
+  isSupplierReturn = false,
 }: OrderFormProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -87,6 +92,7 @@ export default function OrderForm({
 
   // UI State
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [stockBalances, setStockBalances] = useState<StockBalance[]>([]);
   const [selectedProductForQty, setSelectedProductForQty] =
     useState<Product | null>(null);
@@ -261,6 +267,42 @@ export default function OrderForm({
   const handleAddProduct = (product: Product) => {
     // Open Quantity Modal instead of adding 1 automatically
     setSelectedProductForQty(product);
+  };
+
+  const handleImportBuyerReturns = (imported: BuyerReturnItem[]) => {
+    setItems((prev) => {
+      const next = [...prev];
+      imported.forEach(impItem => {
+        const prod = products.find(p => p.id === impItem.productId);
+        const existingIndex = next.findIndex(i => i.productId === impItem.productId);
+        
+        const safeQuantity = Number(impItem.quantity) || 0;
+        const safePrice = Number(impItem.price) || 0;
+        
+        if (existingIndex >= 0) {
+          const item = next[existingIndex];
+          const newQty = item.quantity + safeQuantity;
+          // Optionally update price, but let's keep the existing one or average? Let's keep existing, or use the imported if existing had none.
+          next[existingIndex] = {
+            ...item,
+            quantity: newQty,
+            total: newQty * item.price,
+          };
+        } else {
+          next.push({
+            id: crypto.randomUUID(), // Temp ID for React
+            productId: impItem.productId,
+            productName: impItem.productName || prod?.name || "Невідомий товар",
+            unit: prod?.unit || "",
+            quantity: safeQuantity,
+            price: safePrice,
+            total: safeQuantity * safePrice,
+            isPriceMissing: safePrice <= 0
+          });
+        }
+      });
+      return next;
+    });
   };
 
   const handleConfirmQuantity = (
@@ -704,13 +746,27 @@ export default function OrderForm({
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
               {t("common.items", "Items")}
             </h3>
-            <button
-              onClick={() => setIsProductSelectorOpen(true)}
-              className="flex items-center px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
-            >
-              <Plus size={16} className="mr-1" />
-              {t("action.addProduct", "Add Product")}
-            </button>
+            <div className="flex space-x-2">
+              {isSupplierReturn && (
+                <button
+                  type="button"
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="flex items-center px-3 py-1.5 bg-green-100 text-green-700 rounded-md hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
+                  title={t("action.importBuyerReturns", "Імпорт з повернень покупців")}
+                >
+                  <FileDown size={16} className="mr-1" />
+                  <span className="hidden sm:inline">{t("action.import", "Імпортувати")}</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsProductSelectorOpen(true)}
+                className="flex items-center px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
+              >
+                <Plus size={16} className="mr-1" />
+                {t("action.addProduct", "Add Product")}
+              </button>
+            </div>
           </div>
 
           <OrderItemsTable
@@ -796,6 +852,12 @@ export default function OrderForm({
           return found !== undefined ? Number(found.balance) : null;
         })()}
         onConfirm={handleConfirmQuantity}
+      />
+
+      <ImportBuyerReturnsModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={handleImportBuyerReturns}
       />
     </div>
   );
