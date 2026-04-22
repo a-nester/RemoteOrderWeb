@@ -50,14 +50,14 @@ export default function BuyerReturnEdit() {
         })),
       };
 
-      await BuyerReturnService.update(id, payload);
+      const updatedDoc = await BuyerReturnService.update(id, payload);
 
       if (action === "saveAndPost") {
         await BuyerReturnService.postDocument(id);
         navigate("/buyer-returns", { state: { highlight: id } });
       } else {
         alert(t("common.saved", "Збережено успішно"));
-        // loadData(); // Optionally refresh if we want clean DB state
+        setBuyerReturn(updatedDoc);
       }
     } catch (error) {
       console.error("Failed to update buyer return", error);

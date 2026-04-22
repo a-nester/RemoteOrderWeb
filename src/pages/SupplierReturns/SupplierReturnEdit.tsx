@@ -68,7 +68,7 @@ export default function SupplierReturnEdit() {
         })),
       };
 
-      await SupplierReturnService.update(id, payload);
+      const updatedDoc = await SupplierReturnService.update(id, payload);
 
       if (action === "saveAndPost") {
         try {
@@ -81,10 +81,11 @@ export default function SupplierReturnEdit() {
                            postError.message || 
                            "Невідома помилка проведення";
           showError(typeof errorMsg === 'object' ? JSON.stringify(errorMsg) : String(errorMsg));
+          setSupplierReturn(updatedDoc); // Ensure UI doesn't lose items on error
         }
       } else {
         alert(t("common.saved", "Збережено успішно"));
-        // loadData(); // Optionally refresh if we want clean DB state
+        setSupplierReturn(updatedDoc); // Update state to prevent OrderForm from reverting to old initialData and clearing items
       }
     } catch (error: any) {
       console.error("Failed to update supplier return", error);

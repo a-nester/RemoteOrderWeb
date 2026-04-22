@@ -53,14 +53,14 @@ export default function RealizationEdit() {
         })),
       };
 
-      await RealizationService.update(id, payload);
+      const updatedDoc = await RealizationService.update(id, payload);
 
       if (action === "saveAndPost") {
         await RealizationService.postRealization(id);
         navigate("/realizations", { state: { highlight: id } });
       } else {
         alert(t("common.saved", "Збережено успішно"));
-        // loadData(); // Optionally refresh if we want clean DB state
+        setRealization(updatedDoc);
       }
     } catch (error) {
       console.error("Failed to update realization", error);
