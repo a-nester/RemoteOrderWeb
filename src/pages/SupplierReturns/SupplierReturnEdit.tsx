@@ -1,16 +1,34 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation as useReactRouterLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { supplierReturnService as SupplierReturnService, type SupplierReturn } from "../../services/supplierReturnService";
 import OrderForm from "../../components/OrderForm";
+import { ErrorModal } from "../../components/ui/ErrorModal";
 
 export default function SupplierReturnEdit() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useReactRouterLocation();
   const { t } = useTranslation();
   const [supplierReturn, setSupplierReturn] = useState<SupplierReturn | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const showError = (msg: string) => {
+    setErrorMessage(msg);
+    setErrorModalOpen(true);
+  };
+
+  useEffect(() => {
+    if (location.state?.postError) {
+      showError(location.state.postError);
+      // Clean up state so refresh doesn't trigger it again
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     loadData();
@@ -53,15 +71,25 @@ export default function SupplierReturnEdit() {
       await SupplierReturnService.update(id, payload);
 
       if (action === "saveAndPost") {
-        await SupplierReturnService.postDocument(id);
-        navigate("/supplier-returns", { state: { highlight: id } });
+        try {
+          await SupplierReturnService.postDocument(id);
+          navigate("/supplier-returns", { state: { highlight: id } });
+        } catch (postError: any) {
+          console.error("Failed to post supplier return", postError);
+          const errorMsg = postError.response?.data?.error?.message || 
+                           postError.response?.data?.error || 
+                           postError.message || 
+                           "Невідома помилка проведення";
+          showError(typeof errorMsg === 'object' ? JSON.stringify(errorMsg) : String(errorMsg));
+        }
       } else {
         alert(t("common.saved", "Збережено успішно"));
         // loadData(); // Optionally refresh if we want clean DB state
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update supplier return", error);
-      alert(t("common.error", "Failed to update return"));
+      const msg = error.response?.data?.error?.message || error.response?.data?.error || error.message || "Помилка збереження документа";
+      showError(typeof msg === 'object' ? JSON.stringify(msg) : String(msg));
     } finally {
       setSaving(false);
     }
@@ -93,12 +121,20 @@ export default function SupplierReturnEdit() {
   }
 
   return (
-    <OrderForm
-      initialData={{...supplierReturn, amount: supplierReturn.totalAmount, counterpartyId: supplierReturn.supplierId} as any}
-      onSubmit={handleSubmit}
-      saving={saving}
-      title={"Редагування Повернення постачальнику"}
-      isRealization={false} 
-    />
+    <>
+      <OrderForm
+        initialData={{...supplierReturn, amount: supplierReturn.totalAmount, counterpartyId: supplierReturn.supplierId} as any}
+        onSubmit={handleSubmit}
+        saving={saving}
+        title={"Редагування Повернення постачальнику"}
+        isRealization={false} 
+      />
+      <ErrorModal
+        isOpen={errorModalOpen}
+        onClose={() => setErrorModalOpen(false)}
+        errorMessage={errorMessage}
+        title="Помилка збереження"
+      />
+    </>
   );
 }

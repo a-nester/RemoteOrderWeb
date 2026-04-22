@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { supplierReturnService as SupplierReturnService } from "../../services/supplierReturnService";
 import OrderForm from "../../components/OrderForm";
 import { ErrorBoundary } from "../../components/ErrorBoundary";
+import { ErrorModal } from "../../components/ui/ErrorModal";
 
 export default function SupplierReturnCreate() {
   const navigate = useNavigate();
@@ -12,6 +13,14 @@ export default function SupplierReturnCreate() {
   const [saving, setSaving] = useState(false);
   const [initialData, setInitialData] = useState<any>(null);
   const [loading, setLoading] = useState(!!searchParams.get("copyFrom"));
+  
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const showError = (msg: string) => {
+    setErrorMessage(msg);
+    setErrorModalOpen(true);
+  };
 
   useEffect(() => {
     const copyFrom = searchParams.get("copyFrom");
@@ -55,14 +64,28 @@ export default function SupplierReturnCreate() {
       const res = await SupplierReturnService.create(payload);
 
       if (action === "saveAndPost") {
-        await SupplierReturnService.postDocument(res.id);
-        navigate("/supplier-returns", { state: { highlight: res.id } });
+        try {
+          await SupplierReturnService.postDocument(res.id);
+          navigate("/supplier-returns", { state: { highlight: res.id } });
+        } catch (postError: any) {
+          console.error("Failed to post supplier return", postError);
+          const errorMsg = postError.response?.data?.error?.message || 
+                           postError.response?.data?.error || 
+                           postError.message || 
+                           "Невідома помилка проведення";
+                           
+          // Safely switch to edit mode to prevent duplicate document creations!
+          navigate(`/supplier-returns/${res.id}/edit`, { 
+            state: { postError: typeof errorMsg === 'object' ? JSON.stringify(errorMsg) : String(errorMsg) } 
+          });
+        }
       } else {
         navigate(`/supplier-returns/${res.id}/edit`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create supplier return", error);
-      alert(t("common.error", "Failed to create return"));
+      const msg = error.response?.data?.error?.message || error.response?.data?.error || error.message || "Помилка створення документа";
+      showError(typeof msg === 'object' ? JSON.stringify(msg) : String(msg));
     } finally {
       setSaving(false);
     }
@@ -81,6 +104,12 @@ export default function SupplierReturnCreate() {
         saving={saving}
         title={"Створення Повернення постачальнику"}
         isRealization={false} // Different logic might apply if we need it
+      />
+      <ErrorModal
+        isOpen={errorModalOpen}
+        onClose={() => setErrorModalOpen(false)}
+        errorMessage={errorMessage}
+        title="Помилка збереження"
       />
     </ErrorBoundary>
   );
