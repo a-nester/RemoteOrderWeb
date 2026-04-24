@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProductsStore } from '../store/products.store';
 import Layout from '../components/Layout';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, Search, Filter, Check, ChevronDown } from 'lucide-react';
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { PriceTypesService } from '../services/priceTypes.service';
 import type { PriceType } from '../types/priceType';
@@ -24,11 +24,39 @@ function ProductsContent() {
   const [priceTypes, setPriceTypes] = useState<PriceType[]>([]);
   const [selectedPriceType, setSelectedPriceType] = useState<string>('standard');
   const [isPriceListModalOpen, setIsPriceListModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const categoryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadProducts();
     PriceTypesService.fetchPriceTypes().then(setPriceTypes).catch(console.error);
   }, [loadProducts]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryRef.current && !categoryRef.current.contains(event.target as Node)) {
+        setIsCategoryOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const allCategories = Array.from(new Set(products.map(p => p.category).filter(Boolean))) as string[];
+
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(p.category || '');
+    return matchesSearch && matchesCategory;
+  });
+
+  const toggleCategory = (cat: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+    );
+  };
 
   const handleDownloadPriceList = (priceTypeId: string, format: 'excel' | 'pdf') => {
         const priceTypeName = priceTypeId === 'standard' 
@@ -40,21 +68,72 @@ function ProductsContent() {
             : priceTypes.find(pt => pt.slug === priceTypeId)?.currency || 'UAH';
 
         if (format === 'excel') {
-            generateExcelPriceList(products, priceTypeId, priceTypeName, currency);
+            generateExcelPriceList(filteredProducts, priceTypeId, priceTypeName, currency);
         } else {
-            generatePdfPriceList(products, priceTypeId, priceTypeName, currency);
+            generatePdfPriceList(filteredProducts, priceTypeId, priceTypeName, currency);
         }
   };
 
   return (
     <Layout title="Products">
       <div className="mb-6 flex justify-between items-center flex-wrap gap-4">
-        <div className="relative">
-             <input 
-                type="text" 
-                placeholder="Search products..." 
-                className="pl-4 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-             />
+        <div className="flex flex-1 gap-4 items-center">
+            <div className="relative flex-1 max-w-md">
+                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                     <Search className="h-4 w-4 text-gray-400" />
+                 </div>
+                 <input 
+                    type="text" 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Пошук товарів..." 
+                    className="pl-9 pr-4 py-2 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                 />
+            </div>
+            
+            <div className="relative" ref={categoryRef}>
+                <button
+                    onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:bg-gray-700"
+                >
+                    <Filter className="h-4 w-4" />
+                    <span>{selectedCategories.length > 0 ? `Категорії (${selectedCategories.length})` : 'Всі категорії'}</span>
+                    <ChevronDown className="h-4 w-4" />
+                </button>
+                
+                {isCategoryOpen && (
+                    <div className="absolute left-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-lg z-50 max-h-96 overflow-y-auto">
+                        <div className="p-2 border-b dark:border-gray-700 flex justify-between items-center">
+                            <span className="text-sm font-medium dark:text-white">Фільтр категорій</span>
+                            {selectedCategories.length > 0 && (
+                                <button 
+                                    onClick={() => setSelectedCategories([])}
+                                    className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                                >
+                                    Скинути
+                                </button>
+                            )}
+                        </div>
+                        <div className="p-2">
+                            {allCategories.map(cat => (
+                                <button
+                                    key={cat}
+                                    onClick={() => toggleCategory(cat)}
+                                    className="flex items-center w-full px-2 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md dark:text-gray-200"
+                                >
+                                    <div className={`w-4 h-4 mr-3 rounded border flex items-center justify-center ${selectedCategories.includes(cat) ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-gray-300 dark:border-gray-600'}`}>
+                                        {selectedCategories.includes(cat) && <Check className="w-3 h-3" />}
+                                    </div>
+                                    <span className="truncate">{cat}</span>
+                                </button>
+                            ))}
+                            {allCategories.length === 0 && (
+                                <div className="p-2 text-sm text-gray-500 text-center">Немає категорій</div>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
         
         <div className="flex gap-2">
@@ -112,7 +191,7 @@ function ProductsContent() {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 <td className="px-3 py-4 max-w-[200px]">
                   <div className="flex items-center">
