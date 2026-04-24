@@ -71,6 +71,17 @@ export default function StockBalancesReport() {
     return balances.filter(b => !hiddenCategories.includes(b.productCategory || "Без категорії"));
   }, [balances, hiddenCategories]);
 
+  // Calculate totals
+  const { totalQuantity, totalAmount } = useMemo(() => {
+    let q = 0;
+    let a = 0;
+    filteredBalances.forEach(row => {
+      q += Number(row.balance) || 0;
+      a += Number(row.totalValue) || 0;
+    });
+    return { totalQuantity: q, totalAmount: a };
+  }, [filteredBalances]);
+
   const loadWarehouses = async () => {
     try {
       const data = await OrganizationService.getWarehouses();
@@ -349,6 +360,21 @@ export default function StockBalancesReport() {
               ))
             )}
           </tbody>
+          {!loading && filteredBalances.length > 0 && (
+            <tfoot className="bg-gray-50 dark:bg-gray-900 font-bold border-t-2 border-gray-200 dark:border-gray-700">
+              <tr>
+                <td colSpan={3} className="px-6 py-4 text-right text-gray-900 dark:text-white uppercase text-sm">
+                  Разом:
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-gray-900 dark:text-white text-sm">
+                  {totalQuantity.toFixed(2)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-indigo-600 dark:text-indigo-400 text-sm">
+                  {totalAmount.toFixed(2)} ₴
+                </td>
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
     </div>
