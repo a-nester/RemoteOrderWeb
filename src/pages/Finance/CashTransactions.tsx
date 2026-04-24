@@ -22,6 +22,7 @@ import {
   ExternalLink,
   X,
   Edit,
+  Search,
 } from "lucide-react";
 import { useAuthStore } from "../../store/auth.store";
 import { AuthService } from "../../services/auth.service";
@@ -129,6 +130,7 @@ export default function CashTransactions() {
     user?.preferences?.cashFilterType || "ALL",
   );
   const [filterCounterparty, setFilterCounterparty] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Date filters
   const [startDate, setStartDate] = useState(() => {
@@ -297,6 +299,16 @@ export default function CashTransactions() {
       return true;
     });
   }
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    filteredTransactions = filteredTransactions.filter(
+      (tx) => 
+        tx.number.toLowerCase().includes(q) ||
+        (tx.counterpartyName || "").toLowerCase().includes(q) ||
+        (tx.categoryName || "").toLowerCase().includes(q) ||
+        (tx.comment || "").toLowerCase().includes(q)
+    );
+  }
 
   const handleCopyTransaction = (tx: CashTransaction) => {
     // Determine category ID or counterparty ID if possible
@@ -390,6 +402,19 @@ export default function CashTransactions() {
               </button>
             </div>
           )}
+
+          <div className="relative w-full sm:w-auto md:w-56">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Пошук..."
+              className="pl-9 w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2"
+            />
+          </div>
 
           <div className="flex gap-2 items-center w-full sm:w-auto">
             <input
