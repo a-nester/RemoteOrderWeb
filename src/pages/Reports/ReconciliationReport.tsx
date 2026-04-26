@@ -102,17 +102,6 @@ export default function ReconciliationReport() {
   const formatMoney = (m: number | string) =>
     parseFloat(m.toString()).toFixed(2);
 
-  const selectedCp = counterparties.find(
-    (c) => c.id === filters.counterpartyId,
-  );
-  const selectedGroup = groups.find((g) => g.id === filters.groupId);
-
-  const getTargetName = () => {
-    if (selectedCp) return selectedCp.name;
-    if (selectedGroup) return `Група: ${selectedGroup.name}`;
-    return "________________";
-  };
-
   const getCpName = (id: string) => {
     return (
       counterparties.find((c) => c.id === id)?.name || "Невідомий контрагент"
