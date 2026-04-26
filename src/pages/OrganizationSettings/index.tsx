@@ -17,6 +17,7 @@ export default function OrganizationSettings() {
 
   // Org Form State
   const [orgName, setOrgName] = useState("");
+  const [orgDirector, setOrgDirector] = useState("");
   const [salesTypes, setSalesTypes] = useState<string[]>([]);
   const [savingOrg, setSavingOrg] = useState(false);
 
@@ -44,10 +45,12 @@ export default function OrganizationSettings() {
       if (orgData.length > 0) {
         setOrg(orgData[0]);
         setOrgName(orgData[0].name);
+        setOrgDirector(orgData[0].fullDetails || "");
         setSalesTypes(orgData[0].salesTypes || ["Готівковий", "р/р ФОП", "з ПДВ"]);
       } else {
         setOrg(null);
         setOrgName("");
+        setOrgDirector("");
         setSalesTypes(["Готівковий", "р/р ФОП", "з ПДВ"]);
       }
       setWarehouses(whData);
@@ -66,6 +69,7 @@ export default function OrganizationSettings() {
         const updated = await OrganizationService.updateOrganization({
           id: org.id,
           name: orgName,
+          fullDetails: orgDirector,
           salesTypes,
         });
         setOrg(updated);
@@ -73,6 +77,7 @@ export default function OrganizationSettings() {
       } else {
         const created = await OrganizationService.createOrganization({
           name: orgName,
+          fullDetails: orgDirector,
           salesTypes,
         });
         setOrg(created);
@@ -90,6 +95,7 @@ export default function OrganizationSettings() {
   const handleCreateNew = () => {
     setOrg(null);
     setOrgName("");
+    setOrgDirector("");
     setSalesTypes(["Готівковий", "р/р ФОП", "з ПДВ"]);
   };
 
@@ -191,6 +197,7 @@ export default function OrganizationSettings() {
                 if (selected) {
                   setOrg(selected);
                   setOrgName(selected.name);
+                  setOrgDirector(selected.fullDetails || "");
                   setSalesTypes(selected.salesTypes || ["Готівковий", "р/р ФОП", "з ПДВ"]);
                 }
               }}
@@ -228,6 +235,18 @@ export default function OrganizationSettings() {
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
                 className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                ПІБ Керівника (для друку в звітах)
+              </label>
+              <input
+                type="text"
+                value={orgDirector}
+                onChange={(e) => setOrgDirector(e.target.value)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                placeholder="напр. Погребицький Ю.В."
               />
             </div>
             <button

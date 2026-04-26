@@ -5,7 +5,9 @@ import { Link } from "react-router-dom";
 import { API_URL } from "../../constants/api";
 import { useAuthStore } from "../../store/auth.store";
 import { CounterpartyService } from "../../services/counterparty.service";
+import { OrganizationService } from "../../services/organization.service";
 import type { Counterparty, CounterpartyGroup } from "../../types/counterparty";
+import type { Organization } from "../../types/organization";
 import { FileText, Search, Printer, Plus, Minus, Download } from "lucide-react";
 import * as XLSX from "xlsx-js-style";
 
@@ -34,6 +36,7 @@ export default function ReconciliationReport() {
   const [groups, setGroups] = useState<CounterpartyGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [groupedData, setGroupedData] = useState<GroupedReconciliation[]>([]);
+  const [organization, setOrganization] = useState<Organization | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     {},
   );
@@ -52,9 +55,11 @@ export default function ReconciliationReport() {
     Promise.all([
       CounterpartyService.getAll(),
       CounterpartyService.getGroups(),
-    ]).then(([cpRes, gRes]) => {
+      OrganizationService.getOrganization().catch(() => null),
+    ]).then(([cpRes, gRes, orgRes]) => {
       setCounterparties(cpRes);
       setGroups(gRes);
+      setOrganization(orgRes);
     });
   }, []);
 
@@ -146,89 +151,151 @@ export default function ReconciliationReport() {
     return row.docNumber;
   };
 
+  const orgNameText = organization?.name || "ПРИВАТНЕ ПІДПРИЄМСТВО 'СМАКОСИР'";
+  const orgDirectorText = organization?.fullDetails || "Погребицький Ю.В.";
+
   const exportToExcel = () => {
     if (groupedData.length === 0) return;
 
-    let excelData: any[] = [];
-    
+    const wb = XLSX.utils.book_new();
+
     groupedData.forEach(group => {
-      excelData.push({
-        "Дата": "КЛІЄНТ:",
-        "Документ": getCpName(group.counterpartyId),
-        "Дебет (+)": "",
-        "Кредит (-)": "",
-        "Борг контрагента": formatMoney(group.endBalance)
-      });
-      if (group.ledger.length === 0) {
-        excelData.push({
-          "Дата": "",
-          "Документ": `Сальдо на початок (${filters.dateFrom})`,
-          "Дебет (+)": "",
-          "Кредит (-)": "",
-          "Борг контрагента": formatMoney(group.startBalance)
-        });
-      }
+      const cpName = getCpName(group.counterpartyId);
+      const dateToFmt = filters.dateTo.split('-').reverse().join('.');
+      const dateFromFmt = filters.dateFrom.split('-').reverse().join('.');
+      
+      let excelData: any[] = [
+        ['Акт звірки', '', '', ''],
+        [`взаємних розрахунків станом на ${dateToFmt}`, '', '', ''],
+        [`між ${orgNameText}`, '', '', ''],
+        [`та ${cpName}`, '', '', ''],
+        ['', '', '', ''],
+        [`За даними ${orgNameText}`, '', '', ''],
+        ['№', 'Назва операції, документ', 'Дебет', 'Кредит']
+      ];
+
+      const startDebit = group.startBalance > 0 ? group.startBalance : 0;
+      const startCredit = group.startBalance < 0 ? Math.abs(group.startBalance) : 0;
+
+      excelData.push([
+        1,
+        `Сальдо на ${dateFromFmt}`,
+        startDebit > 0 ? startDebit : '0.00',
+        startCredit > 0 ? startCredit : '0.00'
+      ]);
+
+      let sumDebit = 0;
+      let sumCredit = 0;
+
       group.ledger.forEach((row, i) => {
-          if (i === 0) {
-            excelData.push({
-              "Дата": "",
-              "Документ": `Сальдо на початок (${filters.dateFrom})`,
-              "Дебет (+)": "",
-              "Кредит (-)": "",
-              "Борг контрагента": formatMoney(group.startBalance)
-            });
-          }
-          excelData.push({
-            "Дата": dtFormat(row.date),
-            "Документ": getDocName(row),
-            "Дебет (+)": parseFloat(row.debit) !== 0 ? formatMoney(row.debit) : "",
-            "Кредит (-)": parseFloat(row.credit) !== 0 ? formatMoney(row.credit) : "",
-            "Борг контрагента": formatMoney(row.runningBalance)
-          });
-      })
-      excelData.push({});
-    });
+        const d = parseFloat(row.debit) || 0;
+        const c = parseFloat(row.credit) || 0;
+        sumDebit += d;
+        sumCredit += c;
 
-    const ws = XLSX.utils.json_to_sheet(excelData);
+        excelData.push([
+          i + 2,
+          `${getDocName(row)} (${row.date.split('T')[0].split('-').reverse().join('.')})`,
+          d !== 0 ? d : '',
+          c !== 0 ? c : ''
+        ]);
+      });
 
-    const range = XLSX.utils.decode_range(ws['!ref'] || "A1:A1");
-    for (let R = range.s.r; R <= range.e.r; ++R) {
-      for (let C = range.s.c; C <= range.e.c; ++C) {
-        const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
-        if (!ws[cellRef]) continue;
+      excelData.push([
+        group.ledger.length + 2,
+        'Оборот за період',
+        sumDebit !== 0 ? sumDebit : '0.00',
+        sumCredit !== 0 ? sumCredit : '0.00'
+      ]);
 
-        ws[cellRef].s = ws[cellRef].s || {};
+      const endDebit = group.endBalance > 0 ? group.endBalance : 0;
+      const endCredit = group.endBalance < 0 ? Math.abs(group.endBalance) : 0;
 
-        ws[cellRef].s.border = {
-            top: { style: "thin", color: { rgb: "000000" } },
-            bottom: { style: "thin", color: { rgb: "000000" } },
-            left: { style: "thin", color: { rgb: "000000" } },
-            right: { style: "thin", color: { rgb: "000000" } }
-        };
+      excelData.push([
+        group.ledger.length + 3,
+        'Сальдо кінцеве',
+        endDebit > 0 ? endDebit : '',
+        endCredit > 0 ? endCredit : ''
+      ]);
 
-        if (R === 0) {
-            ws[cellRef].s.fill = { fgColor: { rgb: "E0E0E0" } };
+      excelData.push(['', '', '', '']);
+      excelData.push([`За даними ${orgNameText}`, '', '', '']);
+      excelData.push([`на ${dateToFmt} заборгованість на користь ${group.endBalance > 0 ? orgNameText : cpName}`, '', '', '']);
+      excelData.push([`${formatMoney(Math.abs(group.endBalance))} грн.`, '', '', '']);
+      excelData.push(['', '', '', '']);
+      excelData.push([`Від ${orgNameText}`, '', '', '']);
+      excelData.push(['', '', '', '']);
+      excelData.push(['', '', orgDirectorText, '']);
+      excelData.push(['М.П.', '', '', '']);
+
+      const ws = XLSX.utils.aoa_to_sheet(excelData);
+
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }, 
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } }, 
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 3 } }, 
+        { s: { r: 3, c: 0 }, e: { r: 3, c: 3 } }, 
+        { s: { r: 5, c: 0 }, e: { r: 5, c: 3 } }, 
+        { s: { r: excelData.length - 8, c: 0 }, e: { r: excelData.length - 8, c: 3 } },
+        { s: { r: excelData.length - 7, c: 0 }, e: { r: excelData.length - 7, c: 3 } },
+        { s: { r: excelData.length - 6, c: 0 }, e: { r: excelData.length - 6, c: 3 } },
+        { s: { r: excelData.length - 4, c: 0 }, e: { r: excelData.length - 4, c: 3 } },
+      ];
+
+      const headerBorder = {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
+      };
+
+      const tableRows = group.ledger.length + 4; // Headers + start + ledger + 2 footers
+
+      for (let R = 0; R < excelData.length; ++R) {
+        for (let C = 0; C < 4; ++C) {
+          const cellRef = XLSX.utils.encode_cell({ c: C, r: R });
+          if (!ws[cellRef]) ws[cellRef] = { v: '', t: 's' };
+          ws[cellRef].s = ws[cellRef].s || {};
+
+          if (R === 0) {
+            ws[cellRef].s.font = { bold: true, sz: 16 };
+            ws[cellRef].s.alignment = { horizontal: "center" };
+          } else if (R >= 1 && R <= 3) {
+            ws[cellRef].s.alignment = { horizontal: "center" };
+          } else if (R === 5) {
+            ws[cellRef].s.fill = { fgColor: { rgb: "EAE6B7" } };
             ws[cellRef].s.font = { bold: true };
-            ws[cellRef].s.border = {
-                top: { style: "thin", color: { rgb: "000000" } },
-                bottom: { style: "thin", color: { rgb: "000000" } },
-                left: { style: "thin", color: { rgb: "000000" } },
-                right: { style: "thin", color: { rgb: "000000" } }
-            };
+            ws[cellRef].s.border = headerBorder;
+          } else if (R === 6) {
+            ws[cellRef].s.fill = { fgColor: { rgb: "EAE6B7" } };
+            ws[cellRef].s.font = { bold: true };
+            ws[cellRef].s.border = headerBorder;
+            ws[cellRef].s.alignment = { horizontal: "center" };
+          } else if (R > 6 && R < 6 + tableRows) {
+            ws[cellRef].s.border = headerBorder;
+            if (C === 2 || C === 3) {
+              ws[cellRef].s.alignment = { horizontal: "right" };
+              ws[cellRef].z = '#,##0.00';
+            }
+            if (R === 7 || R === 6 + tableRows - 2 || R === 6 + tableRows - 1) {
+              ws[cellRef].s.font = { bold: true };
+            }
+          } else if (R === excelData.length - 6) {
+            ws[cellRef].s.font = { bold: true };
+          }
         }
       }
-    }
 
-    ws['!cols'] = [
-      { wch: 15 },
-      { wch: 50 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 20 }
-    ];
+      ws['!cols'] = [
+        { wch: 5 },
+        { wch: 45 },
+        { wch: 15 },
+        { wch: 15 }
+      ];
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Акт_Звірки");
+      const safeName = cpName.replace(/[\\/?*\[\]:]/g, '_').substring(0, 31);
+      XLSX.utils.book_append_sheet(wb, ws, safeName);
+    });
 
     const fileName = `Акт_Звірки_${filters.dateFrom || 'start'}_${filters.dateTo || 'end'}.xlsx`;
     XLSX.writeFile(wb, fileName);
@@ -343,16 +410,104 @@ export default function ReconciliationReport() {
       </div>
 
       {/* Print Header */}
-      <div className="hidden print:block mb-8 text-center uppercase tracking-wider">
-        <h2 className="text-xl font-bold">Акт звірки взаєморозрахунків</h2>
-        <div className="text-sm mt-2">
-          між Нами та {getTargetName()}
-          <br />
-          за період з {filters.dateFrom || "..."} по {filters.dateTo || "..."}
-        </div>
+      <div className="hidden print:block mb-8">
+        {groupedData.map((group, idx) => {
+          const cpName = getCpName(group.counterpartyId);
+          const dateToFmt = filters.dateTo.split('-').reverse().join('.');
+          const dateFromFmt = filters.dateFrom.split('-').reverse().join('.');
+          
+          const startDebit = group.startBalance > 0 ? group.startBalance : 0;
+          const startCredit = group.startBalance < 0 ? Math.abs(group.startBalance) : 0;
+          
+          let sumDebit = 0;
+          let sumCredit = 0;
+
+          const endDebit = group.endBalance > 0 ? group.endBalance : 0;
+          const endCredit = group.endBalance < 0 ? Math.abs(group.endBalance) : 0;
+
+          return (
+            <div key={group.counterpartyId} className={idx > 0 ? "break-before-page" : ""}>
+              <div className="text-center mb-4 text-black">
+                <h2 className="text-xl font-bold">Акт звірки</h2>
+                <div className="text-base">
+                  взаємних розрахунків станом на {dateToFmt}<br />
+                  між {orgNameText}<br />
+                  та {cpName}
+                </div>
+              </div>
+
+              <table className="w-full text-sm border-collapse border border-black mb-4">
+                <thead>
+                  <tr className="bg-[#eae6b7]">
+                    <th colSpan={4} className="border border-black px-2 py-1 text-left font-bold text-black">
+                      За даними {orgNameText}
+                    </th>
+                  </tr>
+                  <tr className="bg-[#eae6b7] text-black">
+                    <th className="border border-black px-1 py-1 text-center w-8">№</th>
+                    <th className="border border-black px-2 py-1 text-center">Назва операції, документ</th>
+                    <th className="border border-black px-2 py-1 text-center w-24">Дебет</th>
+                    <th className="border border-black px-2 py-1 text-center w-24">Кредит</th>
+                  </tr>
+                </thead>
+                <tbody className="text-black">
+                  <tr>
+                    <td className="border border-black px-1 py-1 text-center font-bold">1</td>
+                    <td className="border border-black px-2 py-1 font-bold">Сальдо на {dateFromFmt}</td>
+                    <td className="border border-black px-2 py-1 text-right font-bold">{startDebit ? formatMoney(startDebit) : '0.00'}</td>
+                    <td className="border border-black px-2 py-1 text-right font-bold">{startCredit ? formatMoney(startCredit) : '0.00'}</td>
+                  </tr>
+                  {group.ledger.map((row, i) => {
+                    const d = parseFloat(row.debit) || 0;
+                    const c = parseFloat(row.credit) || 0;
+                    sumDebit += d;
+                    sumCredit += c;
+                    return (
+                      <tr key={row.documentId}>
+                        <td className="border border-black px-1 py-1 text-center">{i + 2}</td>
+                        <td className="border border-black px-2 py-1">{getDocName(row)} ({row.date.split('T')[0].split('-').reverse().join('.')})</td>
+                        <td className="border border-black px-2 py-1 text-right">{d !== 0 ? formatMoney(d) : ''}</td>
+                        <td className="border border-black px-2 py-1 text-right">{c !== 0 ? formatMoney(c) : ''}</td>
+                      </tr>
+                    );
+                  })}
+                  <tr>
+                    <td className="border border-black px-1 py-1 text-center font-bold">{group.ledger.length + 2}</td>
+                    <td className="border border-black px-2 py-1 font-bold">Оборот за період</td>
+                    <td className="border border-black px-2 py-1 text-right font-bold">{sumDebit !== 0 ? formatMoney(sumDebit) : '0.00'}</td>
+                    <td className="border border-black px-2 py-1 text-right font-bold">{sumCredit !== 0 ? formatMoney(sumCredit) : '0.00'}</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-black px-1 py-1 text-center font-bold">{group.ledger.length + 3}</td>
+                    <td className="border border-black px-2 py-1 font-bold">Сальдо кінцеве</td>
+                    <td className="border border-black px-2 py-1 text-right font-bold">{endDebit ? formatMoney(endDebit) : ''}</td>
+                    <td className="border border-black px-2 py-1 text-right font-bold">{endCredit ? formatMoney(endCredit) : ''}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div className="text-sm text-black mb-12 space-y-1">
+                <div>За даними {orgNameText}</div>
+                <div className="font-bold">на {dateToFmt} заборгованість на користь {group.endBalance > 0 ? orgNameText : cpName}</div>
+                <div className="font-bold">{formatMoney(Math.abs(group.endBalance))} грн.</div>
+                
+                <div className="mt-6 flex justify-between">
+                  <div className="w-1/2 space-y-4">
+                    <div>Від {orgNameText}</div>
+                    <div className="flex justify-between items-end border-b border-black w-64 pb-1">
+                      <span></span>
+                      <span>{orgDirectorText}</span>
+                    </div>
+                    <div>М.П.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden print:shadow-none print:border-none">
+      <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden print:hidden">
         {/* Ledger */}
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 print:text-sm">
