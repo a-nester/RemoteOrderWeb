@@ -68,16 +68,16 @@ export default function Layout({ children, title }: LayoutProps) {
 
   const hasAccess = (group: string, item?: string) => {
     if (!user) return false;
-    if (user.role === 'admin') return true;
+    if (user.role === "admin") return true;
     if (!user.permissions) return false;
     const groupPerms = (user.permissions as any)[group];
     if (!groupPerms) return false;
-    
+
     if (item) {
-       return !!groupPerms[item];
+      return !!groupPerms[item];
     }
-    
-    return Object.values(groupPerms).some(val => val === true);
+
+    return Object.values(groupPerms).some((val) => val === true);
   };
 
   const togglePriceEditor = () => setIsPriceEditorOpen(!isPriceEditorOpen);
@@ -170,38 +170,38 @@ export default function Layout({ children, title }: LayoutProps) {
               {isPriceEditorOpen && (
                 <div className="ml-4 mt-1 space-y-1">
                   {hasAccess("priceEditor", "priceSettings") && (
-                  <NavLink
-                    to="/price-documents"
-                    className={({ isActive }) =>
-                      clsx(
-                        "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                        isActive
-                          ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                      )
-                    }
-                  >
-                    <span className="w-5 mr-3"></span>{" "}
-                    {/* Indent placeholder */}
-                    {t("menu.priceSettings")}
-                  </NavLink>
+                    <NavLink
+                      to="/price-documents"
+                      className={({ isActive }) =>
+                        clsx(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                        )
+                      }
+                    >
+                      <span className="w-5 mr-3"></span>{" "}
+                      {/* Indent placeholder */}
+                      {t("menu.priceSettings")}
+                    </NavLink>
                   )}
                   {/* Price Types - Assuming route /price-types exists or will exist */}
                   {hasAccess("priceEditor", "priceTypes") && (
-                  <NavLink
-                    to="/price-types" // TODO: Create this route if not exists
-                    className={({ isActive }) =>
-                      clsx(
-                        "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                        isActive
-                          ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                      )
-                    }
-                  >
-                    <span className="w-5 mr-3"></span>
-                    {t("menu.priceTypes")}
-                  </NavLink>
+                    <NavLink
+                      to="/price-types" // TODO: Create this route if not exists
+                      className={({ isActive }) =>
+                        clsx(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                        )
+                      }
+                    >
+                      <span className="w-5 mr-3"></span>
+                      {t("menu.priceTypes")}
+                    </NavLink>
                   )}
                 </div>
               )}
@@ -210,111 +210,111 @@ export default function Layout({ children, title }: LayoutProps) {
 
           {/* Reports Group */}
           {hasAccess("reports") && (
-          <div>
-            <button
-              onClick={toggleReports}
-              className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-md transition-colors"
-            >
-              <div className="flex items-center">
-                <Archive className="mr-3 h-5 w-5" />
-                Звіти
-              </div>
-              {isReportsOpen ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
+            <div>
+              <button
+                onClick={toggleReports}
+                className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-md transition-colors"
+              >
+                <div className="flex items-center">
+                  <Archive className="mr-3 h-5 w-5" />
+                  Звіти
+                </div>
+                {isReportsOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </button>
+
+              {isReportsOpen && (
+                <div className="ml-4 mt-1 space-y-1">
+                  {hasAccess("reports", "stockBalances") && (
+                    <NavLink
+                      to="/reports/stock-balances"
+                      className={({ isActive }) =>
+                        clsx(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                        )
+                      }
+                    >
+                      <span className="w-5 mr-3"></span>
+                      Залишки на складах
+                    </NavLink>
+                  )}
+
+                  {hasAccess("reports", "inventory") && (
+                    <NavLink
+                      to="/reports/inventory"
+                      className={({ isActive }) =>
+                        clsx(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                        )
+                      }
+                    >
+                      <span className="w-5 mr-3"></span>
+                      Відомість по товарах
+                    </NavLink>
+                  )}
+
+                  {hasAccess("reports", "sales") && (
+                    <NavLink
+                      to="/reports/sales"
+                      className={({ isActive }) =>
+                        clsx(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                        )
+                      }
+                    >
+                      <span className="w-5 mr-3"></span>
+                      Продажі
+                    </NavLink>
+                  )}
+
+                  {hasAccess("reports", "reconciliation") && (
+                    <NavLink
+                      to="/reports/reconciliation"
+                      className={({ isActive }) =>
+                        clsx(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                        )
+                      }
+                    >
+                      <span className="w-5 mr-3"></span>
+                      Акт звірки
+                    </NavLink>
+                  )}
+
+                  {hasAccess("reports", "cashflow") && (
+                    <NavLink
+                      to="/reports/cashflow"
+                      className={({ isActive }) =>
+                        clsx(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                        )
+                      }
+                    >
+                      <span className="w-5 mr-3"></span>
+                      Рух коштів
+                    </NavLink>
+                  )}
+                </div>
               )}
-            </button>
-
-            {isReportsOpen && (
-              <div className="ml-4 mt-1 space-y-1">
-                {hasAccess("reports", "stockBalances") && (
-                <NavLink
-                  to="/reports/stock-balances"
-                  className={({ isActive }) =>
-                    clsx(
-                      "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                      isActive
-                        ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                    )
-                  }
-                >
-                  <span className="w-5 mr-3"></span>
-                  Залишки на складах
-                </NavLink>
-                )}
-
-                {hasAccess("reports", "inventory") && (
-                <NavLink
-                  to="/reports/inventory"
-                  className={({ isActive }) =>
-                    clsx(
-                      "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                      isActive
-                        ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                    )
-                  }
-                >
-                  <span className="w-5 mr-3"></span>
-                  Відомість по товарах
-                </NavLink>
-                )}
-
-                {hasAccess("reports", "sales") && (
-                <NavLink
-                  to="/reports/sales"
-                  className={({ isActive }) =>
-                    clsx(
-                      "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                      isActive
-                        ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                    )
-                  }
-                >
-                  <span className="w-5 mr-3"></span>
-                  Продажі
-                </NavLink>
-                )}
-
-                {hasAccess("reports", "reconciliation") && (
-                <NavLink
-                  to="/reports/reconciliation"
-                  className={({ isActive }) =>
-                    clsx(
-                      "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                      isActive
-                        ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                    )
-                  }
-                >
-                  <span className="w-5 mr-3"></span>
-                  Акт звірки
-                </NavLink>
-                )}
-
-                {hasAccess("reports", "cashflow") && (
-                <NavLink
-                  to="/reports/cashflow"
-                  className={({ isActive }) =>
-                    clsx(
-                      "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                      isActive
-                        ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                    )
-                  }
-                >
-                  <span className="w-5 mr-3"></span>
-                  Рух коштів
-                </NavLink>
-                )}
-              </div>
-            )}
-          </div>
+            </div>
           )}
 
           {/* Finance Group */}
@@ -338,36 +338,36 @@ export default function Layout({ children, title }: LayoutProps) {
               {isFinanceOpen && (
                 <div className="ml-4 mt-1 space-y-1">
                   {hasAccess("finance", "transactions") && (
-                  <NavLink
-                    to="/finance/transactions"
-                    className={({ isActive }) =>
-                      clsx(
-                        "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                        isActive
-                          ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                      )
-                    }
-                  >
-                    <span className="w-5 mr-3"></span>
-                    Каса
-                  </NavLink>
+                    <NavLink
+                      to="/finance/transactions"
+                      className={({ isActive }) =>
+                        clsx(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                        )
+                      }
+                    >
+                      <span className="w-5 mr-3"></span>
+                      Каса
+                    </NavLink>
                   )}
                   {hasAccess("finance", "cashboxes") && (
-                  <NavLink
-                    to="/finance/cashboxes"
-                    className={({ isActive }) =>
-                      clsx(
-                        "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                        isActive
-                          ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                      )
-                    }
-                  >
-                    <span className="w-5 mr-3"></span>
-                    Налаштування каси
-                  </NavLink>
+                    <NavLink
+                      to="/finance/cashboxes"
+                      className={({ isActive }) =>
+                        clsx(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                        )
+                      }
+                    >
+                      <span className="w-5 mr-3"></span>
+                      Налаштування каси
+                    </NavLink>
                   )}
                 </div>
               )}
@@ -390,59 +390,59 @@ export default function Layout({ children, title }: LayoutProps) {
           </NavLink>
           {/* Documents Group */}
           {hasAccess("documents") && (
-          <div>
-            <button
-              onClick={toggleDocuments}
-              className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-md transition-colors"
-            >
-              <div className="flex items-center">
-                <FileText className="mr-3 h-5 w-5" />
-                Документи
-              </div>
-              {isDocumentsOpen ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
-            </button>
-
-            {isDocumentsOpen && (
-              <div className="ml-4 mt-1 space-y-1">
-                {hasAccess("documents", "orders") && (
-                <NavLink
-                  to="/orders"
-                  className={({ isActive }) =>
-                    clsx(
-                      "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                      isActive
-                        ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                    )
-                  }
-                >
-                  <span className="w-5 mr-3"></span>
-                  {t("menu.orders")}
-                </NavLink>
+            <div>
+              <button
+                onClick={toggleDocuments}
+                className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-md transition-colors"
+              >
+                <div className="flex items-center">
+                  <FileText className="mr-3 h-5 w-5" />
+                  Документи
+                </div>
+                {isDocumentsOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
                 )}
+              </button>
 
-                {hasAccess("documents", "realizations") && (
-                <NavLink
-                  to="/realizations"
-                  className={({ isActive }) =>
-                    clsx(
-                      "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
-                      isActive
-                        ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
-                    )
-                  }
-                >
-                  <span className="w-5 mr-3"></span>
-                  {t("menu.realizations", "Realizations")}
-                </NavLink>
-                )}
+              {isDocumentsOpen && (
+                <div className="ml-4 mt-1 space-y-1">
+                  {hasAccess("documents", "orders") && (
+                    <NavLink
+                      to="/orders"
+                      className={({ isActive }) =>
+                        clsx(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                        )
+                      }
+                    >
+                      <span className="w-5 mr-3"></span>
+                      {t("menu.orders")}
+                    </NavLink>
+                  )}
 
-                {hasAccess("documents", "goodsReceipts") && (
+                  {hasAccess("documents", "realizations") && (
+                    <NavLink
+                      to="/realizations"
+                      className={({ isActive }) =>
+                        clsx(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                        )
+                      }
+                    >
+                      <span className="w-5 mr-3"></span>
+                      {t("menu.realizations", "Realizations")}
+                    </NavLink>
+                  )}
+
+                  {hasAccess("documents", "goodsReceipts") && (
                     <NavLink
                       to="/goods-receipt"
                       className={({ isActive }) =>
@@ -457,9 +457,9 @@ export default function Layout({ children, title }: LayoutProps) {
                       <span className="w-5 mr-3"></span>
                       {t("menu.goodsReceipt", "Goods Receipt")}
                     </NavLink>
-                )}
-                    
-                {hasAccess("documents", "buyerReturns") && (
+                  )}
+
+                  {hasAccess("documents", "buyerReturns") && (
                     <NavLink
                       to="/buyer-returns"
                       className={({ isActive }) =>
@@ -474,9 +474,9 @@ export default function Layout({ children, title }: LayoutProps) {
                       <span className="w-5 mr-3"></span>
                       Повернення від покупця
                     </NavLink>
-                )}
+                  )}
 
-                {hasAccess("documents", "supplierReturns") && (
+                  {hasAccess("documents", "supplierReturns") && (
                     <NavLink
                       to="/supplier-returns"
                       className={({ isActive }) =>
@@ -491,10 +491,10 @@ export default function Layout({ children, title }: LayoutProps) {
                       <span className="w-5 mr-3"></span>
                       Повернення постачальнику
                     </NavLink>
-                )}
-              </div>
-            )}
-          </div>
+                  )}
+                </div>
+              )}
+            </div>
           )}
 
           {user?.role === "admin" && (
@@ -653,7 +653,6 @@ export default function Layout({ children, title }: LayoutProps) {
               )}
             </div>
           )}
-
         </nav>
         <div className="absolute bottom-0 w-full p-4 border-t">
           <div className="flex items-center">
@@ -693,7 +692,7 @@ export default function Layout({ children, title }: LayoutProps) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 p-1 sm:p-2 lg:p-8">{children}</main>
       </div>
     </div>
   );

@@ -23,8 +23,12 @@ export default function RealizationList() {
 
   const [realizations, setRealizations] = useState<Realization[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState(() => sessionStorage.getItem("realizations_search") || "");
-  const [filterCounterparty, setFilterCounterparty] = useState(() => sessionStorage.getItem("realizations_counterparty") || "");
+  const [searchTerm, setSearchTerm] = useState(
+    () => sessionStorage.getItem("realizations_search") || "",
+  );
+  const [filterCounterparty, setFilterCounterparty] = useState(
+    () => sessionStorage.getItem("realizations_counterparty") || "",
+  );
 
   const { user, setPreferences } = useAuthStore();
   const defaultSort = user?.preferences?.realizationSort || "desc";
@@ -209,20 +213,6 @@ export default function RealizationList() {
             </div>
           )}
 
-          {/* Search Input */}
-          <div className="relative flex-1 md:w-64">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              placeholder={t("common.search", "Search...")}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white h-[42px]"
-            />
-          </div>
-
           {/* Date Filters */}
           <div className="flex gap-2 items-center">
             <input
@@ -240,13 +230,28 @@ export default function RealizationList() {
             />
           </div>
 
-          <button
-            onClick={() => navigate("/realizations/create")}
-            className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors h-[42px]"
-          >
-            <Plus className="mr-2" size={18} />
-            {t("action.create", "Create")}
-          </button>
+          <div className="flex flex-row gap-2 w-full">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder={t("common.search", "Search...")}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white h-[42px]"
+              />
+            </div>
+            <button
+              onClick={() => navigate("/realizations/create")}
+              className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors h-[42px]"
+            >
+              <Plus className="mr-2" size={18} />
+              {t("action.create", "Create")}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -337,7 +342,11 @@ export default function RealizationList() {
                           handleToggleStatus(item.id, item.status)
                         }
                         onDelete={() => handleDelete(item.id, item.status)}
-                        onBuyerReturn={() => navigate(`/buyer-returns/create?fromRealization=${item.id}`)}
+                        onBuyerReturn={() =>
+                          navigate(
+                            `/buyer-returns/create?fromRealization=${item.id}`,
+                          )
+                        }
                         onFilter={
                           item.counterpartyName
                             ? () =>
@@ -365,7 +374,7 @@ export default function RealizationList() {
       </div>
 
       {/* Mobile View */}
-      <div className="md:hidden space-y-4 px-4">
+      <div className="md:hidden space-y-1">
         {filteredAndSortedRealizations.map((item: Realization) => (
           <div
             key={item.id}
@@ -412,11 +421,12 @@ export default function RealizationList() {
                     handleToggleStatus(item.id, item.status)
                   }
                   onDelete={() => handleDelete(item.id, item.status)}
-                  onBuyerReturn={() => navigate(`/buyer-returns/create?fromRealization=${item.id}`)}
+                  onBuyerReturn={() =>
+                    navigate(`/buyer-returns/create?fromRealization=${item.id}`)
+                  }
                   onFilter={
                     item.counterpartyName
-                      ? () =>
-                          setFilterCounterparty(item.counterpartyName!)
+                      ? () => setFilterCounterparty(item.counterpartyName!)
                       : undefined
                   }
                 />
