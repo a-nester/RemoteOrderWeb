@@ -53,7 +53,7 @@ export default function RealizationEdit() {
         })),
       };
 
-      const updatedDoc = await RealizationService.update(id, payload);
+      await RealizationService.update(id, payload);
 
       if (action === "saveAndPost") {
         await RealizationService.postRealization(id);
