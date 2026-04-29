@@ -9,7 +9,7 @@ import { ErrorBoundary } from "../components/ErrorBoundary";
 import { PriceTypesService } from '../services/priceTypes.service';
 import type { PriceType } from '../types/priceType';
 import PriceListModal from '../components/PriceListModal';
-import { generateExcelPriceList, generatePdfPriceList } from '../utils/priceList.utils';
+import { generateExcelPriceList } from '../utils/priceList.utils';
 import { BASE_URL } from '../constants/api';
 
 export default function Products() {
@@ -83,15 +83,11 @@ function ProductsContent() {
         const priceTypeName = priceTypeId === 'standard' 
             ? 'Standard' 
             : priceTypes.find(pt => pt.slug === priceTypeId)?.name || priceTypeId;
-            
-        const currency = priceTypeId === 'standard' 
-            ? 'UAH' 
-            : priceTypes.find(pt => pt.slug === priceTypeId)?.currency || 'UAH';
 
         if (format === 'excel') {
-            generateExcelPriceList(filteredProducts, priceTypeId, priceTypeName, currency);
+            generateExcelPriceList(filteredProducts, priceTypeId, priceTypeName);
         } else {
-            generatePdfPriceList(filteredProducts, priceTypeId, priceTypeName, currency);
+            window.open(`/products/print?priceType=${priceTypeId}`, '_blank');
         }
   };
 

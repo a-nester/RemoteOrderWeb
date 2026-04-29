@@ -5,6 +5,9 @@ export interface Product {
     unit: string;
     category: string;
     inBox?: number | null;
+    barcode?: string | null;
+    packing?: string | null;
+    tara?: string | null;
     createdAt: number;
     updatedAt: number;
     photos?: string[];

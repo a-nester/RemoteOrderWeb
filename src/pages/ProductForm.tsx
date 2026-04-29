@@ -17,6 +17,9 @@ export default function ProductForm() {
     price: '',
     unit: 'шт', // default unit
     inBox: '', // new field
+    barcode: '',
+    packing: '',
+    tara: '',
   });
 
   useEffect(() => {
@@ -35,6 +38,9 @@ export default function ProductForm() {
           price: product.prices?.standard?.toString() || '0',
           unit: product.unit,
           inBox: product.inBox?.toString() || '',
+          barcode: product.barcode || '',
+          packing: product.packing || '',
+          tara: product.tara || '',
         });
       }
     }
@@ -98,6 +104,9 @@ export default function ProductForm() {
           prices: updatedPrices,
           unit: formData.unit,
           inBox: formData.inBox ? Number(formData.inBox) : null,
+          barcode: formData.barcode || null,
+          packing: formData.packing || null,
+          tara: formData.tara || null,
         }, imageFile || undefined); // Pass imageFile
       } else {
         const prices = { standard: parseFloat(formData.price) || 0 };
@@ -108,6 +117,9 @@ export default function ProductForm() {
           prices,
           unit: formData.unit,
           inBox: formData.inBox ? Number(formData.inBox) : null,
+          barcode: formData.barcode || null,
+          packing: formData.packing || null,
+          tara: formData.tara || null,
           photos: [], // Default empty
           isDeleted: false
         }, imageFile || undefined); // Pass imageFile
@@ -213,6 +225,48 @@ export default function ProductForm() {
                     onChange={(e) => setFormData({ ...formData, inBox: e.target.value })}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder="Наприклад: 24"
+                  />
+                </div>
+
+                <div className="col-span-2 sm:col-span-1">
+                  <label htmlFor="barcode" className="block text-sm font-medium text-gray-700">
+                    Штрих-код
+                  </label>
+                  <input
+                    type="text"
+                    id="barcode"
+                    value={formData.barcode}
+                    onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Наприклад: 4820000000000"
+                  />
+                </div>
+
+                <div className="col-span-2 sm:col-span-1">
+                  <label htmlFor="packing" className="block text-sm font-medium text-gray-700">
+                    Пакування одиниці
+                  </label>
+                  <input
+                    type="text"
+                    id="packing"
+                    value={formData.packing}
+                    onChange={(e) => setFormData({ ...formData, packing: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Наприклад: гофроящик, плівка"
+                  />
+                </div>
+
+                <div className="col-span-2 sm:col-span-1">
+                  <label htmlFor="tara" className="block text-sm font-medium text-gray-700">
+                    Тара
+                  </label>
+                  <input
+                    type="text"
+                    id="tara"
+                    value={formData.tara}
+                    onChange={(e) => setFormData({ ...formData, tara: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Наприклад: ящик"
                   />
                 </div>
             </div>

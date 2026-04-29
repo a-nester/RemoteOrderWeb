@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import ProductForm from "./pages/ProductForm";
+import PriceListPrint from "./pages/PriceListPrint";
 import PriceDocumentList from "./pages/PriceDocuments";
 import PriceDocumentEditor from "./pages/PriceDocuments/PriceDocumentEditor";
 import Layout from "./components/Layout";
@@ -72,6 +73,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Products />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/products/print"
+            element={
+              <ProtectedRoute>
+                <PriceListPrint />
               </ProtectedRoute>
             }
           />
