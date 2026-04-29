@@ -60,7 +60,7 @@ export default function RealizationEdit() {
         navigate("/realizations", { state: { highlight: id } });
       } else {
         alert(t("common.saved", "Збережено успішно"));
-        setRealization(updatedDoc);
+        await loadData();
       }
     } catch (error) {
       console.error("Failed to update realization", error);
