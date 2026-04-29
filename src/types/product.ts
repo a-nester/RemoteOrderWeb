@@ -4,6 +4,7 @@ export interface Product {
     prices: Record<string, number>;
     unit: string;
     category: string;
+    inBox?: number | null;
     createdAt: number;
     updatedAt: number;
     photos?: string[];

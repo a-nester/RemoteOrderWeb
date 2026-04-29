@@ -16,6 +16,7 @@ export default function ProductForm() {
     category: '',
     price: '',
     unit: 'шт', // default unit
+    inBox: '', // new field
   });
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export default function ProductForm() {
           category: product.category,
           price: product.prices?.standard?.toString() || '0',
           unit: product.unit,
+          inBox: product.inBox?.toString() || '',
         });
       }
     }
@@ -95,6 +97,7 @@ export default function ProductForm() {
           category: formData.category,
           prices: updatedPrices,
           unit: formData.unit,
+          inBox: formData.inBox ? Number(formData.inBox) : null,
         }, imageFile || undefined); // Pass imageFile
       } else {
         const prices = { standard: parseFloat(formData.price) || 0 };
@@ -104,6 +107,7 @@ export default function ProductForm() {
           category: formData.category,
           prices,
           unit: formData.unit,
+          inBox: formData.inBox ? Number(formData.inBox) : null,
           photos: [], // Default empty
           isDeleted: false
         }, imageFile || undefined); // Pass imageFile
@@ -195,6 +199,21 @@ export default function ProductForm() {
                     <option value="л">л</option>
                     <option value="пач">пач</option>
                   </select>
+                </div>
+
+                <div className="col-span-2 sm:col-span-1">
+                  <label htmlFor="inBox" className="block text-sm font-medium text-gray-700">
+                    Кількість в ящику (В ящику)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    id="inBox"
+                    value={formData.inBox}
+                    onChange={(e) => setFormData({ ...formData, inBox: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Наприклад: 24"
+                  />
                 </div>
             </div>
 

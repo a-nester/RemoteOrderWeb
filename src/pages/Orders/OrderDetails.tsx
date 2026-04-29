@@ -7,7 +7,6 @@ import type { Order } from "../../types/order";
 import type { Product } from "../../types/product";
 import { ArrowLeft, Printer, FileText } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { numberToWordsUk } from "../../utils/numberToWords";
 
 export default function OrderDetails() {
   const { id } = useParams<{ id: string }>();
@@ -44,7 +43,11 @@ export default function OrderDetails() {
     return p ? p.name : productId;
   };
 
-  const [printType, setPrintType] = useState<"invoice" | "order">("invoice");
+  const getProductInBox = (productId: string) => {
+    const p = products.find((p) => p.id === productId);
+    return p ? p.inBox : null;
+  };
+
   const [creatingWaybill, setCreatingWaybill] = useState(false);
 
   const handleCreateWaybill = async () => {
@@ -69,8 +72,7 @@ export default function OrderDetails() {
     }
   };
 
-  const handlePrint = (type: "invoice" | "order") => {
-    setPrintType(type);
+  const handlePrint = () => {
     setTimeout(() => {
       window.print();
     }, 100);
@@ -126,7 +128,7 @@ export default function OrderDetails() {
               : "Створити накладну"}
           </button>
           <button
-            onClick={() => handlePrint("order")}
+            onClick={handlePrint}
             className="flex items-center px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
           >
             <Printer className="mr-2" size={20} />
@@ -239,10 +241,7 @@ export default function OrderDetails() {
         {/* Title */}
         <div className="text-center mb-6">
           <div className="text-xl font-bold">
-            {printType === "invoice"
-              ? t("print.invoiceNumber", "Invoice #")
-              : t("print.orderNumber", "Order #")}
-            {order.docNumber || order.id.slice(0, 8)}{" "}
+            Складська накладна № {order.docNumber || order.id.slice(0, 8)}{" "}
             {/* Using docNumber or short ID for display */}
           </div>
           <div className="font-bold">
@@ -267,10 +266,7 @@ export default function OrderDetails() {
                 {t("print.qty", "Qty")}
               </th>
               <th className="border border-black p-1 text-center w-24">
-                {t("print.price", "Price")}
-              </th>
-              <th className="border border-black p-1 text-center w-24">
-                {t("print.sum", "Sum")}
+                Кількість ящиків
               </th>
             </tr>
           </thead>
@@ -290,39 +286,23 @@ export default function OrderDetails() {
                   <td className="border border-black p-1 text-right">
                     {item.quantity || item.count}
                   </td>
-                  <td className="border border-black p-1 text-right">
-                    {Number(item.price || 0).toFixed(2)}
-                  </td>
-                  <td className="border border-black p-1 text-right">
-                    {(
-                      Number(item.quantity || item.count || 0) *
-                      Number(item.price || 0)
-                    ).toFixed(2)}
+                  <td className="border border-black p-1 text-center">
+                    {(() => {
+                      const inBox = getProductInBox(item.productId || item.id || "unknown");
+                      if (!inBox) return "немає даних";
+                      const qty = Number(item.quantity || item.count || 0);
+                      const boxes = qty / Number(inBox);
+                      if (boxes < 1) return "-";
+                      return Number.isInteger(boxes) ? boxes.toString() : boxes.toFixed(2).replace(/\.?0+$/, '');
+                    })()}
                   </td>
                 </tr>
               ))}
-            {/* Total Row in Table */}
-            <tr>
-              <td
-                colSpan={5}
-                className="border border-black p-1 text-right font-bold"
-              >
-                {t("print.total", "Total")}:
-              </td>
-              <td className="border border-black p-1 text-right font-bold">
-                {Number(order.amount || 0).toFixed(2)}
-              </td>
-            </tr>
+            {/* Total Row in Table Removed for Warehouse Receipt */}
           </tbody>
         </table>
 
-        {/* Footer Sum */}
-        <div className="mb-8">
-          <div className="mb-1">{t("print.totalSum", "Total sum")}:</div>
-          <div className="font-bold border-b border-black inline-block min-w-full pb-1">
-            {numberToWordsUk(order.amount)}
-          </div>
-        </div>
+        {/* Footer Sum Removed for Warehouse Receipt */}
 
         {/* Signatures */}
         <div className="flex justify-between mt-12">
