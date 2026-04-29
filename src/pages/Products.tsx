@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProductsStore } from '../store/products.store';
+import { useAuthStore } from '../store/auth.store';
+import { AuthService } from '../services/auth.service';
 import Layout from '../components/Layout';
 import { Plus, FileText, Search, Filter, Check, ChevronDown } from 'lucide-react';
 import { ErrorBoundary } from "../components/ErrorBoundary";
@@ -25,7 +27,12 @@ function ProductsContent() {
   const [selectedPriceType, setSelectedPriceType] = useState<string>('standard');
   const [isPriceListModalOpen, setIsPriceListModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  
+  const { user, setPreferences } = useAuthStore();
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    user?.preferences?.productsSelectedCategories || []
+  );
+  
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const categoryRef = useRef<HTMLDivElement>(null);
 
@@ -53,9 +60,23 @@ function ProductsContent() {
   });
 
   const toggleCategory = (cat: string) => {
-    setSelectedCategories(prev => 
-      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
-    );
+    setSelectedCategories(prev => {
+      const newCategories = prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat];
+      
+      // Update store and backend
+      const newPrefs = { ...(user?.preferences || {}), productsSelectedCategories: newCategories };
+      setPreferences(newPrefs);
+      AuthService.updatePreferences(newPrefs).catch(console.error);
+      
+      return newCategories;
+    });
+  };
+
+  const resetCategories = () => {
+    setSelectedCategories([]);
+    const newPrefs = { ...(user?.preferences || {}), productsSelectedCategories: [] };
+    setPreferences(newPrefs);
+    AuthService.updatePreferences(newPrefs).catch(console.error);
   };
 
   const handleDownloadPriceList = (priceTypeId: string, format: 'excel' | 'pdf') => {
@@ -107,7 +128,7 @@ function ProductsContent() {
                             <span className="text-sm font-medium dark:text-white">Фільтр категорій</span>
                             {selectedCategories.length > 0 && (
                                 <button 
-                                    onClick={() => setSelectedCategories([])}
+                                    onClick={resetCategories}
                                     className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
                                 >
                                     Скинути
@@ -185,6 +206,9 @@ function ProductsContent() {
               <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 Unit
               </th>
+              <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                В ящику
+              </th>
                <th scope="col" className="relative px-3 py-3">
                 <span className="sr-only">Edit</span>
               </th>
@@ -223,6 +247,9 @@ function ProductsContent() {
                 </td>
                 <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {product.unit}
+                </td>
+                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {product.inBox ? product.inBox : '-'}
                 </td>
                 <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button 
