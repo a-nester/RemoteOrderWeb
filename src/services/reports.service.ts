@@ -47,7 +47,7 @@ export interface SalesByProduct {
 
 export interface InventoryMovementDetail {
   id: string;
-  type: "GOODS_RECEIPT" | "REALIZATION";
+  type: "GOODS_RECEIPT" | "REALIZATION" | "BUYER_RETURN" | "SUPPLIER_RETURN";
   docNumber: string;
   date: string;
   quantity: string | number;
