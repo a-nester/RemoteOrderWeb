@@ -536,6 +536,14 @@ export default function InventoryReport() {
                                 Надходження №{detail.docNumber} від {dtStr}
                               </Link>
                             )}
+                            {detail.type === "BUYER_RETURN" && (
+                              <Link
+                                to={`/buyer-returns/${detail.id}`}
+                                className="text-indigo-600 dark:text-indigo-400 hover:underline"
+                              >
+                                Повернення від покупця №{detail.docNumber} від {dtStr}
+                              </Link>
+                            )}
                             {detail.type === "REALIZATION" && (
                               <Link
                                 to={`/realizations/${detail.id}`}
@@ -544,16 +552,24 @@ export default function InventoryReport() {
                                 Реалізація №{detail.docNumber} від {dtStr}
                               </Link>
                             )}
+                            {detail.type === "SUPPLIER_RETURN" && (
+                              <Link
+                                to={`/supplier-returns/${detail.id}`}
+                                className="text-indigo-600 dark:text-indigo-400 hover:underline"
+                              >
+                                Повернення постачальнику №{detail.docNumber} від {dtStr}
+                              </Link>
+                            )}
                           </td>
                           <td className="px-6 py-2 text-right"></td>{" "}
                           {/* Empty Start Balance col */}
                           <td className="px-6 py-2 whitespace-nowrap text-sm text-green-600 dark:text-green-400 text-right">
-                            {detail.type === "GOODS_RECEIPT"
+                            {(detail.type === "GOODS_RECEIPT" || detail.type === "BUYER_RETURN")
                               ? `+${Number(detail.quantity).toFixed(3)}`
                               : ""}
                           </td>
                           <td className="px-6 py-2 whitespace-nowrap text-sm text-red-600 dark:text-red-400 text-right">
-                            {detail.type === "REALIZATION"
+                            {(detail.type === "REALIZATION" || detail.type === "SUPPLIER_RETURN")
                               ? `-${Number(detail.quantity).toFixed(3)}`
                               : ""}
                           </td>
