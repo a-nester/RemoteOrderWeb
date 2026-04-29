@@ -379,27 +379,27 @@ export default function RealizationList() {
           <div
             key={item.id}
             onClick={() => navigate(`/realizations/${item.id}`)}
-            className="bg-white dark:bg-gray-800 shadow rounded-lg p-3 space-y-1 cursor-pointer hover:shadow-md transition-shadow"
+            className="bg-white dark:bg-gray-800 shadow rounded-lg p-2 space-y-1 cursor-pointer hover:shadow-md transition-shadow"
           >
             <div className="flex justify-between items-start">
-              <div>
-                <span className="text-sm font-bold text-gray-900 dark:text-white">
-                  #{item.number}
-                </span>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {new Date(item.date).toLocaleDateString()}
-                </p>
-              </div>
+              {/* <div> */}
+              <p className="text-sm font-bold text-gray-900 dark:text-white">
+                {new Date(item.date).toLocaleDateString()}
+              </p>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                #{item.number}
+              </span>
               <span
                 className={`px-2 py-0.5 text-xs rounded-full ${getStatusColor(item.status)}`}
               >
                 {item.status}
               </span>
+              {/* </div> */}
             </div>
-            <div className="text-sm text-gray-700 dark:text-gray-300">
+            <div className="pl-2 text-md text-gray-900 dark:text-white">
               {item.counterpartyName}
             </div>
-            <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex justify-between items-center pt-1 border-t border-gray-100 dark:border-gray-700">
               <span className="font-bold text-gray-900 dark:text-white">
                 {Number(item.amount).toFixed(2)} {item.currency}
               </span>
