@@ -76,6 +76,7 @@ export default function SalesReport() {
   });
   const [counterparty, setCounterparty] = useState<string>("");
   const [groupBySalesType, setGroupBySalesType] = useState<boolean>(false);
+  const [includeReturns, setIncludeReturns] = useState<boolean>(false);
   const [salesType, setSalesType] = useState<string>("");
   const [salesTypesList, setSalesTypesList] = useState<string[]>([]);
 
@@ -165,7 +166,8 @@ export default function SalesReport() {
           dateTo,
           counterparty,
           groupBySalesType,
-          salesType
+          salesType,
+          includeReturns
         );
         setSalesByClient(data);
       } else if (activeTab === "byProduct") {
@@ -174,7 +176,8 @@ export default function SalesReport() {
           dateTo,
           counterparty,
           groupBySalesType,
-          salesType
+          salesType,
+          includeReturns
         );
         setSalesByProduct(data);
       }
@@ -230,6 +233,7 @@ export default function SalesReport() {
         "Категорія": row.productCategory || "Без категорії",
         "Вид продажу": row.salesType || "-",
         "К-ть": Number(row.totalQuantity),
+        "Ціна за од. (₴)": Number(row.totalQuantity) !== 0 ? (Number(row.totalAmount) / Number(row.totalQuantity)).toFixed(2) : "0.00",
         "Сума Продажу": Number(row.totalAmount),
         "Закупівельна вартість": Number(row.totalPurchaseCost),
         "Прибуток": Number(row.totalProfit)
@@ -405,6 +409,19 @@ export default function SalesReport() {
             />
             <span className="text-sm font-medium text-gray-700">
               {t("reports.groupBySalesType", "Сортувати за типом продаж")}
+            </span>
+          </label>
+        </div>
+        <div className="flex items-center mb-2 mr-4">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={includeReturns}
+              onChange={(e) => setIncludeReturns(e.target.checked)}
+              className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              Врахувати повернення
             </span>
           </label>
         </div>
@@ -702,6 +719,9 @@ export default function SalesReport() {
                       {t("common.quantity", "Кількість")}
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ціна за од. (₴)
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {t("common.amount", "Сума")} (₴)
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -727,7 +747,7 @@ export default function SalesReport() {
                     ).map(([salesType, rows]) => (
                       <Fragment key={salesType}>
                         <tr className="bg-blue-50/50">
-                          <td colSpan={8} className="px-4 py-3 text-sm font-bold text-gray-900 border-y border-gray-200">
+                          <td colSpan={9} className="px-4 py-3 text-sm font-bold text-gray-900 border-y border-gray-200">
                             {salesType}
                           </td>
                         </tr>
@@ -747,6 +767,9 @@ export default function SalesReport() {
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
                               {formatNum(row.totalQuantity)}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
+                              {Number(row.totalQuantity) !== 0 ? (Number(row.totalAmount) / Number(row.totalQuantity)).toFixed(2) : "0.00"}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                               {formatNum(row.totalAmount)}
@@ -768,6 +791,9 @@ export default function SalesReport() {
                            </td>
                            <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">
                              {formatNum(rows.reduce((sum, item) => sum + Number(item.totalQuantity), 0))}
+                           </td>
+                           <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">
+                             -
                            </td>
                            <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">
                              {formatNum(rows.reduce((sum, item) => sum + Number(item.totalAmount), 0))}
@@ -806,6 +832,9 @@ export default function SalesReport() {
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
                           {formatNum(row.totalQuantity)}
                         </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
+                          {Number(row.totalQuantity) !== 0 ? (Number(row.totalAmount) / Number(row.totalQuantity)).toFixed(2) : "0.00"}
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                           {formatNum(row.totalAmount)}
                         </td>
@@ -820,7 +849,7 @@ export default function SalesReport() {
                   )}
                   {salesByProduct.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="p-8 text-center text-gray-500">
+                      <td colSpan={9} className="p-8 text-center text-gray-500">
                         {t("common.noData", "Немає даних")}
                       </td>
                     </tr>
@@ -842,6 +871,9 @@ export default function SalesReport() {
                             0,
                           ),
                         )}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
+                        -
                       </td>
                       <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
                         {formatNum(

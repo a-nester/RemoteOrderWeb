@@ -75,9 +75,9 @@ export const ReportsService = {
     return response.data;
   },
 
-  getSalesByClient: async (dateFrom?: string, dateTo?: string, counterparty?: string, groupBySalesType?: boolean, salesType?: string): Promise<SalesByClient[]> => {
+  getSalesByClient: async (dateFrom?: string, dateTo?: string, counterparty?: string, groupBySalesType?: boolean, salesType?: string, includeReturns?: boolean): Promise<SalesByClient[]> => {
       const response = await axios.get(`${API_URL}/reports/sales/by-client`, {
-          params: { dateFrom, dateTo, counterparty, groupBySalesType, salesType },
+          params: { dateFrom, dateTo, counterparty, groupBySalesType, salesType, includeReturns },
           headers: getAuthHeader()
       });
       return response.data;
@@ -91,9 +91,9 @@ export const ReportsService = {
       return response.data;
   },
 
-  getSalesByProduct: async (dateFrom?: string, dateTo?: string, counterparty?: string, groupBySalesType?: boolean, salesType?: string): Promise<SalesByProduct[]> => {
+  getSalesByProduct: async (dateFrom?: string, dateTo?: string, counterparty?: string, groupBySalesType?: boolean, salesType?: string, includeReturns?: boolean): Promise<SalesByProduct[]> => {
       const response = await axios.get(`${API_URL}/reports/sales/by-product`, {
-          params: { dateFrom, dateTo, counterparty, groupBySalesType, salesType },
+          params: { dateFrom, dateTo, counterparty, groupBySalesType, salesType, includeReturns },
           headers: getAuthHeader()
       });
       return response.data;
