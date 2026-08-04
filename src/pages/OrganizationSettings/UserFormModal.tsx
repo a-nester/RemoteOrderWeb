@@ -37,6 +37,7 @@ export default function UserFormModal({
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [saving, setSaving] = useState(false);
   const [permissions, setPermissions] = useState<any>(defaultPermissions);
+  const [visibleWarehouses, setVisibleWarehouses] = useState<string[]>([]);
 
   useEffect(() => {
     CounterpartyService.getAll().then(setCounterparties).catch(console.error);
@@ -49,6 +50,7 @@ export default function UserFormModal({
       setRole(initialData.role || "client");
       setCounterpartyId(initialData.counterpartyId || "");
       setWarehouseId(initialData.warehouseId || "");
+      setVisibleWarehouses(initialData.visibleWarehouses || []);
       setPassword(""); // Never populate password
 
       if (initialData.permissions) {
@@ -78,8 +80,10 @@ export default function UserFormModal({
     setSaving(true);
     try {
       const data: any = { email, role, permissions };
-      if (role === "client" || role === "manager") {
+      if (role === "client") {
         data.warehouseId = warehouseId;
+      } else if (role === "manager") {
+        data.visibleWarehouses = visibleWarehouses;
       }
       if (role === "client" && counterpartyId) {
         data.counterpartyId = counterpartyId;
@@ -137,15 +141,15 @@ export default function UserFormModal({
             </select>
           </div>
 
-          {(role === "client" || role === "manager") && (
+          {(role === "client") && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Склад (Обов'язково для менеджерів і клієнтів)
+                Склад (Обов'язково для клієнтів)
               </label>
               <select
                 value={warehouseId}
                 onChange={(e) => setWarehouseId(e.target.value)}
-                required={role === "client" || role === "manager"}
+                required={role === "client"}
                 className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
                 <option value="">-- Оберіть склад --</option>
@@ -155,6 +159,32 @@ export default function UserFormModal({
                   </option>
                 ))}
               </select>
+            </div>
+          )
+          {role === "manager" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Видимі склади (Для менеджера)
+              </label>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {warehouses.map((wh) => (
+                  <label key={wh.id} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      className="mr-2 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      checked={visibleWarehouses.includes(wh.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setVisibleWarehouses([...visibleWarehouses, wh.id]);
+                        } else {
+                          setVisibleWarehouses(visibleWarehouses.filter(id => id !== wh.id));
+                        }
+                      }}
+                    />
+                    {wh.name}
+                  </label>
+                ))}
+              </div>
             </div>
           )}
 

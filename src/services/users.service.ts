@@ -28,13 +28,14 @@ export interface UserPermissions {
 }
 
 export interface User {
-    id: string;
-    email: string;
-    role: 'admin' | 'manager' | 'client';
-    warehouseId?: string | null;
-    counterpartyId?: string | null;
-    organizationId?: number | null;
-    permissions?: UserPermissions;
+  id: string;
+  email: string;
+  role: 'admin' | 'manager' | 'client';
+  warehouseId?: string | null; // legacy single‑warehouse field
+  visibleWarehouses?: string[]; // new field for manager visibility
+  counterpartyId?: string | null;
+  organizationId?: number | null;
+  permissions?: UserPermissions;
 }
 
 export const UsersService = {
