@@ -32,7 +32,7 @@ import { CounterpartyService } from "../../services/counterparty.service";
 import { PriceTypesService } from "../../services/priceTypes.service";
 import type { GoodsReceipt, GoodsReceiptItem } from "../../types/goodsReceipt";
 import type { Product } from "../../types/product";
-import type { Warehouse } from "../../types/organization";
+import type { Warehouse, Organization } from "../../types/organization";
 import type { Counterparty } from "../../types/counterparty";
 import type { PriceType } from "../../types/priceType";
 import ProductSelector from "../../components/ProductSelector";
@@ -144,6 +144,7 @@ export default function GoodsReceiptEdit() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [providers, setProviders] = useState<Counterparty[]>([]);
   const [priceTypes, setPriceTypes] = useState<PriceType[]>([]);
+  const [organization, setOrganization] = useState<Organization | null>(null);
 
   // Form State
   const [doc, setDoc] = useState<Partial<GoodsReceipt>>({
@@ -171,16 +172,18 @@ export default function GoodsReceiptEdit() {
     setLoading(true);
     try {
       // Load types
-      const [prodsData, whs, cnts, pts] = await Promise.all([
+      const [prodsData, whs, cnts, pts, orgData] = await Promise.all([
         ProductsService.fetchProducts(),
         OrganizationService.getWarehouses(),
         CounterpartyService.getAll(),
         PriceTypesService.fetchPriceTypes(),
+        OrganizationService.getOrganization().catch(() => null),
       ]);
       setProducts(prodsData.products);
       setWarehouses(whs);
       setProviders(cnts);
       setPriceTypes(pts);
+      setOrganization(orgData);
 
       if (!isNew && id) {
         const existing = await GoodsReceiptService.getById(id);
@@ -584,6 +587,7 @@ export default function GoodsReceiptEdit() {
           acc[item.productId] = (acc[item.productId] || 0) + item.quantity;
           return acc;
         }, {} as Record<string, number>)}
+        allowedCategories={organization?.categories}
       />
 
       <QuantityModal

@@ -4,6 +4,7 @@ export interface Organization {
     name: string;
     fullDetails?: string;
     salesTypes?: string[];
+    categories?: string[];
     createdAt?: string;
     updatedAt?: string;
 }

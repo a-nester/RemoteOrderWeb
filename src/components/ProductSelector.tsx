@@ -12,6 +12,7 @@ interface ProductSelectorProps {
   priceSlug: string;
   stockBalances?: StockBalance[];
   addedItemsMap?: Record<string, number>;
+  allowedCategories?: string[];
 }
 
 export default function ProductSelector({
@@ -22,6 +23,7 @@ export default function ProductSelector({
   priceSlug,
   stockBalances = [],
   addedItemsMap = {},
+  allowedCategories,
 }: ProductSelectorProps) {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,13 +31,22 @@ export default function ProductSelector({
 
   // Get unique categories
   const categories = useMemo(() => {
-    const cats = new Set(products.map((p) => p.category).filter(Boolean));
-    return ["All", ...Array.from(cats)].sort();
-  }, [products]);
+    const cats = new Set(products.map((p) => p.category).filter(Boolean) as string[]);
+    let categoryList = Array.from(cats);
+    if (Array.isArray(allowedCategories)) {
+      categoryList = categoryList.filter((cat) => allowedCategories.includes(cat));
+    }
+    return ["All", ...categoryList.sort()];
+  }, [products, allowedCategories]);
 
   // Filter products
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
+      if (Array.isArray(allowedCategories) && p.category) {
+        if (!allowedCategories.includes(p.category)) {
+          return false;
+        }
+      }
       const matchesSearch = p.name
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
@@ -43,7 +54,7 @@ export default function ProductSelector({
         selectedCategory === "All" || p.category === selectedCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [products, searchTerm, selectedCategory]);
+  }, [products, searchTerm, selectedCategory, allowedCategories]);
 
   const groupedProducts = useMemo(() => {
     const groups: Record<string, Product[]> = {};

@@ -21,7 +21,7 @@ import type { PriceType } from "../types/priceType";
 import { ReportsService } from "../services/reports.service";
 import type { StockBalance } from "../services/reports.service";
 import { OrganizationService } from "../services/organization.service";
-import type { Warehouse } from "../types/organization";
+import type { Warehouse, Organization } from "../types/organization";
 import ProductSelector from "./ProductSelector";
 import OrderItemsTable from "./OrderItemsTable";
 import QuantityModal from "./QuantityModal";
@@ -84,6 +84,7 @@ export default function OrderForm({
   const [salesType, setSalesType] = useState<string>(
     (initialData as any)?.salesType || "Готівковий",
   );
+  const [organization, setOrganization] = useState<Organization | null>(null);
   const [orgSalesTypes, setOrgSalesTypes] = useState<string[]>([
     "Готівковий",
     "р/р ФОП",
@@ -164,24 +165,25 @@ export default function OrderForm({
   const loadData = async () => {
     setLoading(true);
     try {
-      const [cpData, productsData, priceTypesData] = await Promise.all([
+      const [cpData, productsData, priceTypesData, orgData] = await Promise.all([
         CounterpartyService.getAll(),
         ProductsService.fetchProducts(),
         PriceTypesService.fetchPriceTypes(),
+        OrganizationService.getOrganization().catch(() => null),
       ]);
       setCounterparties(cpData);
       setProducts(productsData.products.filter((p) => !p.isDeleted));
       setPriceTypes(priceTypesData.filter((pt) => !pt.isDeleted));
-
-      if (needsWarehouse) {
-        const [warehousesData, orgData] = await Promise.all([
-          OrganizationService.getWarehouses(),
-          OrganizationService.getOrganization(),
-        ]);
-        setWarehouses(warehousesData);
-        if (orgData && orgData.salesTypes) {
+      if (orgData) {
+        setOrganization(orgData);
+        if (orgData.salesTypes) {
           setOrgSalesTypes(orgData.salesTypes);
         }
+      }
+
+      if (needsWarehouse) {
+        const warehousesData = await OrganizationService.getWarehouses();
+        setWarehouses(warehousesData);
       }
     } catch (error) {
       console.error("Failed to load data", error);
@@ -841,6 +843,7 @@ export default function OrderForm({
           acc[item.productId] = (acc[item.productId] || 0) + item.quantity;
           return acc;
         }, {} as Record<string, number>)}
+        allowedCategories={organization?.categories}
       />
 
       <QuantityModal

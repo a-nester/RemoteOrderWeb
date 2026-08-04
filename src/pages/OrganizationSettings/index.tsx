@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Save, Plus, Store, Edit } from "lucide-react";
 import { OrganizationService } from "../../services/organization.service";
+import { ProductsService } from "../../services/products.service";
 import type { Organization, Warehouse } from "../../types/organization";
 import UsersList from "./UsersList";
 import { useAuthStore } from "../../store/auth.store";
@@ -19,6 +20,8 @@ export default function OrganizationSettings() {
   const [orgName, setOrgName] = useState("");
   const [orgDirector, setOrgDirector] = useState("");
   const [salesTypes, setSalesTypes] = useState<string[]>([]);
+  const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [savingOrg, setSavingOrg] = useState(false);
 
   // Warehouse Modal State
@@ -37,21 +40,31 @@ export default function OrganizationSettings() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [orgData, whData] = await Promise.all([
+      const [orgData, whData, productsRes] = await Promise.all([
         OrganizationService.getAllOrganizations(),
         OrganizationService.getWarehouses(),
+        ProductsService.fetchProducts().catch(() => ({ products: [], timestamp: Date.now() })),
       ]);
+      
+      const uniqueCats = Array.from(
+        new Set(productsRes.products.map((p) => p.category).filter(Boolean))
+      ).sort() as string[];
+      setAvailableCategories(uniqueCats);
+
       setOrganizations(orgData);
       if (orgData.length > 0) {
-        setOrg(orgData[0]);
-        setOrgName(orgData[0].name);
-        setOrgDirector(orgData[0].fullDetails || "");
-        setSalesTypes(orgData[0].salesTypes || ["Готівковий", "р/р ФОП", "з ПДВ"]);
+        const firstOrg = orgData[0];
+        setOrg(firstOrg);
+        setOrgName(firstOrg.name);
+        setOrgDirector(firstOrg.fullDetails || "");
+        setSalesTypes(firstOrg.salesTypes || ["Готівковий", "р/р ФОП", "з ПДВ"]);
+        setSelectedCategories(firstOrg.categories ?? uniqueCats);
       } else {
         setOrg(null);
         setOrgName("");
         setOrgDirector("");
         setSalesTypes(["Готівковий", "р/р ФОП", "з ПДВ"]);
+        setSelectedCategories(uniqueCats);
       }
       setWarehouses(whData);
     } catch (error) {
@@ -71,6 +84,7 @@ export default function OrganizationSettings() {
           name: orgName,
           fullDetails: orgDirector,
           salesTypes,
+          categories: selectedCategories,
         });
         setOrg(updated);
         setOrganizations((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
@@ -79,6 +93,7 @@ export default function OrganizationSettings() {
           name: orgName,
           fullDetails: orgDirector,
           salesTypes,
+          categories: selectedCategories,
         });
         setOrg(created);
         setOrganizations((prev) => [...prev, created]);
@@ -97,6 +112,7 @@ export default function OrganizationSettings() {
     setOrgName("");
     setOrgDirector("");
     setSalesTypes(["Готівковий", "р/р ФОП", "з ПДВ"]);
+    setSelectedCategories(availableCategories);
   };
 
   const handleOpenModal = (warehouse?: Warehouse) => {
@@ -199,6 +215,7 @@ export default function OrganizationSettings() {
                   setOrgName(selected.name);
                   setOrgDirector(selected.fullDetails || "");
                   setSalesTypes(selected.salesTypes || ["Готівковий", "р/р ФОП", "з ПДВ"]);
+                  setSelectedCategories(selected.categories ?? availableCategories);
                 }
               }}
               className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
@@ -288,6 +305,65 @@ export default function OrganizationSettings() {
               </label>
             ))}
           </div>
+        </div>
+
+        {/* Categories Section */}
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+            <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+              Категорії товарів для підбору
+            </h2>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedCategories([...availableCategories])}
+                className="text-xs px-2.5 py-1 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-gray-700 dark:text-indigo-300 rounded border border-indigo-200 dark:border-gray-600 font-medium transition-colors"
+              >
+                Обрати всі
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedCategories([])}
+                className="text-xs px-2.5 py-1 bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-600 font-medium transition-colors"
+              >
+                Зняти всі
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+            Позначені категорії будуть відображатися у списках підбору товарів в замовленнях, реалізаціях та поступленнях.
+          </p>
+          {availableCategories.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 italic">Категорії не знайдені в системі</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {availableCategories.map((cat) => {
+                const isChecked = selectedCategories.includes(cat);
+                return (
+                  <label
+                    key={cat}
+                    className="flex items-center space-x-2.5 cursor-pointer p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedCategories((prev) => [...prev, cat]);
+                        } else {
+                          setSelectedCategories((prev) => prev.filter((c) => c !== cat));
+                        }
+                      }}
+                      className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                    />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {cat}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Warehouses Section */}

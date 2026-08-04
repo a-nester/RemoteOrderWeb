@@ -5,7 +5,9 @@ import { ArrowLeft, Plus, Trash, Check, Save } from 'lucide-react';
 import { PriceDocumentsService } from '../../services/priceDocuments.service';
 import { PriceTypesService } from '../../services/priceTypes.service';
 import { ProductsService } from '../../services/products.service';
+import { OrganizationService } from '../../services/organization.service';
 import type { PriceDocument, PriceDocumentItem } from '../../types/priceDocument';
+import type { Organization } from '../../types/organization';
 import type { PriceType } from '../../types/priceType';
 import type { Product } from '../../types/product';
 import ProductSelector from '../../components/ProductSelector';
@@ -33,6 +35,7 @@ export default function PriceDocumentEditor() {
     const [priceTypes, setPriceTypes] = useState<PriceType[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
+  const [organization, setOrganization] = useState<Organization | null>(null);
     const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
     const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
@@ -61,6 +64,10 @@ export default function PriceDocumentEditor() {
             // Ideally we should have search, but for now fetch all
             const prods = await ProductsService.fetchProducts();
             setProducts(prods.products);
+
+            // Fetch organization to get allowed categories
+            const org = await OrganizationService.getOrganization();
+            setOrganization(org);
 
             if (!isNew && id) {
                 const doc = await PriceDocumentsService.fetchDocument(id);
@@ -494,6 +501,7 @@ export default function PriceDocumentEditor() {
                     acc[item.productId] = 1;
                     return acc;
                 }, {} as Record<string, number>)}
+                allowedCategories={organization?.categories ?? undefined}
             />
         </div>
     );
