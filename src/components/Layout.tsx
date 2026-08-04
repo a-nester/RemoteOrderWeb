@@ -118,7 +118,7 @@ export default function Layout({ children, title }: LayoutProps) {
             <X size={24} />
           </button>
         </div>
-        <nav className="flex-1 overflow-y-auto mt-6 px-4 space-y-2 pb-4">
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden mt-6 px-4 space-y-2 pb-4">
           <NavLink
             to="/dashboard"
             className={({ isActive }) =>
@@ -654,7 +654,7 @@ export default function Layout({ children, title }: LayoutProps) {
             </div>
           )}
         </nav>
-        <div className="absolute bottom-0 w-full p-4 border-t">
+        <div className="bg-white dark:bg-gray-800 p-4 border-t">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
