@@ -87,6 +87,11 @@ export const ProductsService = {
                     unit: item.unit,
                     category: item.category,
                     photos: item.photos || [],
+                    inBox: item.inBox,
+                    barcode: item.barcode,
+                    packing: item.packing,
+                    tara: item.tara,
+                    weight: item.weight ? Number(item.weight) : null,
                     createdAt: new Date(item.createdAt).getTime(),
                     updatedAt: new Date(item.updatedAt).getTime(),
                     // Map 'deleted' from API to 'isDeleted'
@@ -110,6 +115,11 @@ export const ProductsService = {
         formData.append("prices", JSON.stringify(product.prices));
         formData.append("unit", product.unit);
         formData.append("category", product.category);
+        if (product.inBox !== undefined && product.inBox !== null) formData.append("inBox", product.inBox.toString());
+        if (product.barcode) formData.append("barcode", product.barcode);
+        if (product.packing) formData.append("packing", product.packing);
+        if (product.tara) formData.append("tara", product.tara);
+        if (product.weight !== undefined && product.weight !== null) formData.append("weight", product.weight.toString());
 
         if (imageFile) {
             formData.append("photos", imageFile);
@@ -132,6 +142,11 @@ export const ProductsService = {
         formData.append("prices", JSON.stringify(product.prices));
         formData.append("unit", product.unit);
         formData.append("category", product.category);
+        if (product.inBox !== undefined && product.inBox !== null) formData.append("inBox", product.inBox.toString());
+        if (product.barcode) formData.append("barcode", product.barcode);
+        if (product.packing) formData.append("packing", product.packing);
+        if (product.tara) formData.append("tara", product.tara);
+        if (product.weight !== undefined && product.weight !== null) formData.append("weight", product.weight.toString());
 
         if (imageFile) {
             formData.append("photos", imageFile);

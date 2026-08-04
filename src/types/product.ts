@@ -8,6 +8,7 @@ export interface Product {
     barcode?: string | null;
     packing?: string | null;
     tara?: string | null;
+    weight?: number | null;
     createdAt: number;
     updatedAt: number;
     photos?: string[];

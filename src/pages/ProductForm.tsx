@@ -20,6 +20,7 @@ export default function ProductForm() {
     barcode: '',
     packing: '',
     tara: '',
+    weight: '',
   });
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export default function ProductForm() {
           barcode: product.barcode || '',
           packing: product.packing || '',
           tara: product.tara || '',
+          weight: product.unit === 'кг' ? '1' : (product.weight?.toString() || ''),
         });
       }
     }
@@ -107,6 +109,7 @@ export default function ProductForm() {
           barcode: formData.barcode || null,
           packing: formData.packing || null,
           tara: formData.tara || null,
+          weight: formData.unit === 'кг' ? 1 : (formData.weight ? Number(formData.weight) : null),
         }, imageFile || undefined); // Pass imageFile
       } else {
         const prices = { standard: parseFloat(formData.price) || 0 };
@@ -120,6 +123,7 @@ export default function ProductForm() {
           barcode: formData.barcode || null,
           packing: formData.packing || null,
           tara: formData.tara || null,
+          weight: formData.unit === 'кг' ? 1 : (formData.weight ? Number(formData.weight) : null),
           photos: [], // Default empty
           isDeleted: false
         }, imageFile || undefined); // Pass imageFile
@@ -211,6 +215,22 @@ export default function ProductForm() {
                     <option value="л">л</option>
                     <option value="пач">пач</option>
                   </select>
+                </div>
+
+                <div className="col-span-2 sm:col-span-1">
+                  <label htmlFor="weight" className="block text-sm font-medium text-gray-700">
+                    Вага 1 одиниці (кг)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    id="weight"
+                    value={formData.unit === 'кг' ? '1' : formData.weight}
+                    onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                    disabled={formData.unit === 'кг'}
+                    className={`mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${formData.unit === 'кг' ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
+                    placeholder="Наприклад: 0.35"
+                  />
                 </div>
 
                 <div className="col-span-2 sm:col-span-1">
