@@ -22,6 +22,7 @@ export default function OrganizationSettings() {
   const [salesTypes, setSalesTypes] = useState<string[]>([]);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [vatCostCoefficient, setVatCostCoefficient] = useState<string>("1.345");
   const [savingOrg, setSavingOrg] = useState(false);
 
   // Warehouse Modal State
@@ -59,12 +60,14 @@ export default function OrganizationSettings() {
         setOrgDirector(firstOrg.fullDetails || "");
         setSalesTypes(firstOrg.salesTypes || ["Готівковий", "р/р ФОП", "з ПДВ"]);
         setSelectedCategories(firstOrg.categories ?? uniqueCats);
+        setVatCostCoefficient(firstOrg.vatCostCoefficient !== undefined ? String(firstOrg.vatCostCoefficient) : "1.345");
       } else {
         setOrg(null);
         setOrgName("");
         setOrgDirector("");
         setSalesTypes(["Готівковий", "р/р ФОП", "з ПДВ"]);
         setSelectedCategories(uniqueCats);
+        setVatCostCoefficient("1.345");
       }
       setWarehouses(whData);
     } catch (error) {
@@ -77,6 +80,9 @@ export default function OrganizationSettings() {
   const handleSaveOrg = async () => {
     if (!orgName.trim()) return;
     setSavingOrg(true);
+    const parsedCoeff = parseFloat(vatCostCoefficient);
+    const coeffValue = isNaN(parsedCoeff) ? 1.0 : parsedCoeff;
+
     try {
       if (org) {
         const updated = await OrganizationService.updateOrganization({
@@ -85,6 +91,7 @@ export default function OrganizationSettings() {
           fullDetails: orgDirector,
           salesTypes,
           categories: selectedCategories,
+          vatCostCoefficient: coeffValue,
         });
         setOrg(updated);
         setOrganizations((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
@@ -94,6 +101,7 @@ export default function OrganizationSettings() {
           fullDetails: orgDirector,
           salesTypes,
           categories: selectedCategories,
+          vatCostCoefficient: coeffValue,
         });
         setOrg(created);
         setOrganizations((prev) => [...prev, created]);
@@ -113,6 +121,7 @@ export default function OrganizationSettings() {
     setOrgDirector("");
     setSalesTypes(["Готівковий", "р/р ФОП", "з ПДВ"]);
     setSelectedCategories(availableCategories);
+    setVatCostCoefficient("1.345");
   };
 
   const handleOpenModal = (warehouse?: Warehouse) => {
@@ -286,7 +295,7 @@ export default function OrganizationSettings() {
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
             {t("organization.salesTypes", "Види продажу")}
           </h2>
-          <div className="flex flex-wrap gap-6">
+          <div className="flex flex-wrap gap-6 mb-6">
             {["Готівковий", "р/р ФОП", "з ПДВ"].map(type => (
               <label key={type} className="flex items-center space-x-2 cursor-pointer">
                 <input
@@ -304,6 +313,25 @@ export default function OrganizationSettings() {
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{type}</span>
               </label>
             ))}
+          </div>
+
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Коефіцієнт розрахунку собівартості з ПДВ
+            </label>
+            <div className="max-w-xs">
+              <input
+                type="number"
+                step="0.001"
+                value={vatCostCoefficient}
+                onChange={(e) => setVatCostCoefficient(e.target.value)}
+                placeholder="1.345"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-sm"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Множник собівартості списуваного товару для виду продажу з ПДВ (наприклад 1.345)
+              </p>
+            </div>
           </div>
         </div>
 

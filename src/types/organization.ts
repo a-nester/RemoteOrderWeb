@@ -5,6 +5,7 @@ export interface Organization {
     fullDetails?: string;
     salesTypes?: string[];
     categories?: string[];
+    vatCostCoefficient?: number;
     createdAt?: string;
     updatedAt?: string;
 }
