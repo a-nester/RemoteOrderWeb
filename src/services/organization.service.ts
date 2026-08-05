@@ -35,7 +35,17 @@ export const OrganizationService = {
     // Warehouses
     getWarehouses: async (): Promise<Warehouse[]> => {
         const response = await axios.get(`${BASE_URL}/warehouses`, { headers: getAuthHeader() });
-        return response.data;
+        const warehouses: Warehouse[] = response.data;
+        const user = useAuthStore.getState().user;
+        if (user?.role === 'manager') {
+            const visibleIds = user.visibleWarehouses || [];
+            if (visibleIds.length > 0) {
+                return warehouses.filter((w) => visibleIds.includes(w.id) || w.id === user.warehouseId);
+            } else if (user.warehouseId) {
+                return warehouses.filter((w) => w.id === user.warehouseId);
+            }
+        }
+        return warehouses;
     },
 
     createWarehouse: async (data: Partial<Warehouse>): Promise<Warehouse> => {

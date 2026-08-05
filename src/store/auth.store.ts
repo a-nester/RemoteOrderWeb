@@ -11,6 +11,7 @@ export type User = {
     email: string;
     role: Role;
     warehouseId?: string;
+    visibleWarehouses?: string[];
     preferences?: any;
     permissions?: UserPermissions;
 };
