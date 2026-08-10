@@ -108,8 +108,8 @@ export default function UserFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
             {initialData ? "Редагувати користувача" : "Додати користувача"}
           </h3>
@@ -121,7 +121,7 @@ export default function UserFormModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto flex-1">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Email (Логін)
@@ -378,7 +378,7 @@ export default function UserFormModal({
             )}
           </div>
 
-          <div className="pt-4 flex justify-end">
+          <div className="pt-3 pb-1 flex justify-end sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 -mx-4 -mb-4 px-4 mt-4">
             <button
               type="button"
               onClick={onClose}
