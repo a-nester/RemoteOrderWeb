@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Package, ShoppingBag, RotateCcw, Users, MapPin, Calendar, FileText } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Package, ShoppingBag, RotateCcw, Users, MapPin, FileText } from "lucide-react";
 import type { User } from "../services/users.service";
 import type { Counterparty } from "../types/counterparty";
 import type { Territory } from "../types/territory";
@@ -7,7 +7,7 @@ import { CounterpartyService } from "../services/counterparty.service";
 import { TerritoryService } from "../services/territory.service";
 import { OrderService } from "../services/order.service";
 import { RealizationService } from "../services/realization.service";
-import { BuyerReturnService } from "../services/buyerReturnService";
+import { buyerReturnService } from "../services/buyerReturnService";
 
 interface ManagerDashboardProps {
   managerUser: User;
@@ -29,9 +29,9 @@ export default function ManagerDashboard({ managerUser }: ManagerDashboardProps)
         const [terrs, cps, ords, reals, rets] = await Promise.all([
           TerritoryService.getAll().catch(() => []),
           CounterpartyService.getAll().catch(() => []),
-          OrderService.getAll().catch(() => []),
+          OrderService.getOrders({}).catch(() => []),
           RealizationService.getAll().catch(() => []),
-          BuyerReturnService.getAll().catch(() => []),
+          buyerReturnService.getAll().catch(() => []),
         ]);
 
         setTerritories(terrs);
@@ -39,17 +39,17 @@ export default function ManagerDashboard({ managerUser }: ManagerDashboardProps)
         // Filter counterparties by manager's visibleTerritories
         const visibleTerrIds = managerUser.visibleTerritories || [];
         const managerCps = visibleTerrIds.length > 0
-          ? cps.filter((c) => c.territoryId && visibleTerrIds.includes(c.territoryId))
+          ? cps.filter((c: Counterparty) => c.territoryId && visibleTerrIds.includes(c.territoryId))
           : cps;
 
         setCounterparties(managerCps);
 
-        const managerCpIds = new Set(managerCps.map((c) => String(c.id)));
+        const managerCpIds = new Set(managerCps.map((c: Counterparty) => String(c.id)));
 
         // Filter documents by manager counterparties
-        const managerOrds = ords.filter((o) => o.counterpartyId && managerCpIds.has(String(o.counterpartyId)));
-        const managerReals = reals.filter((r) => r.counterpartyId && managerCpIds.has(String(r.counterpartyId)));
-        const managerRets = rets.filter((br) => br.counterpartyId && managerCpIds.has(String(br.counterpartyId)));
+        const managerOrds = ords.filter((o: any) => o.counterpartyId && managerCpIds.has(String(o.counterpartyId)));
+        const managerReals = reals.filter((r: any) => r.counterpartyId && managerCpIds.has(String(r.counterpartyId)));
+        const managerRets = rets.filter((br: any) => br.counterpartyId && managerCpIds.has(String(br.counterpartyId)));
 
         setOrders(managerOrds);
         setRealizations(managerReals);
@@ -66,13 +66,13 @@ export default function ManagerDashboard({ managerUser }: ManagerDashboardProps)
 
   // Assigned territory names
   const assignedTerritoryNames = territories
-    .filter((t) => (managerUser.visibleTerritories || []).includes(t.id))
-    .map((t) => t.name);
+    .filter((t: Territory) => (managerUser.visibleTerritories || []).includes(t.id))
+    .map((t: Territory) => t.name);
 
   // Totals calculations
-  const totalOrdersAmount = orders.reduce((sum, o) => sum + (Number(o.total || o.amount) || 0), 0);
-  const totalRealizationsAmount = realizations.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
-  const totalReturnsAmount = returns.reduce((sum, br) => sum + (Number(br.totalAmount) || 0), 0);
+  const totalOrdersAmount = orders.reduce((sum: number, o: any) => sum + (Number(o.total || o.amount) || 0), 0);
+  const totalRealizationsAmount = realizations.reduce((sum: number, r: any) => sum + (Number(r.amount) || 0), 0);
+  const totalReturnsAmount = returns.reduce((sum: number, br: any) => sum + (Number(br.totalAmount) || 0), 0);
 
   if (loading) {
     return (
@@ -247,10 +247,10 @@ export default function ManagerDashboard({ managerUser }: ManagerDashboardProps)
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {orders.slice(0, 15).map((ord) => (
+                    {orders.slice(0, 15).map((ord: any) => (
                       <tr key={ord.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                         <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium">
-                          {ord.number || `#${String(ord.id).slice(0, 8)}`}
+                          {ord.docNumber || ord.number || `#${String(ord.id).slice(0, 8)}`}
                           <div className="text-xs text-gray-500 dark:text-gray-400">
                             {new Date(ord.createdAt || ord.date).toLocaleDateString("uk-UA")}
                           </div>
@@ -264,7 +264,7 @@ export default function ManagerDashboard({ managerUser }: ManagerDashboardProps)
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm text-right font-bold text-gray-900 dark:text-white">
-                          {(Number(ord.total || ord.amount) || 0).toLocaleString("uk-UA", { minimumFractionDigits: 2 })} ₴
+                          {(Number(ord.amount || ord.total) || 0).toLocaleString("uk-UA", { minimumFractionDigits: 2 })} ₴
                         </td>
                       </tr>
                     ))}
@@ -299,7 +299,7 @@ export default function ManagerDashboard({ managerUser }: ManagerDashboardProps)
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {counterparties.map((cp) => (
+                    {counterparties.map((cp: Counterparty) => (
                       <tr key={cp.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                         <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
                           {cp.name}

@@ -3,7 +3,8 @@ import Layout from "../components/Layout";
 import CollectionPlanner from "./Admin/CollectionPlanner/CollectionPlanner";
 import ManagerDashboard from "./ManagerDashboard";
 import { useAuthStore } from "../store/auth.store";
-import { UsersService, User } from "../services/users.service";
+import { UsersService } from "../services/users.service";
+import type { User } from "../services/users.service";
 import { Users, ShieldCheck } from "lucide-react";
 
 export default function Dashboard() {
