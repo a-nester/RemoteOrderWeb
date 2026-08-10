@@ -4,8 +4,10 @@ import { X, Save } from "lucide-react";
 import type { User } from "../../services/users.service";
 import { CounterpartyService } from "../../services/counterparty.service";
 import { OrganizationService } from "../../services/organization.service";
+import { TerritoryService } from "../../services/territory.service";
 import type { Counterparty } from "../../types/counterparty";
 import type { Warehouse } from "../../types/organization";
+import type { Territory } from "../../types/territory";
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -35,13 +37,16 @@ export default function UserFormModal({
   const [warehouseId, setWarehouseId] = useState("");
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [territories, setTerritories] = useState<Territory[]>([]);
   const [saving, setSaving] = useState(false);
   const [permissions, setPermissions] = useState<any>(defaultPermissions);
   const [visibleWarehouses, setVisibleWarehouses] = useState<string[]>([]);
+  const [visibleTerritories, setVisibleTerritories] = useState<string[]>([]);
 
   useEffect(() => {
     CounterpartyService.getAll().then(setCounterparties).catch(console.error);
     OrganizationService.getWarehouses().then(setWarehouses).catch(console.error);
+    TerritoryService.getAll().then(setTerritories).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -51,6 +56,7 @@ export default function UserFormModal({
       setCounterpartyId(initialData.counterpartyId || "");
       setWarehouseId(initialData.warehouseId || "");
       setVisibleWarehouses(initialData.visibleWarehouses || []);
+      setVisibleTerritories(initialData.visibleTerritories || []);
       setPassword(""); // Never populate password
 
       if (initialData.permissions) {
@@ -68,6 +74,8 @@ export default function UserFormModal({
       setRole("client");
       setCounterpartyId("");
       setWarehouseId("");
+      setVisibleWarehouses([]);
+      setVisibleTerritories([]);
       setPassword("");
       setPermissions(defaultPermissions);
     }
@@ -84,6 +92,7 @@ export default function UserFormModal({
         data.warehouseId = warehouseId;
       } else if (role === "manager") {
         data.visibleWarehouses = visibleWarehouses;
+        data.visibleTerritories = visibleTerritories;
       }
       if (role === "client" && counterpartyId) {
         data.counterpartyId = counterpartyId;
@@ -162,30 +171,61 @@ export default function UserFormModal({
             </div>
           )}
           {role === "manager" && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Видимі склади (Для менеджера)
-              </label>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {warehouses.map((wh) => (
-                  <label key={wh.id} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      className="mr-2 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                      checked={visibleWarehouses.includes(wh.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setVisibleWarehouses([...visibleWarehouses, wh.id]);
-                        } else {
-                          setVisibleWarehouses(visibleWarehouses.filter(id => id !== wh.id));
-                        }
-                      }}
-                    />
-                    {wh.name}
-                  </label>
-                ))}
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Видимі склади (Для менеджера)
+                </label>
+                <div className="space-y-2 max-h-36 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-md p-2">
+                  {warehouses.map((wh) => (
+                    <label key={wh.id} className="flex items-center text-sm dark:text-gray-300">
+                      <input
+                        type="checkbox"
+                        className="mr-2 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        checked={visibleWarehouses.includes(wh.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setVisibleWarehouses([...visibleWarehouses, wh.id]);
+                          } else {
+                            setVisibleWarehouses(visibleWarehouses.filter(id => id !== wh.id));
+                          }
+                        }}
+                      />
+                      {wh.name}
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Видимість територій (Для менеджера)
+                </label>
+                {territories.length === 0 ? (
+                  <p className="text-xs text-gray-500 italic">Немає створених територій</p>
+                ) : (
+                  <div className="space-y-2 max-h-36 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-md p-2">
+                    {territories.map((t) => (
+                      <label key={t.id} className="flex items-center text-sm dark:text-gray-300">
+                        <input
+                          type="checkbox"
+                          className="mr-2 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          checked={visibleTerritories.includes(t.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setVisibleTerritories([...visibleTerritories, t.id]);
+                            } else {
+                              setVisibleTerritories(visibleTerritories.filter(id => id !== t.id));
+                            }
+                          }}
+                        />
+                        {t.name}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
           {role === "client" && (

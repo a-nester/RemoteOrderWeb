@@ -32,7 +32,8 @@ export interface User {
   email: string;
   role: 'admin' | 'manager' | 'client';
   warehouseId?: string | null; // legacy single‑warehouse field
-  visibleWarehouses?: string[]; // new field for manager visibility
+  visibleWarehouses?: string[]; // field for manager warehouse visibility
+  visibleTerritories?: string[]; // field for manager territory visibility
   counterpartyId?: string | null;
   organizationId?: number | null;
   permissions?: UserPermissions;

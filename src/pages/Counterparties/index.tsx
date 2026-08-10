@@ -147,6 +147,9 @@ export default function Counterparties() {
                 Price Type
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Територія
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Contact
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -170,7 +173,7 @@ export default function Counterparties() {
                     </div>
                   </div>
                 </td>
-                <td colSpan={4}></td>
+                <td colSpan={5}></td>
               </tr>
             ))}
 
@@ -204,6 +207,15 @@ export default function Counterparties() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {cp.priceTypeName || "-"}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {cp.territoryName ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300">
+                      {cp.territoryName}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 text-xs italic">не задано</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {cp.contactPerson || "-"}
