@@ -1,13 +1,16 @@
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProductsStore } from '../store/products.store';
 import { useAuthStore } from '../store/auth.store';
 import { AuthService } from '../services/auth.service';
+import { OrganizationService } from '../services/organization.service';
 import Layout from '../components/Layout';
 import { Plus, FileText, Search, Filter, Check, ChevronDown } from 'lucide-react';
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { PriceTypesService } from '../services/priceTypes.service';
 import type { PriceType } from '../types/priceType';
+import type { Organization } from '../types/organization';
+import type { Product } from '../types/product';
 import PriceListModal from '../components/PriceListModal';
 import { generateExcelPriceList } from '../utils/priceList.utils';
 import { BASE_URL } from '../constants/api';
@@ -25,6 +28,7 @@ function ProductsContent() {
   const navigate = useNavigate();
   const [priceTypes, setPriceTypes] = useState<PriceType[]>([]);
   const [selectedPriceType, setSelectedPriceType] = useState<string>('standard');
+  const [organization, setOrganization] = useState<Organization | null>(null);
   const [isPriceListModalOpen, setIsPriceListModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -39,6 +43,7 @@ function ProductsContent() {
   useEffect(() => {
     loadProducts();
     PriceTypesService.fetchPriceTypes().then(setPriceTypes).catch(console.error);
+    OrganizationService.getOrganization().then(setOrganization).catch(console.error);
   }, [loadProducts]);
 
   useEffect(() => {
@@ -51,19 +56,59 @@ function ProductsContent() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const allCategories = Array.from(new Set(products.map(p => p.category).filter(Boolean))) as string[];
+  const allowedCategories = organization?.categories;
 
-  const filteredProducts = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(p.category || '');
-    return matchesSearch && matchesCategory;
-  });
+  // Categories filter list: ONLY show active categories from global settings if set
+  const allCategories = useMemo(() => {
+    const rawCategories = Array.from(new Set(products.map(p => p.category).filter(Boolean))) as string[];
+    if (Array.isArray(allowedCategories) && allowedCategories.length > 0) {
+      return allowedCategories.filter(cat => rawCategories.includes(cat));
+    }
+    return rawCategories.sort();
+  }, [products, allowedCategories]);
+
+  // Filter products by search and category
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => {
+      if (Array.isArray(allowedCategories) && allowedCategories.length > 0 && p.category) {
+        if (!allowedCategories.includes(p.category)) return false;
+      }
+      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(p.category || '');
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchQuery, selectedCategories, allowedCategories]);
+
+  // Group products by category (like in product picking modal)
+  const groupedProducts = useMemo(() => {
+    const groups: Record<string, Product[]> = {};
+    filteredProducts.forEach((p) => {
+      const cat = p.category || "Без категорії";
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(p);
+    });
+
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+      if (Array.isArray(allowedCategories) && allowedCategories.length > 0) {
+        const idxA = allowedCategories.indexOf(a);
+        const idxB = allowedCategories.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+      }
+      return a.localeCompare(b);
+    });
+
+    return sortedKeys.map((key) => ({
+      category: key,
+      items: groups[key].sort((a, b) => a.name.localeCompare(b.name)),
+    }));
+  }, [filteredProducts, allowedCategories]);
 
   const toggleCategory = (cat: string) => {
     setSelectedCategories(prev => {
       const newCategories = prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat];
       
-      // Update store and backend
       const newPrefs = { ...(user?.preferences || {}), productsSelectedCategories: newCategories };
       setPreferences(newPrefs);
       AuthService.updatePreferences(newPrefs).catch(console.error);
@@ -80,15 +125,15 @@ function ProductsContent() {
   };
 
   const handleDownloadPriceList = (priceTypeId: string, format: 'excel' | 'pdf') => {
-        const priceTypeName = priceTypeId === 'standard' 
-            ? 'Standard' 
-            : priceTypes.find(pt => pt.slug === priceTypeId)?.name || priceTypeId;
+    const priceTypeName = priceTypeId === 'standard' 
+      ? 'Standard' 
+      : priceTypes.find(pt => pt.slug === priceTypeId || pt.id === priceTypeId)?.name || priceTypeId;
 
-        if (format === 'excel') {
-            generateExcelPriceList(filteredProducts, priceTypeId, priceTypeName);
-        } else {
-            window.open(`/products/print?priceType=${priceTypeId}`, '_blank');
-        }
+    if (format === 'excel') {
+      generateExcelPriceList(filteredProducts, priceTypeId, priceTypeName, allowedCategories);
+    } else {
+      window.open(`/products/print?priceType=${priceTypeId}`, '_blank');
+    }
   };
 
   return (
@@ -211,51 +256,62 @@ function ProductsContent() {
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {filteredProducts.map((product) => (
-              <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                <td className="px-3 py-4 max-w-[200px]">
-                  <div className="flex items-center">
-                    <div className="h-10 w-10 flex-shrink-0">
-                      {product.photos && product.photos.length > 0 ? (
-                        <img className="h-10 w-10 rounded-full object-cover" 
-                             src={product.photos[0].startsWith('http') ? product.photos[0] : `${BASE_URL}${product.photos[0]}`} 
-                             alt="" />
-                      ) : (
-                         <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-gray-400 dark:text-gray-300">
-                             N/A
-                         </div>
-                      )}
-                    </div>
-                    <div className="ml-4 dropdown">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white break-words">{product.name}</div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900 dark:text-gray-300">{product.category}</div>
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900 dark:text-gray-300">
-                    {product.prices?.[selectedPriceType] != null 
-                        ? Number(product.prices[selectedPriceType]).toFixed(2) 
-                        : '0.00'}
-                  </div>
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {product.unit}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                  {product.inBox ? product.inBox : '-'}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button 
-                      onClick={() => navigate(`/products/${product.id}`)}
-                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300"
-                  >
-                      Edit
-                  </button>
-                </td>
-              </tr>
+            {groupedProducts.map((group) => (
+              <React.Fragment key={group.category}>
+                {/* Category Header Row */}
+                <tr className="bg-gray-100 dark:bg-gray-700/80 font-bold">
+                  <td colSpan={6} className="px-3 py-2 text-xs uppercase tracking-wider text-indigo-700 dark:text-indigo-300 bg-indigo-50/50 dark:bg-indigo-900/20">
+                    📁 {group.category} ({group.items.length})
+                  </td>
+                </tr>
+                {/* Product Rows */}
+                {group.items.map((product) => (
+                  <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <td className="px-3 py-4 max-w-[200px]">
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 flex-shrink-0">
+                          {product.photos && product.photos.length > 0 ? (
+                            <img className="h-10 w-10 rounded-full object-cover" 
+                                 src={product.photos[0].startsWith('http') ? product.photos[0] : `${BASE_URL}${product.photos[0]}`} 
+                                 alt="" />
+                          ) : (
+                             <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-gray-400 dark:text-gray-300">
+                                 N/A
+                             </div>
+                          )}
+                        </div>
+                        <div className="ml-4 dropdown">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white break-words">{product.name}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-3 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-gray-300">{product.category}</div>
+                    </td>
+                    <td className="px-3 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-gray-300">
+                        {product.prices?.[selectedPriceType] != null 
+                            ? Number(product.prices[selectedPriceType]).toFixed(2) 
+                            : '0.00'}
+                      </div>
+                    </td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {product.unit}
+                    </td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                      {product.inBox ? product.inBox : '-'}
+                    </td>
+                    <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button 
+                          onClick={() => navigate(`/products/${product.id}`)}
+                          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300"
+                      >
+                          Edit
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </React.Fragment>
             ))}
           </tbody>
         </table>
