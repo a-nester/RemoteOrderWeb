@@ -226,17 +226,21 @@ export default function CollectionPlanner({ targetUserId }: CollectionPlannerPro
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         targetUserId={targetUserId}
-        onAdd={async (clientId: string, dayOfWeek: number) => {
+        onAdd={async (clientIds: string[], dayOfWeek: number) => {
           try {
-            const newItem = await collectionService.addScheduleItem(
-              dayOfWeek,
-              clientId,
-              targetUserId,
+            const newItems = await Promise.all(
+              clientIds.map((clientId) =>
+                collectionService.addScheduleItem(
+                  dayOfWeek,
+                  clientId,
+                  targetUserId,
+                )
+              )
             );
-            setItems((prev) => [...prev, newItem]);
+            setItems((prev) => [...prev, ...newItems]);
             setIsModalOpen(false);
           } catch (error) {
-            console.error("Failed to add client", error);
+            console.error("Failed to add clients", error);
             alert(t("common.error"));
           }
         }}
