@@ -225,6 +225,7 @@ export default function CollectionPlanner({ targetUserId }: CollectionPlannerPro
       <AddClientModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        targetUserId={targetUserId}
         onAdd={async (clientId: string, dayOfWeek: number) => {
           try {
             const newItem = await collectionService.addScheduleItem(
