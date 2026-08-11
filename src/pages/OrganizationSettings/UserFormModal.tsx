@@ -5,9 +5,11 @@ import type { User } from "../../services/users.service";
 import { CounterpartyService } from "../../services/counterparty.service";
 import { OrganizationService } from "../../services/organization.service";
 import { TerritoryService } from "../../services/territory.service";
+import { PriceTypesService } from "../../services/priceTypes.service";
 import type { Counterparty } from "../../types/counterparty";
 import type { Warehouse } from "../../types/organization";
 import type { Territory } from "../../types/territory";
+import type { PriceType } from "../../types/priceType";
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -38,15 +40,18 @@ export default function UserFormModal({
   const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [territories, setTerritories] = useState<Territory[]>([]);
+  const [priceTypes, setPriceTypes] = useState<PriceType[]>([]);
   const [saving, setSaving] = useState(false);
   const [permissions, setPermissions] = useState<any>(defaultPermissions);
   const [visibleWarehouses, setVisibleWarehouses] = useState<string[]>([]);
   const [visibleTerritories, setVisibleTerritories] = useState<string[]>([]);
+  const [visiblePriceTypes, setVisiblePriceTypes] = useState<string[]>([]);
 
   useEffect(() => {
     CounterpartyService.getAll().then(setCounterparties).catch(console.error);
     OrganizationService.getWarehouses().then(setWarehouses).catch(console.error);
     TerritoryService.getAll().then(setTerritories).catch(console.error);
+    PriceTypesService.fetchPriceTypes().then(setPriceTypes).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -57,6 +62,7 @@ export default function UserFormModal({
       setWarehouseId(initialData.warehouseId || "");
       setVisibleWarehouses(initialData.visibleWarehouses || []);
       setVisibleTerritories(initialData.visibleTerritories || []);
+      setVisiblePriceTypes(initialData.visiblePriceTypes || []);
       setPassword(""); // Never populate password
 
       if (initialData.permissions) {
@@ -93,6 +99,7 @@ export default function UserFormModal({
       } else if (role === "manager") {
         data.visibleWarehouses = visibleWarehouses;
         data.visibleTerritories = visibleTerritories;
+        data.visiblePriceTypes = visiblePriceTypes;
       }
       if (role === "client" && counterpartyId) {
         data.counterpartyId = counterpartyId;
@@ -220,6 +227,35 @@ export default function UserFormModal({
                           }}
                         />
                         {t.name}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Типи цін (Для менеджера)
+                </label>
+                {priceTypes.length === 0 ? (
+                  <p className="text-xs text-gray-500 italic">Немає типів цін</p>
+                ) : (
+                  <div className="space-y-2 max-h-36 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-md p-2">
+                    {priceTypes.map((pt) => (
+                      <label key={pt.id} className="flex items-center text-sm dark:text-gray-300">
+                        <input
+                          type="checkbox"
+                          className="mr-2 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          checked={visiblePriceTypes.includes(pt.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setVisiblePriceTypes([...visiblePriceTypes, pt.id]);
+                            } else {
+                              setVisiblePriceTypes(visiblePriceTypes.filter(id => id !== pt.id));
+                            }
+                          }}
+                        />
+                        {pt.name} ({pt.currency})
                       </label>
                     ))}
                   </div>

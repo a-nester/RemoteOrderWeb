@@ -10,6 +10,7 @@ export interface CollectionItem {
   status: "planned" | "in_progress" | "done";
   order_count?: number;
   product_count?: number;
+  userId?: string;
 }
 
 export interface DaySummary {
@@ -35,10 +36,16 @@ class CollectionService {
     };
   }
 
-  async getSchedule(): Promise<CollectionItem[]> {
+  async getSchedule(userId?: string): Promise<CollectionItem[]> {
+    const params: any = {};
+    if (userId) params.userId = userId;
+
     const response = await axios.get(
       `${API_URL}/collection-schedule`,
-      this.getHeaders(),
+      {
+        ...this.getHeaders(),
+        params,
+      }
     );
     return response.data;
   }
@@ -46,10 +53,11 @@ class CollectionService {
   async addScheduleItem(
     dayOfWeek: number,
     clientId: string,
+    userId?: string,
   ): Promise<CollectionItem> {
     const response = await axios.post(
       `${API_URL}/collection-schedule`,
-      { dayOfWeek, clientId },
+      { dayOfWeek, clientId, userId },
       this.getHeaders(),
     );
     return response.data;
@@ -80,10 +88,16 @@ class CollectionService {
     await axios.delete(`${API_URL}/collection-schedule/${id}`, this.getHeaders());
   }
 
-  async getDaySummary(dayOfWeek: number): Promise<DaySummary> {
+  async getDaySummary(dayOfWeek: number, userId?: string): Promise<DaySummary> {
+    const params: any = { dayOfWeek };
+    if (userId) params.userId = userId;
+
     const response = await axios.get(
-      `${API_URL}/collection-schedule/day-summary?dayOfWeek=${dayOfWeek}`,
-      this.getHeaders(),
+      `${API_URL}/collection-schedule/day-summary`,
+      {
+        ...this.getHeaders(),
+        params,
+      }
     );
     return response.data;
   }

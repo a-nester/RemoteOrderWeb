@@ -28,7 +28,11 @@ import type { Counterparty } from "../../../types/counterparty";
 import { CounterpartyService } from "../../../services/counterparty.service";
 import { useTranslation } from "react-i18next";
 
-export default function CollectionPlanner() {
+interface CollectionPlannerProps {
+  targetUserId?: string;
+}
+
+export default function CollectionPlanner({ targetUserId }: CollectionPlannerProps) {
   const { t } = useTranslation();
   const [items, setItems] = useState<CollectionItem[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
@@ -60,7 +64,7 @@ export default function CollectionPlanner() {
 
   const fetchSchedule = async () => {
     try {
-      const data = await collectionService.getSchedule();
+      const data = await collectionService.getSchedule(targetUserId);
       setItems(data);
     } catch (error) {
       console.error("Failed to fetch schedule", error);
@@ -79,7 +83,7 @@ export default function CollectionPlanner() {
 
   useEffect(() => {
     fetchSchedule();
-  }, []);
+  }, [targetUserId]);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as number);
@@ -226,6 +230,7 @@ export default function CollectionPlanner() {
             const newItem = await collectionService.addScheduleItem(
               dayOfWeek,
               clientId,
+              targetUserId,
             );
             setItems((prev) => [...prev, newItem]);
             setIsModalOpen(false);

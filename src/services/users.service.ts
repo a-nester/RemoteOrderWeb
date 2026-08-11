@@ -34,6 +34,7 @@ export interface User {
   warehouseId?: string | null; // legacy single‑warehouse field
   visibleWarehouses?: string[]; // field for manager warehouse visibility
   visibleTerritories?: string[]; // field for manager territory visibility
+  visiblePriceTypes?: string[]; // field for manager price types visibility
   counterpartyId?: string | null;
   organizationId?: number | null;
   permissions?: UserPermissions;
