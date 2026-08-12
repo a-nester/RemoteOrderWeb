@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Search, X } from "lucide-react";
 import type { Product } from "../types/product";
@@ -74,89 +74,47 @@ export default function ProductSelector({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4">
       <div className="bg-white dark:bg-gray-800 rounded-none sm:rounded-lg shadow-xl w-full max-w-4xl h-full sm:h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {t("product.select", "Select Product")}
-          </h2>
+        <div className="flex justify-between items-center px-6 py-4 border-b dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            {t("planner.selectProduct", "Підбір товару")}
+          </h3>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white"
+            className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
         {/* Filters */}
-        <div className="p-4 space-y-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-          <div className="relative">
+        <div className="p-4 bg-gray-50 dark:bg-gray-800/50 border-b dark:border-gray-700 flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
             <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              size={20}
+              className="absolute left-3 top-2.5 text-gray-400"
+              size={18}
             />
             <input
               type="text"
-              placeholder={t("common.search", "Search...")}
+              placeholder={t("common.search", "Пошук за назвою...")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500"
-              autoFocus
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
           </div>
-
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="border rounded-lg px-3 py-2 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
             {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${
-                  selectedCategory === cat
-                    ? "bg-blue-600 text-white"
-                    : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
-                }`}
-              >
-                {cat}
-              </button>
+              <option key={cat} value={cat}>
+                {cat === "All" ? "Всі категорії" : cat}
+              </option>
             ))}
-          </div>
+          </select>
         </div>
 
         {/* Product List */}
-        <div className="flex-1 overflow-y-auto p-0">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0 z-10 shadow-sm">
-              <tr>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                >
-                  {t("common.product", "Product")}
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32"
-                >
-                  {t("common.price", "Price")}
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24"
-                >
-                  Залишок
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {groupedProducts.map((group) => (
-                <optgroup
-                  key={group.category}
-                  label="hack-for-react-key"
-                  className="contents"
-                >
-                  {/* Category Header */}
-                  <tr className="bg-gray-100 dark:bg-gray-800">
-                    <td
-                      colSpan={3}
-                      className="px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300"
                     >
                       {group.category}
                     </td>
@@ -200,7 +158,7 @@ export default function ProductSelector({
                       </td>
                     </tr>
                   ))}
-                </optgroup>
+                </React.Fragment>
               ))}
               {filteredProducts.length === 0 && (
                 <tr>
