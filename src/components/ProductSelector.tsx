@@ -115,63 +115,91 @@ export default function ProductSelector({
         </div>
 
         {/* Product List */}
-                    >
-                      {group.category}
-                    </td>
-                  </tr>
-                  {/* Category Products */}
-                  {group.items.map((product) => (
-                    <tr
-                      key={product.id}
-                      onClick={() => onSelect(product)}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-                    >
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                        <div className="font-medium flex items-center gap-2">
-                          {product.name}
-                          {addedItemsMap[product.id] ? (
-                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                               ✓ {addedItemsMap[product.id]}
-                             </span>
-                          ) : null}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {product.unit}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
-                        {Number(
-                          product.prices?.[priceSlug] ||
-                            product.prices?.standard ||
-                            0,
-                        ).toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-indigo-600 dark:text-indigo-400 text-right">
-                        {stockBalances.find((sb) => sb.productId === product.id)
-                          ?.balance
-                          ? Number(
-                              stockBalances.find(
-                                (sb) => sb.productId === product.id,
-                              )?.balance,
-                            ).toFixed(2)
-                          : ""}
+        <div className="flex-1 overflow-y-auto">
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+              {t("common.noResults", "Товарів не знайдено")}
+            </div>
+          ) : (
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0">
+                <tr>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                  >
+                    Товар
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-32"
+                  >
+                    {t("common.price", "Price")}
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-24"
+                  >
+                    Залишок
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                {groupedProducts.map((group) => (
+                  <React.Fragment key={group.category}>
+                    {/* Category Header */}
+                    <tr className="bg-gray-100 dark:bg-gray-800">
+                      <td
+                        colSpan={3}
+                        className="px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300"
+                      >
+                        {group.category}
                       </td>
                     </tr>
-                  ))}
-                </React.Fragment>
-              ))}
-              {filteredProducts.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={3}
-                    className="px-6 py-10 text-center text-gray-500 dark:text-gray-400"
-                  >
-                    {t("common.noResults", "No products found")}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                    {/* Category Products */}
+                    {group.items.map((product) => (
+                      <tr
+                        key={product.id}
+                        onClick={() => onSelect(product)}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+                      >
+                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                          <div className="font-medium flex items-center gap-2">
+                            {product.name}
+                            {addedItemsMap[product.id] ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                ✓ {addedItemsMap[product.id]}
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {product.unit}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
+                          {Number(
+                            product.prices?.[priceSlug] ||
+                              product.prices?.standard ||
+                              0,
+                          ).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-indigo-600 dark:text-indigo-400 text-right">
+                          {stockBalances.find((sb) => sb.productId === product.id)
+                            ?.balance
+                            ? Number(
+                                stockBalances.find(
+                                  (sb) => sb.productId === product.id,
+                                )?.balance,
+                              ).toFixed(2)
+                            : ""}
+                        </td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
