@@ -1,16 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, BarChart2 } from "lucide-react";
 import type { Order, OrderFilter } from "../../types/order";
 import { OrderService } from "../../services/order.service";
 import OrderList from "./OrderList";
+import OrderAnalysisModal from "./OrderAnalysisModal";
 
 export default function Orders() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
 
   // Filters
   const [startDate, setStartDate] = useState(() => {
@@ -143,10 +145,20 @@ export default function Orders() {
             />
           </div>
 
+          {/* Analysis Button */}
+          <button
+            onClick={() => setIsAnalysisModalOpen(true)}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors whitespace-nowrap h-[42px] font-medium text-sm shadow-sm"
+            title="Аналіз замовлень по контрагентах"
+          >
+            <BarChart2 size={18} />
+            Аналіз
+          </button>
+
           {/* Create Button */}
           <button
             onClick={handleCreateOrder}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap h-[42px]"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap h-[42px] font-medium text-sm shadow-sm"
           >
             <Plus size={18} />
             {t("order.create", "New Order")}
@@ -167,6 +179,14 @@ export default function Orders() {
           onStatusChange={handleStatusChange}
         />
       )}
+
+      {/* Order Analysis Modal */}
+      <OrderAnalysisModal
+        isOpen={isAnalysisModalOpen}
+        onClose={() => setIsAnalysisModalOpen(false)}
+        initialStartDate={startDate}
+        initialEndDate={endDate}
+      />
     </div>
   );
 }
