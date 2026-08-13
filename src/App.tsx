@@ -42,6 +42,7 @@ import InventoryReport from "./pages/Reports/InventoryReport";
 import FinanceSettings from "./pages/Finance/Cashboxes";
 import CashTransactions from "./pages/Finance/CashTransactions";
 import { RepostDocuments } from "./pages/Admin/RepostDocuments";
+import DatabaseBackup from "./pages/Admin/DatabaseBackup";
 import "./i18n";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -447,6 +448,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <GoodsReceiptEdit />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/backups"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <DatabaseBackup />
                 </Layout>
               </ProtectedRoute>
             }
