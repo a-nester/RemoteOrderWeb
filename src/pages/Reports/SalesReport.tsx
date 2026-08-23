@@ -14,7 +14,7 @@ import { OrganizationService } from "../../services/organization.service";
 import { CounterpartyService } from "../../services/counterparty.service";
 import type { Counterparty, CounterpartyGroup } from "../../types/counterparty";
 import * as XLSX from "xlsx-js-style";
-import { Download, Printer, ChevronDown, ChevronRight, Check } from "lucide-react";
+import { Download, Printer, ChevronDown, ChevronRight } from "lucide-react";
 
 interface SaleItem {
   id: string;
