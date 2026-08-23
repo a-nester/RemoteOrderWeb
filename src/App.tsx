@@ -43,6 +43,7 @@ import FinanceSettings from "./pages/Finance/Cashboxes";
 import CashTransactions from "./pages/Finance/CashTransactions";
 import { RepostDocuments } from "./pages/Admin/RepostDocuments";
 import DatabaseBackup from "./pages/Admin/DatabaseBackup";
+import UserSessions from "./pages/Service/UserSessions";
 import "./i18n";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -268,6 +269,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <RepostDocuments />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/service/sessions"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <UserSessions />
                 </Layout>
               </ProtectedRoute>
             }

@@ -110,11 +110,29 @@ function aggregateSalesByPeriod(sales: SaleItem[], period: ChartPeriod): PeriodB
   return Array.from(bucketsMap.values()).sort((a, b) => a.key.localeCompare(b.key));
 }
 
-function SalesChart({ sales }: { sales: SaleItem[] }) {
-  const [chartType, setChartType] = useState<ChartType>("bar");
-  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("day");
-  const [showSales, setShowSales] = useState<boolean>(true);
-  const [showProfit, setShowProfit] = useState<boolean>(true);
+interface SalesChartProps {
+  sales: SaleItem[];
+  chartType: ChartType;
+  setChartType: (type: ChartType) => void;
+  chartPeriod: ChartPeriod;
+  setChartPeriod: (period: ChartPeriod) => void;
+  showSales: boolean;
+  setShowSales: (val: boolean) => void;
+  showProfit: boolean;
+  setShowProfit: (val: boolean) => void;
+}
+
+function SalesChart({
+  sales,
+  chartType,
+  setChartType,
+  chartPeriod,
+  setChartPeriod,
+  showSales,
+  setShowSales,
+  showProfit,
+  setShowProfit,
+}: SalesChartProps) {
   const [hoveredBucket, setHoveredBucket] = useState<PeriodBucket | null>(null);
 
   const buckets = useMemo(() => {
@@ -691,8 +709,13 @@ function MultiSelectDropdown<T>({
 
 export default function SalesReport() {
   const { t } = useTranslation();
+  const { user, setPreferences } = useAuthStore();
 
-  const [activeTab, setActiveTab] = useState<TabType>("general");
+  // Active tab state (with user preferences / localStorage memory)
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    return (user?.preferences?.salesActiveTab || localStorage.getItem("sales_activeTab") || "general") as TabType;
+  });
+
   const [sales, setSales] = useState<SaleItem[]>([]);
   const [salesByClient, setSalesByClient] = useState<SalesByClient[]>([]);
   const [salesByProduct, setSalesByProduct] = useState<SalesByProduct[]>([]);
@@ -726,27 +749,102 @@ export default function SalesReport() {
     }
   };
 
-  const { user, setPreferences } = useAuthStore();
-
-  // Filters
+  // Filters with User Preferences & localStorage memory
   const [dateFrom, setDateFrom] = useState<string>(() => user?.preferences?.salesDateFrom || "");
   const [dateTo, setDateTo] = useState<string>(() => {
     if (user?.preferences?.salesDateTo) return user?.preferences?.salesDateTo;
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split("T")[0];
   });
-  const [counterparty, setCounterparty] = useState<string>("");
-  const [groupMode, setGroupMode] = useState<GroupMode>("none");
-  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
-  const [selectedCounterpartyIds, setSelectedCounterpartyIds] = useState<string[]>([]);
+  const [counterparty, setCounterparty] = useState<string>(() => user?.preferences?.salesCounterparty || "");
+  const [groupMode, setGroupMode] = useState<GroupMode>(() => user?.preferences?.salesGroupMode || "none");
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>(() => user?.preferences?.salesSelectedGroupIds || []);
+  const [selectedCounterpartyIds, setSelectedCounterpartyIds] = useState<string[]>(() => user?.preferences?.salesSelectedCounterpartyIds || []);
 
   const [groupsList, setGroupsList] = useState<CounterpartyGroup[]>([]);
   const [counterpartiesList, setCounterpartiesList] = useState<Counterparty[]>([]);
 
-  const [groupBySalesType, setGroupBySalesType] = useState<boolean>(false);
-  const [includeReturns, setIncludeReturns] = useState<boolean>(false);
-  const [salesType, setSalesType] = useState<string>("");
+  const [groupBySalesType, setGroupBySalesType] = useState<boolean>(() => user?.preferences?.salesGroupBySalesType || false);
+  const [includeReturns, setIncludeReturns] = useState<boolean>(() => user?.preferences?.salesIncludeReturns || false);
+  const [salesType, setSalesType] = useState<string>(() => user?.preferences?.salesSalesType || "");
   const [salesTypesList, setSalesTypesList] = useState<string[]>([]);
+
+  // Chart Options state with User Preferences & localStorage memory
+  const [chartType, setChartType] = useState<ChartType>(() => {
+    return (user?.preferences?.salesChartType || localStorage.getItem("sales_chartType") || "bar") as ChartType;
+  });
+  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>(() => {
+    return (user?.preferences?.salesChartPeriod || localStorage.getItem("sales_chartPeriod") || "day") as ChartPeriod;
+  });
+  const [showSales, setShowSales] = useState<boolean>(() => {
+    if (user?.preferences?.salesShowSales !== undefined) return user.preferences.salesShowSales;
+    const local = localStorage.getItem("sales_showSales");
+    return local !== null ? local === "true" : true;
+  });
+  const [showProfit, setShowProfit] = useState<boolean>(() => {
+    if (user?.preferences?.salesShowProfit !== undefined) return user.preferences.salesShowProfit;
+    const local = localStorage.getItem("sales_showProfit");
+    return local !== null ? local === "true" : true;
+  });
+
+  // Save memory function
+  const saveAllPreferences = (overrides?: any) => {
+    const prefs = {
+      ...user?.preferences,
+      salesActiveTab: activeTab,
+      salesDateFrom: dateFrom,
+      salesDateTo: dateTo,
+      salesCounterparty: counterparty,
+      salesGroupMode: groupMode,
+      salesSelectedGroupIds: selectedGroupIds,
+      salesSelectedCounterpartyIds: selectedCounterpartyIds,
+      salesGroupBySalesType: groupBySalesType,
+      salesIncludeReturns: includeReturns,
+      salesSalesType: salesType,
+      salesChartType: chartType,
+      salesChartPeriod: chartPeriod,
+      salesShowSales: showSales,
+      salesShowProfit: showProfit,
+      ...overrides,
+    };
+
+    localStorage.setItem("sales_activeTab", prefs.salesActiveTab);
+    localStorage.setItem("sales_chartType", prefs.salesChartType);
+    localStorage.setItem("sales_chartPeriod", prefs.salesChartPeriod);
+    localStorage.setItem("sales_showSales", String(prefs.salesShowSales));
+    localStorage.setItem("sales_showProfit", String(prefs.salesShowProfit));
+
+    if (user) {
+      setPreferences(prefs);
+      AuthService.updatePreferences(prefs).catch(console.error);
+    }
+  };
+
+  // Persist chart options changes
+  const handleSetChartType = (type: ChartType) => {
+    setChartType(type);
+    saveAllPreferences({ salesChartType: type });
+  };
+
+  const handleSetChartPeriod = (period: ChartPeriod) => {
+    setChartPeriod(period);
+    saveAllPreferences({ salesChartPeriod: period });
+  };
+
+  const handleSetShowSales = (val: boolean) => {
+    setShowSales(val);
+    saveAllPreferences({ salesShowSales: val });
+  };
+
+  const handleSetShowProfit = (val: boolean) => {
+    setShowProfit(val);
+    saveAllPreferences({ salesShowProfit: val });
+  };
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    saveAllPreferences({ salesActiveTab: tab });
+  };
 
   useEffect(() => {
     Promise.all([
@@ -769,12 +867,8 @@ export default function SalesReport() {
     setLoading(true);
     setError(null);
 
-    // Зберігаємо налаштування дат на сервері
-    if (user) {
-      const newPrefs = { ...user.preferences, salesDateFrom: dateFrom, salesDateTo: dateTo };
-      setPreferences(newPrefs);
-      AuthService.updatePreferences(newPrefs).catch(console.error);
-    }
+    // Save active filter preferences
+    saveAllPreferences();
 
     try {
       if (activeTab === "general" || activeTab === "chart") {
@@ -1219,25 +1313,25 @@ export default function SalesReport() {
       <div className="flex gap-6 border-b border-gray-200 mb-6 print:hidden">
         <button
           className={`pb-3 px-2 transition-all duration-200 border-b-2 ${activeTab === "general" ? "border-blue-600 text-blue-600 font-semibold" : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"}`}
-          onClick={() => setActiveTab("general")}
+          onClick={() => handleTabChange("general")}
         >
           {t("reports.generalList", "Загальний список")}
         </button>
         <button
           className={`pb-3 px-2 transition-all duration-200 border-b-2 ${activeTab === "byClient" ? "border-blue-600 text-blue-600 font-semibold" : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"}`}
-          onClick={() => setActiveTab("byClient")}
+          onClick={() => handleTabChange("byClient")}
         >
           {t("reports.byClient", "По клієнтам")}
         </button>
         <button
           className={`pb-3 px-2 transition-all duration-200 border-b-2 ${activeTab === "byProduct" ? "border-blue-600 text-blue-600 font-semibold" : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"}`}
-          onClick={() => setActiveTab("byProduct")}
+          onClick={() => handleTabChange("byProduct")}
         >
           {t("reports.byProduct", "По товарам")}
         </button>
         <button
           className={`pb-3 px-2 transition-all duration-200 border-b-2 flex items-center gap-1.5 ${activeTab === "chart" ? "border-blue-600 text-blue-600 font-semibold" : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"}`}
-          onClick={() => setActiveTab("chart")}
+          onClick={() => handleTabChange("chart")}
         >
           <BarChart2 size={16} />
           Графік
@@ -1257,7 +1351,19 @@ export default function SalesReport() {
 
       {!loading && !error && (
         <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden">
-          {activeTab === "chart" && <SalesChart sales={sales} />}
+          {activeTab === "chart" && (
+            <SalesChart
+              sales={sales}
+              chartType={chartType}
+              setChartType={handleSetChartType}
+              chartPeriod={chartPeriod}
+              setChartPeriod={handleSetChartPeriod}
+              showSales={showSales}
+              setShowSales={handleSetShowSales}
+              showProfit={showProfit}
+              setShowProfit={handleSetShowProfit}
+            />
+          )}
 
           {activeTab === "general" && (
             <div className="overflow-x-auto">
