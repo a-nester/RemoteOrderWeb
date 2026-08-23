@@ -129,6 +129,7 @@ export default function CashTransactions() {
   const [filterDocType, setFilterDocType] = useState<string>(
     user?.preferences?.cashFilterType || "ALL",
   );
+  const [filterCashboxId, setFilterCashboxId] = useState<string>("ALL");
   const [filterCounterparty, setFilterCounterparty] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -286,6 +287,13 @@ export default function CashTransactions() {
       (tx) => tx.type === filterDocType,
     );
   }
+  if (filterCashboxId !== "ALL") {
+    filteredTransactions = filteredTransactions.filter((tx) => {
+      if (tx.cashboxId) return tx.cashboxId === filterCashboxId;
+      const targetCbName = cashboxes.find((c) => c.id === filterCashboxId)?.name;
+      return targetCbName && tx.cashboxName === targetCbName;
+    });
+  }
   if (filterCounterparty) {
     filteredTransactions = filteredTransactions.filter(
       (tx) => tx.counterpartyName === filterCounterparty,
@@ -431,6 +439,19 @@ export default function CashTransactions() {
               className="w-full sm:w-auto rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 px-3"
             />
           </div>
+
+          <select
+            value={filterCashboxId}
+            onChange={(e) => setFilterCashboxId(e.target.value)}
+            className="w-full sm:w-auto rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 px-3"
+          >
+            <option value="ALL">Всі каси</option>
+            {cashboxes.map((cb) => (
+              <option key={cb.id} value={cb.id}>
+                {cb.name}
+              </option>
+            ))}
+          </select>
 
           <select
             value={filterDocType}
