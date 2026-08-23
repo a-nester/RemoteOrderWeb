@@ -75,9 +75,18 @@ export const ReportsService = {
     return response.data;
   },
 
-  getSalesByClient: async (dateFrom?: string, dateTo?: string, counterparty?: string, groupBySalesType?: boolean, salesType?: string, includeReturns?: boolean): Promise<SalesByClient[]> => {
+  getSalesByClient: async (
+    dateFrom?: string, 
+    dateTo?: string, 
+    counterparty?: string, 
+    groupBySalesType?: boolean, 
+    salesType?: string, 
+    includeReturns?: boolean,
+    groupIds?: string,
+    counterpartyIds?: string
+  ): Promise<SalesByClient[]> => {
       const response = await axios.get(`${API_URL}/reports/sales/by-client`, {
-          params: { dateFrom, dateTo, counterparty, groupBySalesType, salesType, includeReturns },
+          params: { dateFrom, dateTo, counterparty, groupBySalesType, salesType, includeReturns, groupIds, counterpartyIds },
           headers: getAuthHeader()
       });
       return response.data;
@@ -91,9 +100,18 @@ export const ReportsService = {
       return response.data;
   },
 
-  getSalesByProduct: async (dateFrom?: string, dateTo?: string, counterparty?: string, groupBySalesType?: boolean, salesType?: string, includeReturns?: boolean): Promise<SalesByProduct[]> => {
+  getSalesByProduct: async (
+    dateFrom?: string, 
+    dateTo?: string, 
+    counterparty?: string, 
+    groupBySalesType?: boolean, 
+    salesType?: string, 
+    includeReturns?: boolean,
+    groupIds?: string,
+    counterpartyIds?: string
+  ): Promise<SalesByProduct[]> => {
       const response = await axios.get(`${API_URL}/reports/sales/by-product`, {
-          params: { dateFrom, dateTo, counterparty, groupBySalesType, salesType, includeReturns },
+          params: { dateFrom, dateTo, counterparty, groupBySalesType, salesType, includeReturns, groupIds, counterpartyIds },
           headers: getAuthHeader()
       });
       return response.data;

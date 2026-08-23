@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment } from "react";
+import { useState, useEffect, useMemo, Fragment } from "react";
 import { RealizationService } from "../../services/realization.service";
 import {
   ReportsService,
@@ -11,12 +11,16 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/auth.store";
 import { AuthService } from "../../services/auth.service";
 import { OrganizationService } from "../../services/organization.service";
+import { CounterpartyService } from "../../services/counterparty.service";
+import type { Counterparty, CounterpartyGroup } from "../../types/counterparty";
 import * as XLSX from "xlsx-js-style";
-import { Download, Printer, ChevronDown, ChevronRight } from "lucide-react";
+import { Download, Printer, ChevronDown, ChevronRight, Check } from "lucide-react";
+
 interface SaleItem {
   id: string;
   number: string;
   date: string;
+  counterpartyId?: string;
   counterpartyName?: string;
   warehouseName: string;
   amount: number;
@@ -27,6 +31,154 @@ interface SaleItem {
 }
 
 type TabType = "general" | "byClient" | "byProduct";
+type GroupMode = "none" | "group" | "group_from_list";
+
+interface MultiSelectDropdownProps<T> {
+  items: T[];
+  selectedIds: string[];
+  onChange: (ids: string[]) => void;
+  getId: (item: T) => string;
+  getName: (item: T) => string;
+  placeholder: string;
+}
+
+function MultiSelectDropdown<T>({
+  items,
+  selectedIds,
+  onChange,
+  getId,
+  getName,
+  placeholder,
+}: MultiSelectDropdownProps<T>) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredItems = useMemo(() => {
+    if (!searchTerm.trim()) return items;
+    return items.filter((item) =>
+      getName(item).toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [items, searchTerm, getName]);
+
+  const toggleItem = (id: string) => {
+    if (selectedIds.includes(id)) {
+      onChange(selectedIds.filter((i) => i !== id));
+    } else {
+      onChange([...selectedIds, id]);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    const visibleIds = filteredItems.map(getId);
+    const allSelected = visibleIds.every((id) => selectedIds.includes(id));
+    if (allSelected) {
+      onChange(selectedIds.filter((id) => !visibleIds.includes(id)));
+    } else {
+      onChange(Array.from(new Set([...selectedIds, ...visibleIds])));
+    }
+  };
+
+  const displayText = useMemo(() => {
+    if (selectedIds.length === 0) return placeholder;
+    if (selectedIds.length === 1) {
+      const found = items.find((i) => getId(i) === selectedIds[0]);
+      return found ? getName(found) : placeholder;
+    }
+    return `Вибрано (${selectedIds.length})`;
+  }, [selectedIds, items, getId, getName, placeholder]);
+
+  return (
+    <div className="relative min-w-[220px]">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between border border-gray-300 px-3 py-1.5 rounded-md bg-white text-sm text-left focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+      >
+        <span className="truncate mr-2 font-medium text-gray-800">
+          {displayText}
+        </span>
+        <ChevronDown size={16} className="text-gray-400 shrink-0" />
+      </button>
+
+      {isOpen && (
+        <>
+          {/* Backdrop overlay */}
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setIsOpen(false)}
+          />
+          {/* Dropdown Menu */}
+          <div className="absolute left-0 mt-1 w-72 bg-white border border-gray-200 rounded-md shadow-lg z-50 p-2 space-y-2">
+            <input
+              type="text"
+              placeholder="Пошук..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-2.5 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+            {filteredItems.length > 0 && (
+              <div className="flex justify-between items-center px-1">
+                <button
+                  type="button"
+                  onClick={toggleSelectAll}
+                  className="text-xs text-blue-600 hover:underline font-medium"
+                >
+                  {filteredItems.every((i) => selectedIds.includes(getId(i)))
+                    ? "Зняти всі"
+                    : "Обрати всіх"}
+                </button>
+                {selectedIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => onChange([])}
+                    className="text-xs text-gray-500 hover:underline"
+                  >
+                    Очистити
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="max-h-48 overflow-y-auto divide-y divide-gray-100 border border-gray-100 rounded">
+              {filteredItems.length === 0 ? (
+                <div className="p-2 text-xs text-gray-400 text-center">
+                  Нічого не знайдено
+                </div>
+              ) : (
+                filteredItems.map((item) => {
+                  const id = getId(item);
+                  const isChecked = selectedIds.includes(id);
+                  return (
+                    <label
+                      key={id}
+                      className="flex items-center px-2 py-1.5 text-xs text-gray-700 hover:bg-blue-50 cursor-pointer select-none"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggleItem(id)}
+                        className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-3.5 w-3.5"
+                      />
+                      <span className="truncate">{getName(item)}</span>
+                    </label>
+                  );
+                })
+              )}
+            </div>
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                className="px-2.5 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Готово
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function SalesReport() {
   const { t } = useTranslation();
@@ -75,20 +227,33 @@ export default function SalesReport() {
     return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split("T")[0];
   });
   const [counterparty, setCounterparty] = useState<string>("");
+  const [groupMode, setGroupMode] = useState<GroupMode>("none");
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  const [selectedCounterpartyIds, setSelectedCounterpartyIds] = useState<string[]>([]);
+
+  const [groupsList, setGroupsList] = useState<CounterpartyGroup[]>([]);
+  const [counterpartiesList, setCounterpartiesList] = useState<Counterparty[]>([]);
+
   const [groupBySalesType, setGroupBySalesType] = useState<boolean>(false);
   const [includeReturns, setIncludeReturns] = useState<boolean>(false);
   const [salesType, setSalesType] = useState<string>("");
   const [salesTypesList, setSalesTypesList] = useState<string[]>([]);
 
   useEffect(() => {
-    OrganizationService.getOrganization()
-      .then((orgs) => {
+    Promise.all([
+      OrganizationService.getOrganization(),
+      CounterpartyService.getGroups(),
+      CounterpartyService.getAll(),
+    ])
+      .then(([orgs, groupsData, cpData]) => {
         const org = Array.isArray(orgs) ? orgs[0] : orgs;
         if (org && org.salesTypes) {
           setSalesTypesList(org.salesTypes);
         }
+        setGroupsList(groupsData || []);
+        setCounterpartiesList(cpData || []);
       })
-      .catch((err) => console.error("Failed to load sales types", err));
+      .catch((err) => console.error("Failed to load report dependencies", err));
   }, []);
 
   const fetchSales = async () => {
@@ -118,12 +283,40 @@ export default function SalesReport() {
           combined = combined.filter((d) => new Date(d.date) >= new Date(dateFrom));
         if (dateTo)
           combined = combined.filter((d) => new Date(d.date) <= new Date(dateTo));
-        if (counterparty)
-          combined = combined.filter((d) =>
-            (d.counterpartyName ?? "")
-              .toLowerCase()
-              .includes(counterparty.toLowerCase()),
-          );
+
+        // Group mode filters for general tab
+        if (groupMode === "none") {
+          if (counterparty)
+            combined = combined.filter((d) =>
+              (d.counterpartyName ?? "")
+                .toLowerCase()
+                .includes(counterparty.toLowerCase())
+            );
+        } else if (groupMode === "group") {
+          if (selectedGroupIds.length > 0) {
+            const cpGroupMap = new Map(counterpartiesList.map((cp) => [cp.id, cp.groupId]));
+            const cpNameGroupMap = new Map(counterpartiesList.map((cp) => [cp.name.toLowerCase(), cp.groupId]));
+            combined = combined.filter((d) => {
+              const cpId = (d as any).counterpartyId;
+              const gId = cpId ? cpGroupMap.get(cpId) : cpNameGroupMap.get((d.counterpartyName || "").toLowerCase());
+              return gId && selectedGroupIds.includes(gId);
+            });
+          }
+        } else if (groupMode === "group_from_list") {
+          if (selectedCounterpartyIds.length > 0) {
+            const selectedNames = new Set(
+              counterpartiesList
+                .filter((cp) => selectedCounterpartyIds.includes(cp.id))
+                .map((cp) => cp.name.toLowerCase())
+            );
+            combined = combined.filter((d) => {
+              const cpId = (d as any).counterpartyId;
+              if (cpId && selectedCounterpartyIds.includes(cpId)) return true;
+              return selectedNames.has((d.counterpartyName || "").toLowerCase());
+            });
+          }
+        }
+
         if (salesType)
           combined = combined.filter(
             (d) => d.type === "REALIZATION" && (d as any).salesType === salesType
@@ -150,6 +343,7 @@ export default function SalesReport() {
             id: r.id,
             number: isReturn ? `Пов. #${r.number}` : r.number,
             date: r.date,
+            counterpartyId: (r as any).counterpartyId,
             counterpartyName: r.counterpartyName ?? "",
             warehouseName: r.warehouseName ?? "",
             amount: Number(r.amount) * sign,
@@ -160,26 +354,48 @@ export default function SalesReport() {
           };
         });
         setSales(mapped);
-      } else if (activeTab === "byClient") {
-        const data = await ReportsService.getSalesByClient(
-          dateFrom,
-          dateTo,
-          counterparty,
-          groupBySalesType,
-          salesType,
-          includeReturns
-        );
-        setSalesByClient(data);
-      } else if (activeTab === "byProduct") {
-        const data = await ReportsService.getSalesByProduct(
-          dateFrom,
-          dateTo,
-          counterparty,
-          groupBySalesType,
-          salesType,
-          includeReturns
-        );
-        setSalesByProduct(data);
+      } else {
+        let filterCounterparty: string | undefined = undefined;
+        let filterGroupIds: string | undefined = undefined;
+        let filterCounterpartyIds: string | undefined = undefined;
+
+        if (groupMode === "none") {
+          filterCounterparty = counterparty || undefined;
+        } else if (groupMode === "group") {
+          if (selectedGroupIds.length > 0) {
+            filterGroupIds = selectedGroupIds.join(",");
+          }
+        } else if (groupMode === "group_from_list") {
+          if (selectedCounterpartyIds.length > 0) {
+            filterCounterpartyIds = selectedCounterpartyIds.join(",");
+          }
+        }
+
+        if (activeTab === "byClient") {
+          const data = await ReportsService.getSalesByClient(
+            dateFrom,
+            dateTo,
+            filterCounterparty,
+            groupBySalesType,
+            salesType,
+            includeReturns,
+            filterGroupIds,
+            filterCounterpartyIds
+          );
+          setSalesByClient(data);
+        } else if (activeTab === "byProduct") {
+          const data = await ReportsService.getSalesByProduct(
+            dateFrom,
+            dateTo,
+            filterCounterparty,
+            groupBySalesType,
+            salesType,
+            includeReturns,
+            filterGroupIds,
+            filterCounterpartyIds
+          );
+          setSalesByProduct(data);
+        }
       }
     } catch (err: any) {
       console.error(err);
@@ -370,18 +586,75 @@ export default function SalesReport() {
             className="border border-gray-300 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+
+        {/* Dynamic Filter Field (Client / Group / Group from list) */}
+        {groupMode === "none" && (
+          <div>
+            <label className="block text-sm mb-1 text-gray-600 font-medium">
+              {t("common.customer", "Клієнт")}
+            </label>
+            <input
+              type="text"
+              value={counterparty}
+              onChange={(e) => setCounterparty(e.target.value)}
+              placeholder={t("common.customer", "Клієнт")}
+              className="border border-gray-300 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[220px]"
+            />
+          </div>
+        )}
+
+        {groupMode === "group" && (
+          <div>
+            <label className="block text-sm mb-1 text-gray-600 font-medium">
+              Група
+            </label>
+            <MultiSelectDropdown
+              items={groupsList}
+              selectedIds={selectedGroupIds}
+              onChange={setSelectedGroupIds}
+              getId={(g) => g.id}
+              getName={(g) => g.name}
+              placeholder="Всі групи"
+            />
+          </div>
+        )}
+
+        {groupMode === "group_from_list" && (
+          <div>
+            <label className="block text-sm mb-1 text-gray-600 font-medium">
+              Група зі списку
+            </label>
+            <MultiSelectDropdown
+              items={counterpartiesList}
+              selectedIds={selectedCounterpartyIds}
+              onChange={setSelectedCounterpartyIds}
+              getId={(c) => c.id}
+              getName={(c) => c.name}
+              placeholder="Всі контрагенти"
+            />
+          </div>
+        )}
+
+        {/* Grouping Select Dropdown (Placed right after Client filter) */}
         <div>
           <label className="block text-sm mb-1 text-gray-600 font-medium">
-            {t("common.customer", "Customer")}
+            Групування
           </label>
-          <input
-            type="text"
-            value={counterparty}
-            onChange={(e) => setCounterparty(e.target.value)}
-            placeholder={t("common.customer", "Customer")}
-            className="border border-gray-300 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[250px]"
-          />
+          <select
+            value={groupMode}
+            onChange={(e) => {
+              setGroupMode(e.target.value as GroupMode);
+              setSelectedGroupIds([]);
+              setSelectedCounterpartyIds([]);
+            }}
+            className="border border-gray-300 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white min-w-[170px]"
+          >
+            <option value="none">Без групування</option>
+            <option value="group">Група</option>
+            <option value="group_from_list">Група із списку</option>
+          </select>
         </div>
+
         <div>
           <label className="block text-sm mb-1 text-gray-600 font-medium">
             {t("reports.salesType", "Вид продажу")}
@@ -486,102 +759,87 @@ export default function SalesReport() {
                       {t("common.customer", "Customer")}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t("reports.salesType", "Вид")}
+                      {t("common.warehouse", "Warehouse")}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t("common.warehouse", "Warehouse")}
+                      Вид продажу
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {t("common.status", "Status")}
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {t("common.amount", "Amount")}
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t("common.profit", "Profit")}
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t("common.profitability", "Рент, %")}
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t("common.status", "Status")}
+                      Прибуток
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {sales.map((sale, index) => (
-                    <tr
-                      key={sale.id}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
+                  {sales.map((row, index) => (
+                    <tr key={row.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                         {index + 1}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {sale.number}
+                        {row.number}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(sale.date).toLocaleDateString()}
+                        {new Date(row.date).toLocaleString('uk-UA')}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                        {sale.counterpartyName}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                        {sale.salesType}
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {row.counterpartyName || t("common.unknown", "Unknown")}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                        {sale.warehouseName}
+                        {row.warehouseName}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
-                        {sale.amount.toFixed(2)} {sale.currency}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-green-600 text-right">
-                        {sale.profit?.toFixed(2) || "-"}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
-                        {sale.amount !== 0 ? ((sale.profit / sale.amount) * 100).toFixed(2) + " %" : "-"}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm">
-                        <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${sale.status === "POSTED" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}
-                        >
-                          {sale.status}
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${row.salesType === 'з ПДВ' ? 'bg-purple-100 text-purple-800' : row.salesType === 'Готівковий' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                          {row.salesType}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            row.status === "POSTED"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {row.status === "POSTED" ? "Проведено" : "Збережено"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                        {formatNum(row.amount)} {row.currency}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
+                        {formatNum(row.profit)} ₴
                       </td>
                     </tr>
                   ))}
                   {sales.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="p-8 text-center text-gray-500">
-                        {t("common.noData", "Немає даних")}
+                      <td
+                        colSpan={9}
+                        className="px-6 py-10 text-center text-gray-500"
+                      >
+                        {t("common.noData", "No data available")}
                       </td>
                     </tr>
                   )}
                 </tbody>
                 {sales.length > 0 && (
-                  <tfoot className="bg-gray-50 border-t-2 border-gray-200">
+                  <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-300">
                     <tr>
-                      <td
-                        colSpan={6}
-                        className="px-4 py-3 text-right text-sm font-bold text-gray-700"
-                      >
-                        {t("common.total", "Всього")}:
+                      <td colSpan={7} className="px-4 py-3 text-right text-gray-700">
+                        Всього:
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
-                        {sales
-                          .reduce((sum, item) => sum + item.amount, 0)
-                          .toFixed(2)}
+                      <td className="px-4 py-3 text-right text-gray-900 text-sm">
+                        {formatNum(sales.reduce((sum, r) => sum + r.amount, 0))} ₴
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-bold text-green-700">
-                        {sales
-                          .reduce((sum, item) => sum + item.profit, 0)
-                          .toFixed(2)}
+                      <td className="px-4 py-3 text-right text-green-600 text-sm">
+                        {formatNum(sales.reduce((sum, r) => sum + r.profit, 0))} ₴
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
-                        {(() => {
-                           const totalAmt = sales.reduce((sum, item) => sum + item.amount, 0);
-                           const totalPrf = sales.reduce((sum, item) => sum + item.profit, 0);
-                           return totalAmt !== 0 ? ((totalPrf / totalAmt) * 100).toFixed(2) + " %" : "-";
-                        })()}
-                      </td>
-                      <td></td>
                     </tr>
                   </tfoot>
                 )}
@@ -598,102 +856,59 @@ export default function SalesReport() {
                       #
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t("common.customer", "Клієнт")}
+                      {t("common.customer", "Customer")}
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t("reports.documentsCount", "К-сть документів")}
+                      К-сть документів
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t("common.amount", "Сума продажів")} (₴)
+                      {t("common.amount", "Amount")}
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t("common.profit", "Прибуток")} (₴)
+                      Прибуток
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t("common.profitability", "Рент, %")}
-                    </th>
+                    {groupBySalesType && (
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Рентабельність %
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {groupBySalesType ? (
-                    Object.entries(
-                      salesByClient.reduce((acc, row) => {
-                        const st = row.salesType || "Не визначено";
-                        if (!acc[st]) acc[st] = [];
-                        acc[st].push(row);
-                        return acc;
-                      }, {} as Record<string, SalesByClient[]>)
-                    ).map(([salesType, rows]) => (
-                      <Fragment key={salesType}>
-                        <tr className="bg-blue-50/50">
-                          <td colSpan={6} className="px-4 py-3 text-sm font-bold text-gray-900 border-y border-gray-200">
-                            {salesType}
-                          </td>
-                        </tr>
-                        {rows.map((row, index) => renderClientRow(row, index))}
-                        <tr className="bg-gray-50 border-t border-gray-200">
-                           <td colSpan={3} className="px-4 py-2 text-right text-sm font-bold text-gray-700">
-                             {t("common.total", "Підсумок")} ({salesType}):
-                           </td>
-                           <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">
-                             {formatNum(rows.reduce((sum, item) => sum + Number(item.totalAmount), 0))}
-                           </td>
-                           <td className="px-4 py-2 text-right text-sm font-bold text-green-700">
-                             {formatNum(rows.reduce((sum, item) => sum + Number(item.totalProfit), 0))}
-                           </td>
-                           <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">
-                             {(() => {
-                               const totalAmt = rows.reduce((sum, item) => sum + Number(item.totalAmount), 0);
-                               const totalPrf = rows.reduce((sum, item) => sum + Number(item.totalProfit), 0);
-                               return totalAmt !== 0 ? ((totalPrf / totalAmt) * 100).toFixed(2) + " %" : "-";
-                             })()}
-                           </td>
-                        </tr>
-                      </Fragment>
-                    ))
-                  ) : (
-                    salesByClient.map((row, index) => renderClientRow(row, index))
-                  )}
+                  {salesByClient.map((row, index) => renderClientRow(row, index))}
                   {salesByClient.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-gray-500">
-                        {t("common.noData", "Немає даних")}
+                      <td
+                        colSpan={groupBySalesType ? 6 : 5}
+                        className="px-6 py-10 text-center text-gray-500"
+                      >
+                        {t("common.noData", "No data available")}
                       </td>
                     </tr>
                   )}
                 </tbody>
                 {salesByClient.length > 0 && (
-                  <tfoot className="bg-gray-50 border-t-2 border-gray-200">
+                  <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-300">
                     <tr>
-                      <td
-                        colSpan={3}
-                        className="px-4 py-3 text-right text-sm font-bold text-gray-700"
-                      >
-                        {t("common.total", "Всього")}:
+                      <td colSpan={2} className="px-4 py-3 text-right text-gray-700">
+                        Всього:
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
-                        {formatNum(
-                          salesByClient.reduce(
-                            (sum, item) => sum + Number(item.totalAmount),
-                            0,
-                          ),
-                        )}
+                      <td className="px-4 py-3 text-right text-gray-900 text-sm">
+                        {salesByClient.reduce((sum, r) => sum + Number(r.documentsCount), 0)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-bold text-green-700">
-                        {formatNum(
-                          salesByClient.reduce(
-                            (sum, item) => sum + Number(item.totalProfit),
-                            0,
-                          ),
-                        )}
+                      <td className="px-4 py-3 text-right text-gray-900 text-sm">
+                        {formatNum(salesByClient.reduce((sum, r) => sum + Number(r.totalAmount), 0))} ₴
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
-                        {(() => {
-                           const totalAmt = salesByClient.reduce((sum, item) => sum + Number(item.totalAmount), 0);
-                           const totalPrf = salesByClient.reduce((sum, item) => sum + Number(item.totalProfit), 0);
-                           return totalAmt !== 0 ? ((totalPrf / totalAmt) * 100).toFixed(2) + " %" : "-";
-                        })()}
+                      <td className="px-4 py-3 text-right text-green-600 text-sm">
+                        {formatNum(salesByClient.reduce((sum, r) => sum + Number(r.totalProfit), 0))} ₴
                       </td>
+                      {groupBySalesType && (
+                        <td className="px-4 py-3 text-right text-gray-900 text-sm">
+                          {salesByClient.reduce((sum, r) => sum + Number(r.totalAmount), 0) !== 0
+                            ? ((salesByClient.reduce((sum, r) => sum + Number(r.totalProfit), 0) / salesByClient.reduce((sum, r) => sum + Number(r.totalAmount), 0)) * 100).toFixed(2) + " %"
+                            : "-"}
+                        </td>
+                      )}
                     </tr>
                   </tfoot>
                 )}
@@ -710,201 +925,120 @@ export default function SalesReport() {
                       #
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t("common.category", "Категорія")}
+                      {t("common.product", "Product")}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t("common.product", "Товар")}
+                      Категорія
                     </th>
+                    {groupBySalesType && (
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Вид продажу
+                      </th>
+                    )}
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t("common.quantity", "Кількість")}
+                      К-сть
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Ціна за од. (₴)
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t("common.amount", "Сума")} (₴)
+                      {t("common.amount", "Amount")}
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Закупівельна вартість (₴)
+                      Закупівельна вартість
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t("common.profit", "Прибуток")} (₴)
+                      Прибуток
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      {t("common.profitability", "Рент, %")}
+                      Маржинальність %
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {groupBySalesType ? (
-                    Object.entries(
-                      salesByProduct.reduce((acc, row) => {
-                        const st = row.salesType || "Не визначено";
-                        if (!acc[st]) acc[st] = [];
-                        acc[st].push(row);
-                        return acc;
-                      }, {} as Record<string, SalesByProduct[]>)
-                    ).map(([salesType, rows]) => (
-                      <Fragment key={salesType}>
-                        <tr className="bg-blue-50/50">
-                          <td colSpan={9} className="px-4 py-3 text-sm font-bold text-gray-900 border-y border-gray-200">
-                            {salesType}
-                          </td>
-                        </tr>
-                        {rows.map((row, index) => (
-                          <tr
-                            key={row.productId}
-                            className="hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                              {index + 1}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 pl-8">
-                              {row.productCategory || "-"}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {row.productName}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
-                              {formatNum(row.totalQuantity)}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
-                              {Number(row.totalQuantity) !== 0 ? (Number(row.totalAmount) / Number(row.totalQuantity)).toFixed(2) : "0.00"}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                              {formatNum(row.totalAmount)}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-600 text-right">
-                              {formatNum(row.totalPurchaseCost)}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
-                              {formatNum(row.totalProfit)}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                              {Number(row.totalAmount) !== 0 ? ((Number(row.totalProfit) / Number(row.totalAmount)) * 100).toFixed(2) + " %" : "-"}
-                            </td>
-                          </tr>
-                        ))}
-                        <tr className="bg-gray-50 border-t border-gray-200">
-                           <td colSpan={3} className="px-4 py-2 text-right text-sm font-bold text-gray-700">
-                             {t("common.total", "Підсумок")} ({salesType}):
-                           </td>
-                           <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">
-                             {formatNum(rows.reduce((sum, item) => sum + Number(item.totalQuantity), 0))}
-                           </td>
-                           <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">
-                             -
-                           </td>
-                           <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">
-                             {formatNum(rows.reduce((sum, item) => sum + Number(item.totalAmount), 0))}
-                           </td>
-                           <td className="px-4 py-2 text-right text-sm font-bold text-gray-700">
-                             {formatNum(rows.reduce((sum, item) => sum + Number(item.totalPurchaseCost), 0))}
-                           </td>
-                           <td className="px-4 py-2 text-right text-sm font-bold text-green-700">
-                             {formatNum(rows.reduce((sum, item) => sum + Number(item.totalProfit), 0))}
-                           </td>
-                           <td className="px-4 py-2 text-right text-sm font-bold text-gray-900">
-                             {(() => {
-                               const totalAmt = rows.reduce((sum, item) => sum + Number(item.totalAmount), 0);
-                               const totalPrf = rows.reduce((sum, item) => sum + Number(item.totalProfit), 0);
-                               return totalAmt !== 0 ? ((totalPrf / totalAmt) * 100).toFixed(2) + " %" : "-";
-                             })()}
-                           </td>
-                        </tr>
-                      </Fragment>
-                    ))
-                  ) : (
-                    salesByProduct.map((row, index) => (
-                      <tr
-                        key={row.productId}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
+                  {salesByProduct.map((row, index) => {
+                    const avgPrice = Number(row.totalQuantity) !== 0 
+                      ? (Number(row.totalAmount) / Number(row.totalQuantity)).toFixed(2) 
+                      : "0.00";
+                    const margin = Number(row.totalAmount) !== 0 
+                      ? ((Number(row.totalProfit) / Number(row.totalAmount)) * 100).toFixed(2) 
+                      : "0.00";
+
+                    return (
+                      <tr key={index} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                           {index + 1}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {row.productCategory || "-"}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                           {row.productName}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
+                            {row.productCategory || "Без категорії"}
+                          </span>
+                        </td>
+                        {groupBySalesType && (
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${row.salesType === 'з ПДВ' ? 'bg-purple-100 text-purple-800' : row.salesType === 'Готівковий' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                              {row.salesType || "-"}
+                            </span>
+                          </td>
+                        )}
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                           {formatNum(row.totalQuantity)}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
-                          {Number(row.totalQuantity) !== 0 ? (Number(row.totalAmount) / Number(row.totalQuantity)).toFixed(2) : "0.00"}
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                          {avgPrice} ₴
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                          {formatNum(row.totalAmount)}
+                          {formatNum(row.totalAmount)} ₴
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-600 text-right">
-                          {formatNum(row.totalPurchaseCost)}
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                          {formatNum(row.totalPurchaseCost)} ₴
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
-                          {formatNum(row.totalProfit)}
+                          {formatNum(row.totalProfit)} ₴
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 text-right">
+                          {margin} %
                         </td>
                       </tr>
-                    ))
-                  )}
+                    );
+                  })}
                   {salesByProduct.length === 0 && (
                     <tr>
-                      <td colSpan={9} className="p-8 text-center text-gray-500">
-                        {t("common.noData", "Немає даних")}
+                      <td
+                        colSpan={groupBySalesType ? 10 : 9}
+                        className="px-6 py-10 text-center text-gray-500"
+                      >
+                        {t("common.noData", "No data available")}
                       </td>
                     </tr>
                   )}
                 </tbody>
                 {salesByProduct.length > 0 && (
-                  <tfoot className="bg-gray-50 border-t-2 border-gray-200">
+                  <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-300">
                     <tr>
-                      <td
-                        colSpan={3}
-                        className="px-4 py-3 text-right text-sm font-bold text-gray-700"
-                      >
-                        {t("common.total", "Всього")}:
+                      <td colSpan={groupBySalesType ? 4 : 3} className="px-4 py-3 text-right text-gray-700">
+                        Всього:
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
-                        {formatNum(
-                          salesByProduct.reduce(
-                            (sum, item) => sum + Number(item.totalQuantity),
-                            0,
-                          ),
-                        )}
+                      <td className="px-4 py-3 text-right text-gray-900 text-sm">
+                        {formatNum(salesByProduct.reduce((sum, r) => sum + Number(r.totalQuantity), 0))}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
-                        -
+                      <td className="px-4 py-3 text-right text-gray-500 text-sm">-</td>
+                      <td className="px-4 py-3 text-right text-gray-900 text-sm">
+                        {formatNum(salesByProduct.reduce((sum, r) => sum + Number(r.totalAmount), 0))} ₴
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
-                        {formatNum(
-                          salesByProduct.reduce(
-                            (sum, item) => sum + Number(item.totalAmount),
-                            0,
-                          ),
-                        )}
+                      <td className="px-4 py-3 text-right text-gray-500 text-sm">
+                        {formatNum(salesByProduct.reduce((sum, r) => sum + Number(r.totalPurchaseCost), 0))} ₴
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-700">
-                        {formatNum(
-                          salesByProduct.reduce(
-                            (sum, item) => sum + Number(item.totalPurchaseCost),
-                            0,
-                          ),
-                        )}
+                      <td className="px-4 py-3 text-right text-green-600 text-sm">
+                        {formatNum(salesByProduct.reduce((sum, r) => sum + Number(r.totalProfit), 0))} ₴
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-bold text-green-700">
-                        {formatNum(
-                          salesByProduct.reduce(
-                            (sum, item) => sum + Number(item.totalProfit),
-                            0,
-                          ),
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right text-sm font-bold text-gray-900">
-                        {(() => {
-                           const totalAmt = salesByProduct.reduce((sum, item) => sum + Number(item.totalAmount), 0);
-                           const totalPrf = salesByProduct.reduce((sum, item) => sum + Number(item.totalProfit), 0);
-                           return totalAmt !== 0 ? ((totalPrf / totalAmt) * 100).toFixed(2) + " %" : "-";
-                        })()}
+                      <td className="px-4 py-3 text-right text-gray-900 text-sm">
+                        {salesByProduct.reduce((sum, r) => sum + Number(r.totalAmount), 0) !== 0
+                          ? ((salesByProduct.reduce((sum, r) => sum + Number(r.totalProfit), 0) / salesByProduct.reduce((sum, r) => sum + Number(r.totalAmount), 0)) * 100).toFixed(2) + " %"
+                          : "0.00 %"}
                       </td>
                     </tr>
                   </tfoot>
