@@ -14,7 +14,7 @@ import { OrganizationService } from "../../services/organization.service";
 import { CounterpartyService } from "../../services/counterparty.service";
 import type { Counterparty, CounterpartyGroup } from "../../types/counterparty";
 import * as XLSX from "xlsx-js-style";
-import { Download, Printer, ChevronDown, ChevronRight } from "lucide-react";
+import { Download, Printer, ChevronDown, ChevronRight, BarChart2 } from "lucide-react";
 
 interface SaleItem {
   id: string;
@@ -30,8 +30,517 @@ interface SaleItem {
   salesType?: string;
 }
 
-type TabType = "general" | "byClient" | "byProduct";
+type TabType = "general" | "byClient" | "byProduct" | "chart";
 type GroupMode = "none" | "group" | "group_from_list";
+
+type ChartPeriod = "day" | "week" | "month" | "year";
+type ChartType = "bar" | "line" | "area";
+
+interface PeriodBucket {
+  key: string;
+  label: string;
+  amount: number;
+  profit: number;
+  count: number;
+}
+
+function aggregateSalesByPeriod(sales: SaleItem[], period: ChartPeriod): PeriodBucket[] {
+  const bucketsMap = new Map<string, PeriodBucket>();
+
+  sales.forEach((s) => {
+    const d = new Date(s.date);
+    if (isNaN(d.getTime())) return;
+
+    let key = "";
+    let label = "";
+
+    if (period === "day") {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      key = `${year}-${month}-${day}`;
+      label = `${day}.${month}.${year}`;
+    } else if (period === "week") {
+      const targetDate = new Date(d.getTime());
+      const dayOfWeek = targetDate.getDay();
+      const diffToMonday = targetDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+      const monday = new Date(targetDate.setDate(diffToMonday));
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+
+      const mDay = String(monday.getDate()).padStart(2, "0");
+      const mMonth = String(monday.getMonth() + 1).padStart(2, "0");
+      const sDay = String(sunday.getDate()).padStart(2, "0");
+      const sMonth = String(sunday.getMonth() + 1).padStart(2, "0");
+
+      key = monday.toISOString().split("T")[0];
+      label = `${mDay}.${mMonth} - ${sDay}.${sMonth}`;
+    } else if (period === "month") {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      key = `${year}-${month}`;
+
+      const monthNames = [
+        "Січ", "Лют", "Бер", "Квіт", "Трав", "Черв",
+        "Лип", "Серп", "Вер", "Жовт", "Лист", "Груд"
+      ];
+      label = `${monthNames[d.getMonth()]} ${year}`;
+    } else if (period === "year") {
+      const year = d.getFullYear();
+      key = `${year}`;
+      label = `${year} р.`;
+    }
+
+    if (!bucketsMap.has(key)) {
+      bucketsMap.set(key, {
+        key,
+        label,
+        amount: 0,
+        profit: 0,
+        count: 0,
+      });
+    }
+
+    const bucket = bucketsMap.get(key)!;
+    bucket.amount += Number(s.amount || 0);
+    bucket.profit += Number(s.profit || 0);
+    bucket.count += 1;
+  });
+
+  return Array.from(bucketsMap.values()).sort((a, b) => a.key.localeCompare(b.key));
+}
+
+function SalesChart({ sales }: { sales: SaleItem[] }) {
+  const [chartType, setChartType] = useState<ChartType>("bar");
+  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>("day");
+  const [showSales, setShowSales] = useState<boolean>(true);
+  const [showProfit, setShowProfit] = useState<boolean>(true);
+  const [hoveredBucket, setHoveredBucket] = useState<PeriodBucket | null>(null);
+
+  const buckets = useMemo(() => {
+    return aggregateSalesByPeriod(sales, chartPeriod);
+  }, [sales, chartPeriod]);
+
+  const totalSales = useMemo(() => buckets.reduce((sum, b) => sum + b.amount, 0), [buckets]);
+  const totalProfit = useMemo(() => buckets.reduce((sum, b) => sum + b.profit, 0), [buckets]);
+  const totalDocs = useMemo(() => buckets.reduce((sum, b) => sum + b.count, 0), [buckets]);
+  const avgCheck = totalDocs > 0 ? totalSales / totalDocs : 0;
+
+  const maxVal = useMemo(() => {
+    let max = 0;
+    buckets.forEach((b) => {
+      if (showSales && b.amount > max) max = b.amount;
+      if (showProfit && b.profit > max) max = b.profit;
+    });
+    return max > 0 ? max * 1.15 : 100;
+  }, [buckets, showSales, showProfit]);
+
+  const svgWidth = 800;
+  const svgHeight = 320;
+  const paddingLeft = 65;
+  const paddingRight = 25;
+  const paddingTop = 30;
+  const paddingBottom = 45;
+
+  const chartW = svgWidth - paddingLeft - paddingRight;
+  const chartH = svgHeight - paddingTop - paddingBottom;
+
+  const getX = (index: number) => {
+    if (buckets.length <= 1) return paddingLeft + chartW / 2;
+    return paddingLeft + (index / (buckets.length - 1)) * chartW;
+  };
+
+  const getBarX = (index: number, barWidth: number) => {
+    const slotW = chartW / buckets.length;
+    return paddingLeft + index * slotW + (slotW - barWidth) / 2;
+  };
+
+  const getY = (val: number) => {
+    const ratio = Math.max(0, val) / maxVal;
+    return paddingTop + chartH - ratio * chartH;
+  };
+
+  const getPathD = (metric: "amount" | "profit") => {
+    if (buckets.length === 0) return "";
+    return buckets
+      .map((b, i) => {
+        const x = buckets.length === 1 ? paddingLeft + chartW / 2 : getX(i);
+        const y = getY(metric === "amount" ? b.amount : b.profit);
+        return `${i === 0 ? "M" : "L"} ${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(" ");
+  };
+
+  const getAreaD = (metric: "amount" | "profit") => {
+    if (buckets.length === 0) return "";
+    const lineD = getPathD(metric);
+    const lastX = buckets.length === 1 ? paddingLeft + chartW / 2 : getX(buckets.length - 1);
+    const firstX = buckets.length === 1 ? paddingLeft + chartW / 2 : getX(0);
+    const bottomY = paddingTop + chartH;
+    return `${lineD} L ${lastX.toFixed(1)},${bottomY} L ${firstX.toFixed(1)},${bottomY} Z`;
+  };
+
+  return (
+    <div className="p-6 space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg">
+          <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+            Сума продажів
+          </div>
+          <div className="text-xl font-bold text-gray-900 dark:text-white mt-1">
+            {totalSales.toLocaleString('uk-UA', { minimumFractionDigits: 2 })} ₴
+          </div>
+        </div>
+
+        <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-lg">
+          <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+            Прибуток
+          </div>
+          <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+            {totalProfit.toLocaleString('uk-UA', { minimumFractionDigits: 2 })} ₴
+          </div>
+        </div>
+
+        <div className="p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800 rounded-lg">
+          <div className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider">
+            Середній чек
+          </div>
+          <div className="text-xl font-bold text-gray-900 dark:text-white mt-1">
+            {avgCheck.toLocaleString('uk-UA', { minimumFractionDigits: 2 })} ₴
+          </div>
+        </div>
+
+        <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-lg">
+          <div className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+            Всього документів
+          </div>
+          <div className="text-xl font-bold text-gray-900 dark:text-white mt-1">
+            {totalDocs}
+          </div>
+        </div>
+      </div>
+
+      {/* Chart Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+            Тип графіку:
+          </span>
+          <div className="inline-flex rounded-md shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setChartType("bar")}
+              className={`px-3 py-1.5 text-xs font-medium ${
+                chartType === "bar"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+              }`}
+            >
+              Стовпчастий
+            </button>
+            <button
+              type="button"
+              onClick={() => setChartType("line")}
+              className={`px-3 py-1.5 text-xs font-medium border-l border-gray-300 dark:border-gray-600 ${
+                chartType === "line"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+              }`}
+            >
+              Лінійний
+            </button>
+            <button
+              type="button"
+              onClick={() => setChartType("area")}
+              className={`px-3 py-1.5 text-xs font-medium border-l border-gray-300 dark:border-gray-600 ${
+                chartType === "area"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+              }`}
+            >
+              З областю
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+            Період:
+          </span>
+          <select
+            value={chartPeriod}
+            onChange={(e) => setChartPeriod(e.target.value as ChartPeriod)}
+            className="border border-gray-300 dark:border-gray-600 px-3 py-1.5 rounded-md text-xs bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="day">По дням</option>
+            <option value="week">По тижнях</option>
+            <option value="month">По місяцях</option>
+            <option value="year">По роках</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showSales}
+              onChange={(e) => setShowSales(e.target.checked)}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-3.5 w-3.5"
+            />
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-blue-600 mr-0.5"></span>
+            Продажі
+          </label>
+          <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showProfit}
+              onChange={(e) => setShowProfit(e.target.checked)}
+              className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 h-3.5 w-3.5"
+            />
+            <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-0.5"></span>
+            Прибуток
+          </label>
+        </div>
+      </div>
+
+      {/* SVG Chart Area */}
+      {buckets.length === 0 ? (
+        <div className="py-16 text-center text-gray-400 text-sm">
+          Немає даних для відображення графіка за вибраний період або фільтри.
+        </div>
+      ) : (
+        <div className="relative w-full overflow-x-auto">
+          <svg
+            viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+            className="w-full h-auto max-h-[420px] select-none"
+          >
+            <defs>
+              <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#2563eb" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#2563eb" stopOpacity="0.0" />
+              </linearGradient>
+              <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+              </linearGradient>
+            </defs>
+
+            {/* Y-Axis Grid Lines & Labels */}
+            {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+              const val = maxVal * (1 - ratio);
+              const y = paddingTop + ratio * chartH;
+              return (
+                <g key={ratio}>
+                  <line
+                    x1={paddingLeft}
+                    y1={y}
+                    x2={svgWidth - paddingRight}
+                    y2={y}
+                    stroke="#e5e7eb"
+                    strokeDasharray="4 4"
+                  />
+                  <text
+                    x={paddingLeft - 8}
+                    y={y + 4}
+                    textAnchor="end"
+                    className="text-[10px] fill-gray-400 font-medium"
+                  >
+                    {Math.round(val).toLocaleString("uk-UA")} ₴
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Area Chart Mode */}
+            {chartType === "area" && (
+              <>
+                {showSales && (
+                  <path d={getAreaD("amount")} fill="url(#salesGrad)" />
+                )}
+                {showProfit && (
+                  <path d={getAreaD("profit")} fill="url(#profitGrad)" />
+                )}
+              </>
+            )}
+
+            {/* Bar Chart Mode */}
+            {chartType === "bar" && (
+              <>
+                {buckets.map((b, i) => {
+                  const slotW = chartW / buckets.length;
+                  const numMetrics = (showSales ? 1 : 0) + (showProfit ? 1 : 0);
+                  if (numMetrics === 0) return null;
+
+                  const totalBarGroupW = Math.min(slotW * 0.7, 45);
+                  const singleBarW = totalBarGroupW / numMetrics;
+                  const startX = getBarX(i, totalBarGroupW);
+
+                  const salesY = getY(b.amount);
+                  const salesH = paddingTop + chartH - salesY;
+                  const profitY = getY(b.profit);
+                  const profitH = paddingTop + chartH - profitY;
+
+                  return (
+                    <g
+                      key={b.key}
+                      onMouseEnter={() => setHoveredBucket(b)}
+                      onMouseLeave={() => setHoveredBucket(null)}
+                      className="cursor-pointer transition-opacity hover:opacity-80"
+                    >
+                      {showSales && (
+                        <rect
+                          x={startX}
+                          y={salesY}
+                          width={singleBarW}
+                          height={Math.max(2, salesH)}
+                          fill="#2563eb"
+                          rx="3"
+                        />
+                      )}
+                      {showProfit && (
+                        <rect
+                          x={startX + (showSales ? singleBarW : 0)}
+                          y={profitY}
+                          width={singleBarW}
+                          height={Math.max(2, profitH)}
+                          fill="#10b981"
+                          rx="3"
+                        />
+                      )}
+                    </g>
+                  );
+                })}
+              </>
+            )}
+
+            {/* Line / Area Lines & Points */}
+            {(chartType === "line" || chartType === "area") && (
+              <>
+                {showSales && (
+                  <path
+                    d={getPathD("amount")}
+                    fill="none"
+                    stroke="#2563eb"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
+                {showProfit && (
+                  <path
+                    d={getPathD("profit")}
+                    fill="none"
+                    stroke="#10b981"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
+
+                {/* Data Points */}
+                {buckets.map((b, i) => {
+                  const x = buckets.length === 1 ? paddingLeft + chartW / 2 : getX(i);
+                  const sY = getY(b.amount);
+                  const pY = getY(b.profit);
+                  return (
+                    <g
+                      key={b.key}
+                      onMouseEnter={() => setHoveredBucket(b)}
+                      onMouseLeave={() => setHoveredBucket(null)}
+                      className="cursor-pointer"
+                    >
+                      <line
+                        x1={x}
+                        y1={paddingTop}
+                        x2={x}
+                        y2={paddingTop + chartH}
+                        stroke="transparent"
+                        strokeWidth={Math.max(12, chartW / buckets.length)}
+                      />
+                      {showSales && (
+                        <circle
+                          cx={x}
+                          cy={sY}
+                          r={hoveredBucket?.key === b.key ? 6 : 4}
+                          fill="#2563eb"
+                          stroke="#ffffff"
+                          strokeWidth="2"
+                          className="transition-all"
+                        />
+                      )}
+                      {showProfit && (
+                        <circle
+                          cx={x}
+                          cy={pY}
+                          r={hoveredBucket?.key === b.key ? 6 : 4}
+                          fill="#10b981"
+                          stroke="#ffffff"
+                          strokeWidth="2"
+                          className="transition-all"
+                        />
+                      )}
+                    </g>
+                  );
+                })}
+              </>
+            )}
+
+            {/* X-Axis Labels */}
+            {buckets.map((b, i) => {
+              const step = Math.ceil(buckets.length / 12);
+              if (i % step !== 0 && i !== buckets.length - 1) return null;
+
+              const x =
+                chartType === "bar"
+                  ? paddingLeft + (i + 0.5) * (chartW / buckets.length)
+                  : buckets.length === 1
+                  ? paddingLeft + chartW / 2
+                  : getX(i);
+
+              return (
+                <text
+                  key={b.key}
+                  x={x}
+                  y={svgHeight - 12}
+                  textAnchor="middle"
+                  className="text-[11px] fill-gray-500 font-medium"
+                >
+                  {b.label}
+                </text>
+              );
+            })}
+          </svg>
+
+          {/* Hover Tooltip Card */}
+          {hoveredBucket && (
+            <div className="absolute top-2 right-4 bg-gray-900/90 text-white p-3 rounded-lg shadow-xl text-xs space-y-1 z-30 pointer-events-none backdrop-blur-sm border border-gray-700">
+              <div className="font-bold text-gray-200 border-b border-gray-700 pb-1 mb-1">
+                {hoveredBucket.label}
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-blue-400">Продажі:</span>
+                <span className="font-bold">
+                  {hoveredBucket.amount.toLocaleString("uk-UA", { minimumFractionDigits: 2 })} ₴
+                </span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-emerald-400">Прибуток:</span>
+                <span className="font-bold">
+                  {hoveredBucket.profit.toLocaleString("uk-UA", { minimumFractionDigits: 2 })} ₴
+                </span>
+              </div>
+              <div className="flex justify-between gap-4 text-gray-400 pt-0.5 border-t border-gray-700/50">
+                <span>Документів:</span>
+                <span className="font-medium text-gray-300">{hoveredBucket.count}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface MultiSelectDropdownProps<T> {
   items: T[];
@@ -268,7 +777,7 @@ export default function SalesReport() {
     }
 
     try {
-      if (activeTab === "general") {
+      if (activeTab === "general" || activeTab === "chart") {
         const [realizations, returns] = await Promise.all([
           RealizationService.getAll(),
           buyerReturnService.getAll()
@@ -284,7 +793,7 @@ export default function SalesReport() {
         if (dateTo)
           combined = combined.filter((d) => new Date(d.date) <= new Date(dateTo));
 
-        // Group mode filters for general tab
+        // Group mode filters for general & chart tab
         if (groupMode === "none") {
           if (counterparty)
             combined = combined.filter((d) =>
@@ -417,12 +926,12 @@ export default function SalesReport() {
   };
 
   const exportToExcel = () => {
-    if (sales.length === 0 && activeTab === "general") return;
+    if (sales.length === 0 && (activeTab === "general" || activeTab === "chart")) return;
 
     let excelData: any[] = [];
     let sheetName = "Звіт_По_Продажам";
 
-    if (activeTab === "general") {
+    if (activeTab === "general" || activeTab === "chart") {
       excelData = sales.map((row) => ({
         "Номер": row.number,
         "Дата": new Date(row.date).toLocaleString('uk-UA'),
@@ -726,6 +1235,13 @@ export default function SalesReport() {
         >
           {t("reports.byProduct", "По товарам")}
         </button>
+        <button
+          className={`pb-3 px-2 transition-all duration-200 border-b-2 flex items-center gap-1.5 ${activeTab === "chart" ? "border-blue-600 text-blue-600 font-semibold" : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"}`}
+          onClick={() => setActiveTab("chart")}
+        >
+          <BarChart2 size={16} />
+          Графік
+        </button>
       </div>
 
       {loading && (
@@ -741,6 +1257,8 @@ export default function SalesReport() {
 
       {!loading && !error && (
         <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden">
+          {activeTab === "chart" && <SalesChart sales={sales} />}
+
           {activeTab === "general" && (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
