@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Database, Download, Trash2, Plus, RefreshCw, HardDrive, Clock, ShieldAlert } from 'lucide-react';
+import { Database, Download, Trash2, Plus, RefreshCw, HardDrive, Clock, ShieldAlert, AlertTriangle } from 'lucide-react';
 import { BackupService, type BackupFile } from '../../services/backup.service';
 
 export default function DatabaseBackup() {
@@ -8,6 +8,7 @@ export default function DatabaseBackup() {
   const [backups, setBackups] = useState<BackupFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
@@ -16,11 +17,15 @@ export default function DatabaseBackup() {
 
   const loadBackups = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await BackupService.getBackups();
-      setBackups(data);
-    } catch (error) {
-      console.error('Failed to load backups:', error);
+      setBackups(data || []);
+    } catch (err: any) {
+      console.error('Failed to load backups:', err);
+      const errMsg = err?.response?.data?.error || err?.message || 'Помилка завантаження резервних копій';
+      setError(errMsg);
+      setBackups([]);
     } finally {
       setLoading(false);
     }
@@ -28,12 +33,14 @@ export default function DatabaseBackup() {
 
   const handleCreateBackup = async () => {
     setCreating(true);
+    setError(null);
     try {
       await BackupService.createBackup();
       await loadBackups();
-    } catch (error) {
-      console.error('Failed to create backup:', error);
-      alert(t('common.error', 'Failed to create backup'));
+    } catch (err: any) {
+      console.error('Failed to create backup:', err);
+      const errMsg = err?.response?.data?.error || err?.response?.data?.details || 'Не вдалося створити резервну копію';
+      alert(`Помилка: ${errMsg}`);
     } finally {
       setCreating(false);
     }
@@ -43,16 +50,16 @@ export default function DatabaseBackup() {
     setActionLoading(filename);
     try {
       await BackupService.downloadBackup(filename);
-    } catch (error) {
-      console.error('Failed to download backup:', error);
-      alert(t('common.error', 'Failed to download backup'));
+    } catch (err: any) {
+      console.error('Failed to download backup:', err);
+      alert('Помилка при завантаженні файлу бекапу');
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleDelete = async (filename: string) => {
-    if (!window.confirm(t('common.confirmDelete', `Are you sure you want to delete backup ${filename}?`))) {
+    if (!window.confirm(t('common.confirmDelete', `Ви дійсно бажаєте видалити резервну копію ${filename}?`))) {
       return;
     }
 
@@ -60,22 +67,23 @@ export default function DatabaseBackup() {
     try {
       await BackupService.deleteBackup(filename);
       setBackups(prev => prev.filter(b => b.filename !== filename));
-    } catch (error) {
-      console.error('Failed to delete backup:', error);
-      alert(t('common.error', 'Failed to delete backup'));
+    } catch (err: any) {
+      console.error('Failed to delete backup:', err);
+      alert('Помилка при видаленні резервної копії');
     } finally {
       setActionLoading(null);
     }
   };
 
   const formatSize = (bytes: number) => {
+    if (!bytes || isNaN(bytes)) return '0 B';
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
-  const totalSize = backups.reduce((acc, b) => acc + b.size, 0);
-  const lastBackup = backups.length > 0 ? backups[0].createdAt : null;
+  const totalSize = (backups || []).reduce((acc, b) => acc + (b.size || 0), 0);
+  const lastBackup = backups && backups.length > 0 ? backups[0].createdAt : null;
 
   return (
     <div className="space-y-6">
@@ -116,6 +124,14 @@ export default function DatabaseBackup() {
         </div>
       </div>
 
+      {/* Error alert */}
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4 flex gap-3 items-center text-red-700 dark:text-red-300 text-sm font-medium">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-red-600" />
+          <span>{error}</span>
+        </div>
+      )}
+
       {/* Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow flex items-center gap-4">
@@ -124,7 +140,7 @@ export default function DatabaseBackup() {
           </div>
           <div>
             <div className="text-sm text-gray-500 dark:text-gray-400">Всього копій</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{backups.length}</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{(backups || []).length}</div>
           </div>
         </div>
 
@@ -145,7 +161,7 @@ export default function DatabaseBackup() {
           <div>
             <div className="text-sm text-gray-500 dark:text-gray-400">Останній бекап</div>
             <div className="text-sm font-semibold text-gray-900 dark:text-white mt-1">
-              {lastBackup ? new Date(lastBackup).toLocaleString() : 'Відсутній'}
+              {lastBackup ? new Date(lastBackup).toLocaleString('uk-UA') : 'Відсутній'}
             </div>
           </div>
         </div>
@@ -157,7 +173,7 @@ export default function DatabaseBackup() {
         <div className="text-xs text-amber-800 dark:text-amber-300 space-y-1">
           <p className="font-semibold">Правило збереження бекапів (Retention Policy):</p>
           <p>
-            Автоматичний розклад здійснює створення копії щодня о 03:00. Зберігаються останні 7 дампів, старіші видаляються автоматично.
+            Автоматичний розклад здійснює створення копії щодня. Зберігаються останні 7 дампів, старіші видаляються автоматично.
           </p>
         </div>
       </div>
@@ -188,10 +204,21 @@ export default function DatabaseBackup() {
                   Завантаження списку бекапів...
                 </td>
               </tr>
-            ) : backups.length === 0 ? (
+            ) : !backups || backups.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                  Резервних копій поки немає. Натисніть "Створити резервну копію", щоб згенерувати перший дамп.
+                <td colSpan={4} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400 space-y-2">
+                  <p className="font-medium">Резервних копій у локальній папці сервера поки немає.</p>
+                  <p className="text-xs text-gray-400">
+                    Це трапляється після перезапуску контейнера або розгортання на хмарному хостингу.
+                  </p>
+                  <button
+                    onClick={handleCreateBackup}
+                    disabled={creating}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-medium mt-2"
+                  >
+                    <Plus size={14} />
+                    Створити перший бекап зараз
+                  </button>
                 </td>
               </tr>
             ) : (
@@ -201,7 +228,7 @@ export default function DatabaseBackup() {
                     {backup.filename}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                    {new Date(backup.createdAt).toLocaleString()}
+                    {new Date(backup.createdAt).toLocaleString('uk-UA')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300 font-mono">
                     {formatSize(backup.size)}

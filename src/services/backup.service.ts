@@ -21,7 +21,9 @@ export const BackupService = {
    */
   getBackups: async (): Promise<BackupFile[]> => {
     const response = await axios.get(BACKUP_API_URL, { headers: getAuthHeader() });
-    return response.data.data;
+    if (Array.isArray(response.data?.data)) return response.data.data;
+    if (Array.isArray(response.data)) return response.data;
+    return [];
   },
 
   /**
@@ -29,7 +31,7 @@ export const BackupService = {
    */
   createBackup: async (): Promise<BackupFile> => {
     const response = await axios.post(BACKUP_API_URL, {}, { headers: getAuthHeader() });
-    return response.data.data;
+    return response.data?.data || response.data;
   },
 
   /**
