@@ -59,9 +59,10 @@ export default function Counterparties() {
       }
       setIsFormOpen(false);
       loadData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save counterparty", error);
-      alert("Failed to save counterparty");
+      const message = error?.response?.data?.error || "Не вдалося зберегти контрагента";
+      alert(message);
     }
   };
 
