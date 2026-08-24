@@ -129,10 +129,18 @@ function ProductsContent() {
       ? 'Standard' 
       : priceTypes.find(pt => pt.slug === priceTypeId || pt.id === priceTypeId)?.name || priceTypeId;
 
+    // Filter products by selected categories if active
+    const productsForPriceList = selectedCategories.length > 0
+      ? products.filter(p => p.category && selectedCategories.includes(p.category))
+      : products;
+
     if (format === 'excel') {
-      generateExcelPriceList(filteredProducts, priceTypeId, priceTypeName, allowedCategories);
+      generateExcelPriceList(productsForPriceList, priceTypeId, priceTypeName, allowedCategories);
     } else {
-      window.open(`/products/print?priceType=${priceTypeId}`, '_blank');
+      const categoriesParam = selectedCategories.length > 0
+        ? `&categories=${encodeURIComponent(selectedCategories.join(','))}`
+        : '';
+      window.open(`/products/print?priceType=${priceTypeId}${categoriesParam}`, '_blank');
     }
   };
 
@@ -321,6 +329,7 @@ function ProductsContent() {
         isOpen={isPriceListModalOpen}
         onClose={() => setIsPriceListModalOpen(false)}
         priceTypes={priceTypes}
+        selectedCategories={selectedCategories}
         onDownload={handleDownloadPriceList}
       />
     </Layout>

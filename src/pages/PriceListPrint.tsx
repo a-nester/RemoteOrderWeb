@@ -45,11 +45,20 @@ export default function PriceListPrint() {
         return found ? found.name : priceTypeId;
     }, [priceTypeId, priceTypes]);
 
+    const categoriesParam = searchParams.get('categories');
+    const selectedCategories = useMemo(() => {
+        if (!categoriesParam) return [];
+        return categoriesParam.split(',').map(c => decodeURIComponent(c.trim())).filter(Boolean);
+    }, [categoriesParam]);
+
     // Group products by category
     const groupedProducts = useMemo(() => {
         let filtered = products;
         if (Array.isArray(allowedCategories) && allowedCategories.length > 0) {
-            filtered = products.filter(p => !p.category || allowedCategories.includes(p.category));
+            filtered = filtered.filter(p => !p.category || allowedCategories.includes(p.category));
+        }
+        if (selectedCategories.length > 0) {
+            filtered = filtered.filter(p => p.category && selectedCategories.includes(p.category));
         }
 
         const groups: Record<string, Product[]> = {};
@@ -74,7 +83,7 @@ export default function PriceListPrint() {
             category: cat,
             items: groups[cat].sort((a, b) => a.name.localeCompare(b.name))
         }));
-    }, [products, allowedCategories]);
+    }, [products, allowedCategories, selectedCategories]);
 
     if (!loaded) return <div className="p-10 text-center text-gray-500">Підготовка прайс-листа до друку...</div>;
 

@@ -7,10 +7,11 @@ interface PriceListModalProps {
     isOpen: boolean;
     onClose: () => void;
     priceTypes: PriceType[];
+    selectedCategories?: string[];
     onDownload: (priceTypeId: string, format: 'excel' | 'pdf') => void;
 }
 
-export default function PriceListModal({ isOpen, onClose, priceTypes, onDownload }: PriceListModalProps) {
+export default function PriceListModal({ isOpen, onClose, priceTypes, selectedCategories, onDownload }: PriceListModalProps) {
     const { t } = useTranslation();
     const [selectedPriceType, setSelectedPriceType] = useState<string>(priceTypes[0]?.slug || 'standard');
     const [format, setFormat] = useState<'excel' | 'pdf'>('excel');
@@ -37,6 +38,13 @@ export default function PriceListModal({ isOpen, onClose, priceTypes, onDownload
 
                 {/* Content */}
                 <div className="p-6 space-y-6">
+                    {/* Active Categories Notice */}
+                    {selectedCategories && selectedCategories.length > 0 && (
+                        <div className="text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 p-3 rounded-lg border border-indigo-200 dark:border-indigo-800 space-y-1">
+                            <span className="font-semibold block">Враховується фільтр категорій ({selectedCategories.length}):</span>
+                            <span className="text-gray-600 dark:text-gray-300 line-clamp-2">{selectedCategories.join(', ')}</span>
+                        </div>
+                    )}
                     {/* Price Type Selector */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
