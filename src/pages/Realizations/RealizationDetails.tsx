@@ -424,7 +424,7 @@ export default function RealizationDetails() {
 
         // Director & location helpers
         const directorName = organization?.fullDetails || 'Юрій Погребицький';
-        const locationText = requisitesData?.address || 'с. Пасіки';
+        const locationText = requisitesData?.placeOfIssue || requisitesData?.address || 'с. Пасіки';
 
         return (
           <div
@@ -614,10 +614,12 @@ export default function RealizationDetails() {
 
             {/* Location & Signatures Section */}
             <div className="mt-8 text-xs space-y-6">
-              <div className="flex items-center gap-1">
-                <span className="font-semibold">Місце складання</span>
-                <span>{locationText}</span>
-              </div>
+              {isVat && (
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold">Місце складання</span>
+                  <span>{locationText}</span>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-16 pt-2">
                 {/* Supplier Signature */}

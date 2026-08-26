@@ -6,6 +6,7 @@ export interface OrganizationRequisites {
     bankName?: string;
     certificateNumber?: string;
     address?: string;
+    placeOfIssue?: string;
     printedFields?: {
         edrpou?: boolean;
         tin?: boolean;
@@ -13,6 +14,7 @@ export interface OrganizationRequisites {
         bankName?: boolean;
         certificateNumber?: boolean;
         address?: boolean;
+        placeOfIssue?: boolean;
     };
 }
 

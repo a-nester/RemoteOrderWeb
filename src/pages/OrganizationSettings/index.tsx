@@ -14,6 +14,7 @@ const DEFAULT_REQUISITES: OrganizationRequisites = {
   bankName: "",
   certificateNumber: "",
   address: "",
+  placeOfIssue: "",
   printedFields: {
     edrpou: false,
     tin: false,
@@ -21,6 +22,7 @@ const DEFAULT_REQUISITES: OrganizationRequisites = {
     bankName: false,
     certificateNumber: false,
     address: false,
+    placeOfIssue: true,
   },
 };
 
@@ -35,6 +37,7 @@ const REQUISITE_FIELDS: Array<{
   { key: "bankName", label: "Назва банку", placeholder: "напр. АТ КБ 'ПРИВАТБАНК'" },
   { key: "certificateNumber", label: "Номер свідоцтва", placeholder: "напр. 100123456" },
   { key: "address", label: "Адреса", placeholder: "напр. м. Рівне, вул. Соборна, 1" },
+  { key: "placeOfIssue", label: "Місце складання (для ПДВ)", placeholder: "напр. с. Пасіки" },
 ];
 
 export default function OrganizationSettings() {
