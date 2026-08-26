@@ -429,7 +429,7 @@ export default function RealizationDetails() {
         return (
           <div
             id="realization-print-area"
-            className="hidden print:block text-black bg-white p-6 max-w-4xl mx-auto"
+            className="hidden print:block text-black bg-white p-6 w-full max-w-none print:p-0 print:m-0 print:w-full"
             style={{ fontFamily: "'Times New Roman', Times, serif, Arial" }}
           >
             {/* Header Section */}
@@ -651,6 +651,10 @@ export default function RealizationDetails() {
       <style>
         {`
                     @media print {
+                        @page {
+                            size: A4 portrait;
+                            margin: 10mm;
+                        }
                         body * {
                             visibility: hidden;
                         }
@@ -661,7 +665,10 @@ export default function RealizationDetails() {
                             position: absolute;
                             left: 0;
                             top: 0;
-                            width: 100%;
+                            width: 100% !important;
+                            max-width: 100% !important;
+                            padding: 0 !important;
+                            margin: 0 !important;
                             z-index: 9999;
                         }
                         .print\\:hidden {

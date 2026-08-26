@@ -24,6 +24,7 @@ export interface Organization {
     categories?: string[];
     vatCostCoefficient?: number;
     requisites?: OrganizationRequisites;
+    isDefault?: boolean;
     createdAt?: string;
     updatedAt?: string;
 }

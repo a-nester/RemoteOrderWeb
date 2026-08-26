@@ -55,6 +55,18 @@ export default function CounterpartyForm({
       setWarehouses(whs);
       setOrganizations(orgs);
       setTerritories(terrs);
+
+      // Auto pre-select default organization for new counterparties
+      if (!counterparty) {
+        const defaultOrg = orgs.find((o) => o.isDefault) || orgs[0];
+        if (defaultOrg) {
+          setFormData((prev) => ({
+            ...prev,
+            organizationId: prev.organizationId || defaultOrg.id,
+          }));
+        }
+      }
+
       if (orgs.length > 0 && orgs[0].salesTypes && orgs[0].salesTypes.length > 0) {
         setSalesTypes(orgs[0].salesTypes);
       }

@@ -32,6 +32,11 @@ export const OrganizationService = {
         return response.data;
     },
 
+    setDefaultOrganization: async (id: string): Promise<Organization[]> => {
+        const response = await axios.put(`${BASE_URL}/set-default/${id}`, {}, { headers: getAuthHeader() });
+        return response.data;
+    },
+
     // Warehouses
     getWarehouses: async (): Promise<Warehouse[]> => {
         const response = await axios.get(`${BASE_URL}/warehouses`, { headers: getAuthHeader() });
