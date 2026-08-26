@@ -1,4 +1,21 @@
 
+export interface OrganizationRequisites {
+    edrpou?: string;
+    tin?: string;
+    accountNumber?: string;
+    bankName?: string;
+    certificateNumber?: string;
+    address?: string;
+    printedFields?: {
+        edrpou?: boolean;
+        tin?: boolean;
+        accountNumber?: boolean;
+        bankName?: boolean;
+        certificateNumber?: boolean;
+        address?: boolean;
+    };
+}
+
 export interface Organization {
     id: string;
     name: string;
@@ -6,6 +23,7 @@ export interface Organization {
     salesTypes?: string[];
     categories?: string[];
     vatCostCoefficient?: number;
+    requisites?: OrganizationRequisites;
     createdAt?: string;
     updatedAt?: string;
 }

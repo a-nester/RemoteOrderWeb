@@ -1,3 +1,4 @@
+import type { OrganizationRequisites } from './organization';
 
 export type RealizationStatus = 'DRAFT' | 'POSTED' | 'CANCELED';
 
@@ -38,6 +39,7 @@ export interface Realization {
     counterpartyName?: string;
     warehouseName?: string;
     organizationName?: string;
+    organizationRequisites?: OrganizationRequisites;
     items?: RealizationItem[];
     isDeleted?: boolean;
 }

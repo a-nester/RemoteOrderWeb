@@ -3,9 +3,39 @@ import { useTranslation } from "react-i18next";
 import { Save, Plus, Store, Edit } from "lucide-react";
 import { OrganizationService } from "../../services/organization.service";
 import { ProductsService } from "../../services/products.service";
-import type { Organization, Warehouse } from "../../types/organization";
+import type { Organization, Warehouse, OrganizationRequisites } from "../../types/organization";
 import UsersList from "./UsersList";
 import { useAuthStore } from "../../store/auth.store";
+
+const DEFAULT_REQUISITES: OrganizationRequisites = {
+  edrpou: "",
+  tin: "",
+  accountNumber: "",
+  bankName: "",
+  certificateNumber: "",
+  address: "",
+  printedFields: {
+    edrpou: false,
+    tin: false,
+    accountNumber: false,
+    bankName: false,
+    certificateNumber: false,
+    address: false,
+  },
+};
+
+const REQUISITE_FIELDS: Array<{
+  key: keyof Omit<OrganizationRequisites, 'printedFields'>;
+  label: string;
+  placeholder: string;
+}> = [
+  { key: "edrpou", label: "ЄДРПОУ", placeholder: "напр. 12345678" },
+  { key: "tin", label: "ІПН", placeholder: "напр. 123456789012" },
+  { key: "accountNumber", label: "Р/р", placeholder: "напр. UA123456789000000123456789012" },
+  { key: "bankName", label: "Назва банку", placeholder: "напр. АТ КБ 'ПРИВАТБАНК'" },
+  { key: "certificateNumber", label: "Номер свідоцтва", placeholder: "напр. 100123456" },
+  { key: "address", label: "Адреса", placeholder: "напр. м. Рівне, вул. Соборна, 1" },
+];
 
 export default function OrganizationSettings() {
   const { t } = useTranslation();
@@ -24,6 +54,11 @@ export default function OrganizationSettings() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [vatCostCoefficient, setVatCostCoefficient] = useState<string>("1.345");
   const [savingOrg, setSavingOrg] = useState(false);
+
+  // Requisites State
+  const [requisites, setRequisites] = useState<OrganizationRequisites>(DEFAULT_REQUISITES);
+  const [isEditingRequisites, setIsEditingRequisites] = useState(false);
+  const [savingRequisites, setSavingRequisites] = useState(false);
 
   // Warehouse Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,6 +96,8 @@ export default function OrganizationSettings() {
         setSalesTypes(firstOrg.salesTypes || ["Готівковий", "р/р ФОП", "з ПДВ"]);
         setSelectedCategories(firstOrg.categories ?? uniqueCats);
         setVatCostCoefficient(firstOrg.vatCostCoefficient !== undefined ? String(firstOrg.vatCostCoefficient) : "1.345");
+        setRequisites(firstOrg.requisites || DEFAULT_REQUISITES);
+        setIsEditingRequisites(false);
       } else {
         setOrg(null);
         setOrgName("");
@@ -68,12 +105,37 @@ export default function OrganizationSettings() {
         setSalesTypes(["Готівковий", "р/р ФОП", "з ПДВ"]);
         setSelectedCategories(uniqueCats);
         setVatCostCoefficient("1.345");
+        setRequisites(DEFAULT_REQUISITES);
+        setIsEditingRequisites(false);
       }
       setWarehouses(whData);
     } catch (error) {
       console.error("Failed to load organization settings", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveRequisites = async () => {
+    if (!org) {
+      alert("Будь ласка, спочатку оберіть або збережіть організацію.");
+      return;
+    }
+    setSavingRequisites(true);
+    try {
+      const updated = await OrganizationService.updateOrganization({
+        id: org.id,
+        requisites: requisites,
+      });
+      setOrg(updated);
+      setOrganizations((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+      setIsEditingRequisites(false);
+      alert(t("common.saved", "Реквізити успішно збережено"));
+    } catch (error) {
+      console.error("Failed to save requisites", error);
+      alert(t("common.error", "Помилка збереження реквізитів"));
+    } finally {
+      setSavingRequisites(false);
     }
   };
 
@@ -122,6 +184,8 @@ export default function OrganizationSettings() {
     setSalesTypes(["Готівковий", "р/р ФОП", "з ПДВ"]);
     setSelectedCategories(availableCategories);
     setVatCostCoefficient("1.345");
+    setRequisites(DEFAULT_REQUISITES);
+    setIsEditingRequisites(false);
   };
 
   const handleOpenModal = (warehouse?: Warehouse) => {
@@ -225,6 +289,8 @@ export default function OrganizationSettings() {
                   setOrgDirector(selected.fullDetails || "");
                   setSalesTypes(selected.salesTypes || ["Готівковий", "р/р ФОП", "з ПДВ"]);
                   setSelectedCategories(selected.categories ?? availableCategories);
+                  setRequisites(selected.requisites || DEFAULT_REQUISITES);
+                  setIsEditingRequisites(false);
                 }
               }}
               className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
@@ -287,6 +353,111 @@ export default function OrganizationSettings() {
                   ? t("common.save", "Save") 
                   : "Створити"}
             </button>
+          </div>
+
+          {/* Requisites Block */}
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                Реквізити
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsEditingRequisites(true)}
+                disabled={!org || isEditingRequisites}
+                className={`flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  !org || isEditingRequisites
+                    ? "bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed border border-gray-200 dark:border-gray-700"
+                    : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-gray-700 dark:text-indigo-300 dark:hover:bg-gray-600 border border-indigo-200 dark:border-gray-600"
+                }`}
+              >
+                <Edit className="mr-1.5 h-3.5 w-3.5" />
+                Редагувати
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {REQUISITE_FIELDS.map((f) => {
+                const isChecked = !!requisites.printedFields?.[f.key];
+                const fieldValue = requisites[f.key] || "";
+
+                return (
+                  <div
+                    key={f.key}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-700/30"
+                  >
+                    <input
+                      type="checkbox"
+                      disabled={!isEditingRequisites}
+                      checked={isChecked}
+                      onChange={(e) => {
+                        if (!isEditingRequisites) return;
+                        setRequisites((prev) => ({
+                          ...prev,
+                          printedFields: {
+                            ...(prev.printedFields || {}),
+                            [f.key]: e.target.checked,
+                          },
+                        }));
+                      }}
+                      title={
+                        isEditingRequisites
+                          ? "Включити в друковану накладну"
+                          : "Перемикання доступне тільки в режимі редагування"
+                      }
+                      className={`w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 ${
+                        isEditingRequisites ? "cursor-pointer" : "cursor-not-allowed opacity-60"
+                      }`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1 flex items-center justify-between">
+                        <span>{f.label}</span>
+                        {isChecked && (
+                          <span className="text-[10px] text-green-600 dark:text-green-400 font-normal">
+                            (у накладній)
+                          </span>
+                        )}
+                      </div>
+                      {isEditingRequisites ? (
+                        <input
+                          type="text"
+                          value={fieldValue}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setRequisites((prev) => ({
+                              ...prev,
+                              [f.key]: val,
+                            }));
+                          }}
+                          placeholder={f.placeholder}
+                          className="w-full px-3 py-1.5 text-sm border rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-indigo-500"
+                        />
+                      ) : (
+                        <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {fieldValue || <span className="text-gray-400 font-normal italic">—</span>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={handleSaveRequisites}
+                disabled={!isEditingRequisites || savingRequisites}
+                className={`flex items-center px-4 py-2 text-sm font-medium rounded-md text-white transition-colors ${
+                  !isEditingRequisites || savingRequisites
+                    ? "bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700 shadow-sm"
+                }`}
+              >
+                <Save className="mr-2 h-4 w-4" />
+                {savingRequisites ? "Збереження..." : "Зберегти"}
+              </button>
+            </div>
           </div>
         </div>
 

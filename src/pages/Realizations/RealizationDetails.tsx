@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Printer, Edit, CheckCircle, FileText, Download } from "lucide-react";
@@ -6,7 +6,9 @@ import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import * as XLSX from "xlsx";
 import { RealizationService } from "../../services/realization.service";
+import { OrganizationService } from "../../services/organization.service";
 import type { Realization } from "../../types/realization";
+import type { Organization } from "../../types/organization";
 import { numberToWordsUk } from "../../utils/numberToWords";
 
 export default function RealizationDetails() {
@@ -14,12 +16,42 @@ export default function RealizationDetails() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [realization, setRealization] = useState<Realization | null>(null);
+  const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [stockError, setStockError] = useState<{productName: string, needed: number, missing: number} | null>(null);
 
   useEffect(() => {
     loadData();
+    OrganizationService.getOrganization().then(setOrganization).catch(console.error);
   }, [id]);
+
+  const requisitesData = realization?.organizationRequisites || organization?.requisites;
+
+  const activePrintedRequisites = useMemo(() => {
+    if (!requisitesData) return [];
+    const fields = requisitesData.printedFields || {};
+    const list: Array<{ label: string; value: string }> = [];
+
+    if (fields.edrpou && requisitesData.edrpou) {
+      list.push({ label: "ЄДРПОУ", value: requisitesData.edrpou });
+    }
+    if (fields.tin && requisitesData.tin) {
+      list.push({ label: "ІПН", value: requisitesData.tin });
+    }
+    if (fields.accountNumber && requisitesData.accountNumber) {
+      list.push({ label: "Р/р", value: requisitesData.accountNumber });
+    }
+    if (fields.bankName && requisitesData.bankName) {
+      list.push({ label: "Назва банку", value: requisitesData.bankName });
+    }
+    if (fields.certificateNumber && requisitesData.certificateNumber) {
+      list.push({ label: "№ свідоцтва", value: requisitesData.certificateNumber });
+    }
+    if (fields.address && requisitesData.address) {
+      list.push({ label: "Адреса", value: requisitesData.address });
+    }
+    return list;
+  }, [requisitesData]);
 
   const loadData = async () => {
     if (!id) return;
@@ -140,11 +172,16 @@ export default function RealizationDetails() {
   const handleExportExcel = () => {
     if (!realization) return;
     
+    const supplierInfo = [realization.organizationName || organization?.name || 'ПП «СМАКОСИР»'];
+    if (activePrintedRequisites.length > 0) {
+      supplierInfo.push(activePrintedRequisites.map(r => `${r.label}: ${r.value}`).join(', '));
+    }
+
     const wsData: any[][] = [
       [`Видаткова накладна №${realization.number}`],
       [`від ${formatDateForPrint(realization.date)}`],
       [],
-      ["Постачальник:", realization.organizationName || 'МілКрай'],
+      ["Постачальник:", supplierInfo.join(' ')],
       ["Одержувач:", realization.counterpartyName],
       ["Умова продажу:", realization.salesType || "Готівковий розрахунок"],
       [],
@@ -382,7 +419,19 @@ export default function RealizationDetails() {
             <div className="w-40 font-bold italic text-left">
               {t("print.supplier", "Постачальник")}
             </div>
-            <div className="text-left">{realization.organizationName || 'МілКрай'}</div>
+            <div className="text-left">
+              <div className="font-semibold">{realization.organizationName || organization?.name || 'ПП «СМАКОСИР»'}</div>
+              {activePrintedRequisites.length > 0 && (
+                <div className="mt-1 text-xs space-y-0.5 font-normal text-gray-800">
+                  {activePrintedRequisites.map((item) => (
+                    <div key={item.label}>
+                      <span className="font-semibold">{item.label}: </span>
+                      <span>{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex mb-2">
             <div className="w-40 font-bold underline text-left">
