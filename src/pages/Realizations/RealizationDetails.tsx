@@ -169,6 +169,14 @@ export default function RealizationDetails() {
     }
   };
 
+  const getSaleConditionLabel = (salesType?: string) => {
+    const effectiveType = salesType?.trim() || organization?.salesTypes?.[0]?.trim();
+    if (effectiveType === 'р/р ФОП' || effectiveType === 'з ПДВ' || effectiveType === 'Безготівковий') {
+      return 'Безготівковий розрахунок';
+    }
+    return 'Готівковий розрахунок';
+  };
+
   const handleExportExcel = () => {
     if (!realization) return;
     
@@ -183,7 +191,7 @@ export default function RealizationDetails() {
       [],
       ["Постачальник:", supplierInfo.join(' ')],
       ["Одержувач:", realization.counterpartyName],
-      ["Умова продажу:", realization.salesType || "Готівковий розрахунок"],
+      ["Умова продажу:", getSaleConditionLabel(realization.salesType)],
       [],
       ["№", "Товар", "Кількість", "Ціна", "Сума"]
     ];
@@ -444,7 +452,7 @@ export default function RealizationDetails() {
               {t("print.saleCondition", "Умова продажу")}
             </div>
             <div className="text-left">
-              {realization.salesType || t("print.cash", "Готівковий розрахунок")}
+              {getSaleConditionLabel(realization.salesType)}
             </div>
           </div>
         </div>

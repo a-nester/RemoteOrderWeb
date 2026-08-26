@@ -49,7 +49,7 @@ export default function OrganizationSettings() {
   // Org Form State
   const [orgName, setOrgName] = useState("");
   const [orgDirector, setOrgDirector] = useState("");
-  const [salesTypes, setSalesTypes] = useState<string[]>([]);
+  const [selectedSalesType, setSelectedSalesType] = useState<string>("Готівковий");
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [vatCostCoefficient, setVatCostCoefficient] = useState<string>("1.345");
@@ -93,7 +93,7 @@ export default function OrganizationSettings() {
         setOrg(firstOrg);
         setOrgName(firstOrg.name);
         setOrgDirector(firstOrg.fullDetails || "");
-        setSalesTypes(firstOrg.salesTypes || ["Готівковий", "р/р ФОП", "з ПДВ"]);
+        setSelectedSalesType(firstOrg.salesTypes?.[0] || "Готівковий");
         setSelectedCategories(firstOrg.categories ?? uniqueCats);
         setVatCostCoefficient(firstOrg.vatCostCoefficient !== undefined ? String(firstOrg.vatCostCoefficient) : "1.345");
         setRequisites(firstOrg.requisites || DEFAULT_REQUISITES);
@@ -102,7 +102,7 @@ export default function OrganizationSettings() {
         setOrg(null);
         setOrgName("");
         setOrgDirector("");
-        setSalesTypes(["Готівковий", "р/р ФОП", "з ПДВ"]);
+        setSelectedSalesType("Готівковий");
         setSelectedCategories(uniqueCats);
         setVatCostCoefficient("1.345");
         setRequisites(DEFAULT_REQUISITES);
@@ -151,7 +151,7 @@ export default function OrganizationSettings() {
           id: org.id,
           name: orgName,
           fullDetails: orgDirector,
-          salesTypes,
+          salesTypes: [selectedSalesType],
           categories: selectedCategories,
           vatCostCoefficient: coeffValue,
         });
@@ -161,7 +161,7 @@ export default function OrganizationSettings() {
         const created = await OrganizationService.createOrganization({
           name: orgName,
           fullDetails: orgDirector,
-          salesTypes,
+          salesTypes: [selectedSalesType],
           categories: selectedCategories,
           vatCostCoefficient: coeffValue,
         });
@@ -181,7 +181,7 @@ export default function OrganizationSettings() {
     setOrg(null);
     setOrgName("");
     setOrgDirector("");
-    setSalesTypes(["Готівковий", "р/р ФОП", "з ПДВ"]);
+    setSelectedSalesType("Готівковий");
     setSelectedCategories(availableCategories);
     setVatCostCoefficient("1.345");
     setRequisites(DEFAULT_REQUISITES);
@@ -287,8 +287,9 @@ export default function OrganizationSettings() {
                   setOrg(selected);
                   setOrgName(selected.name);
                   setOrgDirector(selected.fullDetails || "");
-                  setSalesTypes(selected.salesTypes || ["Готівковий", "р/р ФОП", "з ПДВ"]);
+                  setSelectedSalesType(selected.salesTypes?.[0] || "Готівковий");
                   setSelectedCategories(selected.categories ?? availableCategories);
+                  setVatCostCoefficient(selected.vatCostCoefficient !== undefined ? String(selected.vatCostCoefficient) : "1.345");
                   setRequisites(selected.requisites || DEFAULT_REQUISITES);
                   setIsEditingRequisites(false);
                 }
@@ -317,8 +318,8 @@ export default function OrganizationSettings() {
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
             {t("organization.details", "Organization Details")}
           </h2>
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-4">
+            <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t("organization.name", "Name")}
               </label>
@@ -329,7 +330,7 @@ export default function OrganizationSettings() {
                 className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               />
             </div>
-            <div className="flex-1">
+            <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 ПІБ Керівника (для друку в звітах)
               </label>
@@ -341,6 +342,42 @@ export default function OrganizationSettings() {
                 placeholder="напр. Погребицький Ю.В."
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Вид продажу
+              </label>
+              <select
+                value={selectedSalesType}
+                onChange={(e) => setSelectedSalesType(e.target.value)}
+                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 px-3"
+              >
+                <option value="Готівковий">Готівковий</option>
+                <option value="р/р ФОП">р/р ФОП</option>
+                <option value="з ПДВ">з ПДВ</option>
+              </select>
+            </div>
+          </div>
+
+          {selectedSalesType === "з ПДВ" && (
+            <div className="mb-4 p-3 bg-purple-50/50 dark:bg-purple-900/20 rounded-md border border-purple-200 dark:border-purple-800">
+              <label className="block text-sm font-medium text-purple-900 dark:text-purple-300 mb-1">
+                Коефіцієнт розрахунку собівартості з ПДВ
+              </label>
+              <input
+                type="number"
+                step="0.001"
+                value={vatCostCoefficient}
+                onChange={(e) => setVatCostCoefficient(e.target.value)}
+                placeholder="1.345"
+                className="w-full max-w-xs px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white text-sm"
+              />
+              <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                Множник собівартості списуваного товару для виду продажу з ПДВ (наприклад 1.345)
+              </p>
+            </div>
+          )}
+
+          <div className="flex justify-end">
             <button
               onClick={handleSaveOrg}
               disabled={savingOrg}
@@ -457,51 +494,6 @@ export default function OrganizationSettings() {
                 <Save className="mr-2 h-4 w-4" />
                 {savingRequisites ? "Збереження..." : "Зберегти"}
               </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Sales Types Section */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-            {t("organization.salesTypes", "Види продажу")}
-          </h2>
-          <div className="flex flex-wrap gap-6 mb-6">
-            {["Готівковий", "р/р ФОП", "з ПДВ"].map(type => (
-              <label key={type} className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={salesTypes.includes(type)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSalesTypes(prev => [...prev, type]);
-                    } else {
-                      setSalesTypes(prev => prev.filter(t => t !== type));
-                    }
-                  }}
-                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-5 h-5"
-                />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{type}</span>
-              </label>
-            ))}
-          </div>
-
-          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Коефіцієнт розрахунку собівартості з ПДВ
-            </label>
-            <div className="max-w-xs">
-              <input
-                type="number"
-                step="0.001"
-                value={vatCostCoefficient}
-                onChange={(e) => setVatCostCoefficient(e.target.value)}
-                placeholder="1.345"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white text-sm"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Множник собівартості списуваного товару для виду продажу з ПДВ (наприклад 1.345)
-              </p>
             </div>
           </div>
         </div>
