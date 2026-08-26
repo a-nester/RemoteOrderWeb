@@ -415,135 +415,238 @@ export default function RealizationDetails() {
         </div>
       </div>
 
-      {/* Print Mode (Specific Layout from Reference) */}
-      <div
-        id="realization-print-area"
-        className="hidden print:block text-black bg-white p-4"
-        style={{ fontFamily: "Arial, sans-serif" }}
-      >
-        {/* Header Section */}
-        <div className="mb-6 text-sm">
-          <div className="flex mb-2">
-            <div className="w-40 font-bold italic text-left">
-              {t("print.supplier", "Постачальник")}
-            </div>
-            <div className="text-left">
-              <div className="font-semibold">{realization.organizationName || organization?.name || 'ПП «СМАКОСИР»'}</div>
-              {activePrintedRequisites.length > 0 && (
-                <div className="mt-1 text-xs space-y-0.5 font-normal text-gray-800">
-                  {activePrintedRequisites.map((item) => (
-                    <div key={item.label}>
-                      <span className="font-semibold">{item.label}: </span>
-                      <span>{item.value}</span>
+      {/* Print Mode (Aesthetic Ukrainian Realization Invoice Layout) */}
+      {realization && (() => {
+        const isVat = realization.salesType === 'з ПДВ';
+        const totalAmount = Number(realization.amount || 0);
+        const amountWithoutVat = isVat ? totalAmount / 1.2 : totalAmount;
+        const vatAmount = isVat ? totalAmount - amountWithoutVat : 0;
+
+        // Director & location helpers
+        const directorName = organization?.fullDetails || 'Юрій Погребицький';
+        const locationText = requisitesData?.address || 'с. Пасіки';
+
+        return (
+          <div
+            id="realization-print-area"
+            className="hidden print:block text-black bg-white p-6 max-w-4xl mx-auto"
+            style={{ fontFamily: "'Times New Roman', Times, serif, Arial" }}
+          >
+            {/* Header Section */}
+            <div className="mb-6 text-xs leading-relaxed space-y-1.5">
+              {/* Supplier Row */}
+              <div className="flex items-start">
+                <div className="w-36 font-bold underline text-left shrink-0">
+                  Постачальник
+                </div>
+                <div className="text-left font-medium text-black">
+                  <div className="font-bold">{realization.organizationName || organization?.name || 'ПП «СМАКОСИР»'}</div>
+                  {activePrintedRequisites.length > 0 && (
+                    <div className="mt-0.5 space-y-0.5 font-normal text-[11px] text-gray-900">
+                      {activePrintedRequisites.map((item) => (
+                        <div key={item.label}>
+                          <span className="font-semibold">{item.label}: </span>
+                          <span>{item.value}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
+                </div>
+              </div>
+
+              {/* Recipient Row */}
+              <div className="flex items-center">
+                <div className="w-36 font-bold underline text-left shrink-0">
+                  Одержувач
+                </div>
+                <div className="text-left font-semibold text-black">
+                  {realization.counterpartyName}
+                </div>
+              </div>
+
+              {/* Payer Row */}
+              <div className="flex items-center">
+                <div className="w-36 font-bold underline text-left shrink-0">
+                  Платник
+                </div>
+                <div className="text-left font-medium text-black">
+                  той самий
+                </div>
+              </div>
+
+              {/* Order Row */}
+              <div className="flex items-center">
+                <div className="w-36 font-bold underline text-left shrink-0">
+                  Замовлення
+                </div>
+                <div className="text-left font-medium text-black">
+                  {realization.comment ? `Замовлення ${realization.comment}` : 'Без замовлення'}
+                </div>
+              </div>
+
+              {/* Sale Condition Row */}
+              <div className="flex items-center">
+                <div className="w-36 font-bold underline text-left shrink-0">
+                  Умова продажу
+                </div>
+                <div className="text-left font-medium text-black">
+                  {getSaleConditionLabel(realization.salesType)}
+                </div>
+              </div>
+            </div>
+
+            {/* Document Title */}
+            <div className="text-center my-6">
+              <h1 className="text-lg font-bold text-black tracking-tight">
+                Видаткова накладна № {realization.number}
+              </h1>
+              <div className="text-sm font-bold text-black mt-0.5">
+                від {formatDateForPrint(realization.date)}
+              </div>
+            </div>
+
+            {/* Table */}
+            <table className="w-full border-collapse border border-black mb-4 text-xs">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border border-black p-1.5 text-center font-bold w-8">
+                    №
+                  </th>
+                  <th className="border border-black p-1.5 text-left font-bold">
+                    Товар
+                  </th>
+                  <th className="border border-black p-1.5 text-center font-bold w-12">
+                    Од.
+                  </th>
+                  <th className="border border-black p-1.5 text-right font-bold w-20">
+                    Кількість
+                  </th>
+                  <th className="border border-black p-1.5 text-right font-bold w-24">
+                    {isVat ? 'Ціна без ПДВ' : 'Ціна'}
+                  </th>
+                  <th className="border border-black p-1.5 text-right font-bold w-28">
+                    {isVat ? 'Сума без ПДВ' : 'Сума'}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {(realization.items || []).map((item: any, index: number) => {
+                  const itemPrice = isVat ? Number(item.price || 0) / 1.2 : Number(item.price || 0);
+                  const itemTotal = isVat ? Number(item.total || 0) / 1.2 : Number(item.total || 0);
+
+                  return (
+                    <tr key={index}>
+                      <td className="border border-black p-1 text-center">
+                        {index + 1}
+                      </td>
+                      <td className="border border-black p-1 text-left font-medium">
+                        {item.productName || item.productId}
+                      </td>
+                      <td className="border border-black p-1 text-center">
+                        {item.unit || "кг"}
+                      </td>
+                      <td className="border border-black p-1 text-right">
+                        {Number(item.quantity).toFixed(3)}
+                      </td>
+                      <td className="border border-black p-1 text-right">
+                        {itemPrice.toFixed(2)}
+                      </td>
+                      <td className="border border-black p-1 text-right">
+                        {itemTotal.toFixed(2)}
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {/* Summary Rows */}
+                {isVat ? (
+                  <>
+                    <tr>
+                      <td colSpan={5} className="border border-black p-1 text-right font-bold">
+                        Разом без ПДВ:
+                      </td>
+                      <td className="border border-black p-1 text-right font-bold">
+                        {amountWithoutVat.toFixed(2)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colSpan={5} className="border border-black p-1 text-right font-bold">
+                        ПДВ:
+                      </td>
+                      <td className="border border-black p-1 text-right font-bold">
+                        {vatAmount.toFixed(2)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colSpan={5} className="border border-black p-1 text-right font-bold">
+                        Всього з ПДВ:
+                      </td>
+                      <td className="border border-black p-1 text-right font-bold">
+                        {totalAmount.toFixed(2)}
+                      </td>
+                    </tr>
+                  </>
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="border border-black p-1 text-right font-bold">
+                      Всього:
+                    </td>
+                    <td className="border border-black p-1 text-right font-bold">
+                      {totalAmount.toFixed(2)}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+
+            {/* Sum in Words Block */}
+            <div className="mb-6 text-xs space-y-1">
+              <div className="text-black">Всього на суму:</div>
+              <div className="font-bold text-black text-sm">
+                {numberToWordsUk(totalAmount)}
+              </div>
+              {isVat && (
+                <div className="font-bold text-black text-xs">
+                  ПДВ: {vatAmount.toFixed(2)} грн.
                 </div>
               )}
             </div>
-          </div>
-          <div className="flex mb-2">
-            <div className="w-40 font-bold underline text-left">
-              {t("print.recipient", "Одержувач")}
+
+            {/* Location & Signatures Section */}
+            <div className="mt-8 text-xs space-y-6">
+              <div className="flex items-center gap-1">
+                <span className="font-semibold">Місце складання</span>
+                <span>{locationText}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-16 pt-2">
+                {/* Supplier Signature */}
+                <div>
+                  <div className="font-bold mb-4">Від постачальника</div>
+                  <div className="border-b border-black w-full mb-1"></div>
+                  <div className="text-center font-medium text-xs">
+                    директор {directorName.includes('директор') ? directorName.replace('директор', '').trim() : directorName}
+                  </div>
+                  <div className="text-[9px] text-gray-700 mt-2 italic">
+                    * Відповідальний за здійснення господарської операції і правильність її оформлення
+                  </div>
+                </div>
+
+                {/* Recipient Signature */}
+                <div>
+                  <div className="font-bold mb-4">Отримав(ла)</div>
+                  <div className="border-b border-black w-full mb-1"></div>
+                  <div className="flex justify-between text-[11px] text-gray-800 mt-1 font-medium">
+                    <span>за дов.</span>
+                    <span>№ ______</span>
+                    <span>від __ . __ . ______</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="text-left">{realization.counterpartyName}</div>
           </div>
-          <div className="flex mb-2">
-            <div className="w-40 font-bold underline text-left">
-              {t("print.saleCondition", "Умова продажу")}
-            </div>
-            <div className="text-left">
-              {getSaleConditionLabel(realization.salesType)}
-            </div>
-          </div>
-        </div>
-
-        {/* Title */}
-        <div className="text-center mb-6">
-          <div className="text-lg font-bold">
-            Видаткова накладна №{realization.number}
-          </div>
-          <div className="font-bold">
-            від {formatDateForPrint(realization.date)}
-          </div>
-        </div>
-
-        {/* Table */}
-        <table className="w-full border-collapse border border-black mb-6 text-sm">
-          <thead>
-            <tr>
-              <th className="border border-black p-1 text-center font-normal w-10">
-                №
-              </th>
-              <th className="border border-black p-1 text-left font-normal">
-                Товар
-              </th>
-              <th className="border border-black p-1 text-center font-normal w-12">
-                Од.
-              </th>
-              <th className="border border-black p-1 text-center font-normal w-20">
-                Кількість
-              </th>
-              <th className="border border-black p-1 text-center font-normal w-24">
-                Ціна
-              </th>
-              <th className="border border-black p-1 text-center font-normal w-24">
-                Сума
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {(realization.items || []).map((item: any, index: number) => (
-              <tr key={index}>
-                <td className="border border-black p-1 text-center">
-                  {index + 1}
-                </td>
-                <td className="border border-black p-1 text-left">
-                  {item.productName || item.productId}
-                </td>
-                <td className="border border-black p-1 text-center">
-                  {item.unit || "шт"}
-                </td>
-                <td className="border border-black p-1 text-right">
-                  {Number(item.quantity).toFixed(3)}
-                </td>
-                <td className="border border-black p-1 text-right">
-                  {Number(item.price).toFixed(2)}
-                </td>
-                <td className="border border-black p-1 text-right">
-                  {Number(item.total).toFixed(2)}
-                </td>
-              </tr>
-            ))}
-            {/* Total Row in Table */}
-            <tr>
-              <td colSpan={5} className="border border-black p-1 text-right">
-                Всього:
-              </td>
-              <td className="border border-black p-1 text-right">
-                {Number(realization.amount || 0).toFixed(2)}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        {/* Footer Sum */}
-        <div className="mb-8 text-sm">
-          <div className="mb-1">Всього на суму:</div>
-          <div className="">{numberToWordsUk(realization.amount)}</div>
-        </div>
-
-        {/* Signatures */}
-        <div className="flex justify-between mt-12 text-sm">
-          <div className="flex items-end">
-            <span className="mr-2">Від постачальника</span>
-            <div className="border-b border-black w-48 h-4"></div>
-          </div>
-          <div className="flex items-end">
-            <span className="mr-2">Отримав(ла)</span>
-            <div className="border-b border-black w-48 h-4"></div>
-          </div>
-        </div>
-      </div>
+        );
+      })()}
 
       <style>
         {`
