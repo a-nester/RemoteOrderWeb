@@ -62,6 +62,19 @@ const OrderList: React.FC<OrderListProps> = ({
     await AuthService.updatePreferences(newPrefs);
   };
 
+  const getStatusPriority = (status: OrderStatus): number => {
+    switch (status) {
+      case OrderStatus.NEW:
+        return 1; // Нове (зверху)
+      case OrderStatus.ACCEPTED:
+        return 2; // Прийнято (нижче)
+      case OrderStatus.COMPLETED:
+        return 3; // Виконано (ще нижче)
+      default:
+        return 4;
+    }
+  };
+
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
       case OrderStatus.NEW:
@@ -74,6 +87,31 @@ const OrderList: React.FC<OrderListProps> = ({
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
+
+  const sortedOrders = [...orders].sort((a, b) => {
+    const dateStrA = new Date(a.date || (a as any).createdAt || 0).toISOString().split("T")[0];
+    const dateStrB = new Date(b.date || (b as any).createdAt || 0).toISOString().split("T")[0];
+
+    // 1. Primary sort: Date
+    if (dateStrA !== dateStrB) {
+      return sortOrder === "asc"
+        ? dateStrA.localeCompare(dateStrB)
+        : dateStrB.localeCompare(dateStrA);
+    }
+
+    // 2. Secondary sort: Status priority within the same date (NEW -> ACCEPTED -> COMPLETED)
+    const priorityA = getStatusPriority(a.status);
+    const priorityB = getStatusPriority(b.status);
+
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+
+    // 3. Tertiary sort: Timestamp DESC within same status
+    const timeA = new Date(a.date || (a as any).createdAt || 0).getTime();
+    const timeB = new Date(b.date || (b as any).createdAt || 0).getTime();
+    return timeB - timeA;
+  });
 
   return (
     <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-x-auto">
@@ -121,13 +159,7 @@ const OrderList: React.FC<OrderListProps> = ({
               </td>
             </tr>
           ) : (
-            [...orders]
-              .sort((a, b) => {
-                const dateA = new Date(a.date).getTime();
-                const dateB = new Date(b.date).getTime();
-                return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
-              })
-              .map((order) => {
+            sortedOrders.map((order) => {
                 const isHighlighted = order.id === highlightId;
                 return (
                   <tr
