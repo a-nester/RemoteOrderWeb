@@ -249,7 +249,14 @@ export default function GoodsReceiptEdit() {
     value: any,
   ) => {
     const newItems = [...(doc.items || [])];
-    const item = { ...newItems[index], [field]: value };
+    const item = { ...newItems[index] };
+
+    if (field === "quantity") {
+      const parsedQty = parseFloat(value);
+      item.quantity = isNaN(parsedQty) ? (value as any) : Math.round(parsedQty * 1000) / 1000;
+    } else {
+      (item as any)[field] = value;
+    }
 
     // Auto-set price if Product changed and PriceType selected
     if (field === "productId") {
@@ -263,7 +270,9 @@ export default function GoodsReceiptEdit() {
     }
 
     // Recalculate total always
-    item.total = Number(item.quantity || 0) * Number(item.price || 0);
+    const safeQty = typeof item.quantity === "number" ? item.quantity : parseFloat(item.quantity || "0") || 0;
+    const safePrice = typeof item.price === "number" ? item.price : parseFloat(item.price || "0") || 0;
+    item.total = Number((safeQty * safePrice).toFixed(2));
 
     newItems[index] = item;
     setDoc((prev) => ({ ...prev, items: newItems }));
@@ -274,27 +283,29 @@ export default function GoodsReceiptEdit() {
   };
 
   const handleConfirmQuantity = (product: Product, quantity: number, price: number) => {
+    const roundedQuantity = Math.round(quantity * 1000) / 1000;
     setDoc((prev) => {
       const existingItems = prev.items || [];
       const existingItemIndex = existingItems.findIndex(i => i.productId === product.id);
       
       const newItems = [...existingItems];
       if (existingItemIndex >= 0) {
+        const newQty = Math.round((Number(newItems[existingItemIndex].quantity || 0) + roundedQuantity) * 1000) / 1000;
         newItems[existingItemIndex] = {
           ...newItems[existingItemIndex],
-          quantity: newItems[existingItemIndex].quantity + quantity,
+          quantity: newQty,
           price: price,
-          total: Number((newItems[existingItemIndex].quantity + quantity) * price).toFixed(2) as any
+          total: Number((newQty * price).toFixed(2)) as any
         };
       } else {
         newItems.push({
           id: crypto.randomUUID(),
-          goodsReceiptId: id === "new" ? undefined : id,
+          goodsReceiptId: id === "new" ? "" : (id || ""),
           productId: product.id,
-          quantity,
-          price,
-          total: Number(quantity * price).toFixed(2) as any
-        } as GoodsReceiptItem);
+          quantity: roundedQuantity,
+          price: price,
+          total: Number((roundedQuantity * price).toFixed(2))
+        });
       }
       return { ...prev, items: newItems };
     });
