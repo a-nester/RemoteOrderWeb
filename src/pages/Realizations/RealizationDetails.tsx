@@ -423,7 +423,7 @@ export default function RealizationDetails() {
         const vatAmount = isVat ? totalAmount - amountWithoutVat : 0;
 
         // Director & location helpers
-        const directorName = organization?.fullDetails || 'Юрій Погребицький';
+        const directorName = organization?.fullDetails?.trim() || '';
         const locationText = requisitesData?.placeOfIssue || requisitesData?.address || 'с. Пасіки';
 
         return (
@@ -626,8 +626,8 @@ export default function RealizationDetails() {
                 <div>
                   <div className="font-bold mb-4">Від постачальника</div>
                   <div className="border-b border-black w-full mb-1"></div>
-                  <div className="text-center font-medium text-xs">
-                    директор {directorName.includes('директор') ? directorName.replace('директор', '').trim() : directorName}
+                  <div className="text-center font-medium text-xs min-h-[1.25rem]">
+                    {directorName ? (directorName.toLowerCase().includes('директор') ? directorName : `директор ${directorName}`) : ''}
                   </div>
                   <div className="text-[9px] text-gray-700 mt-2 italic">
                     * Відповідальний за здійснення господарської операції і правильність її оформлення
