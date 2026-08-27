@@ -1006,7 +1006,7 @@ export default function SalesReport() {
   useEffect(() => {
     fetchSales();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+  }, [activeTab, groupBySalesType, includeReturns]);
 
   const formatNum = (num: any) => Number(num || 0).toFixed(2);
 
@@ -1085,6 +1085,13 @@ export default function SalesReport() {
           <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
             {row.clientName || t("common.unknown", "Unknown")}
           </td>
+          {groupBySalesType && (
+            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${row.salesType === 'з ПДВ' ? 'bg-purple-100 text-purple-800' : row.salesType === 'Готівковий' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                {row.salesType || "Готівковий"}
+              </span>
+            </td>
+          )}
           <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
             {row.documentsCount}
           </td>
@@ -1094,15 +1101,13 @@ export default function SalesReport() {
           <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
             {formatNum(row.totalProfit)}
           </td>
-          {groupBySalesType && (
-            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-              {Number(row.totalAmount) !== 0 ? ((Number(row.totalProfit) / Number(row.totalAmount)) * 100).toFixed(2) + " %" : "-"}
-            </td>
-          )}
+          <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+            {Number(row.totalAmount) !== 0 ? ((Number(row.totalProfit) / Number(row.totalAmount)) * 100).toFixed(2) + " %" : "-"}
+          </td>
         </tr>
         {isExpanded && (
             <tr className="bg-gray-50/50">
-                <td colSpan={groupBySalesType ? 6 : 5} className="px-8 py-4">
+                <td colSpan={groupBySalesType ? 7 : 6} className="px-8 py-4">
                     {isLoading ? (
                         <div className="text-sm text-gray-500 text-center py-2">Завантаження деталей...</div>
                     ) : details && details.length > 0 ? (
@@ -1477,6 +1482,11 @@ export default function SalesReport() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {t("common.customer", "Customer")}
                     </th>
+                    {groupBySalesType && (
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Вид продажу
+                      </th>
+                    )}
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       К-сть документів
                     </th>
@@ -1486,11 +1496,9 @@ export default function SalesReport() {
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Прибуток
                     </th>
-                    {groupBySalesType && (
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Рентабельність %
-                      </th>
-                    )}
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Рентабельність %
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -1498,7 +1506,7 @@ export default function SalesReport() {
                   {salesByClient.length === 0 && (
                     <tr>
                       <td
-                        colSpan={groupBySalesType ? 6 : 5}
+                        colSpan={groupBySalesType ? 7 : 6}
                         className="px-6 py-10 text-center text-gray-500"
                       >
                         {t("common.noData", "No data available")}
@@ -1509,7 +1517,7 @@ export default function SalesReport() {
                 {salesByClient.length > 0 && (
                   <tfoot className="bg-gray-50 font-bold border-t-2 border-gray-300">
                     <tr>
-                      <td colSpan={2} className="px-4 py-3 text-right text-gray-700">
+                      <td colSpan={groupBySalesType ? 3 : 2} className="px-4 py-3 text-right text-gray-700">
                         Всього:
                       </td>
                       <td className="px-4 py-3 text-right text-gray-900 text-sm">
@@ -1521,13 +1529,11 @@ export default function SalesReport() {
                       <td className="px-4 py-3 text-right text-green-600 text-sm">
                         {formatNum(salesByClient.reduce((sum, r) => sum + Number(r.totalProfit), 0))} ₴
                       </td>
-                      {groupBySalesType && (
-                        <td className="px-4 py-3 text-right text-gray-900 text-sm">
-                          {salesByClient.reduce((sum, r) => sum + Number(r.totalAmount), 0) !== 0
-                            ? ((salesByClient.reduce((sum, r) => sum + Number(r.totalProfit), 0) / salesByClient.reduce((sum, r) => sum + Number(r.totalAmount), 0)) * 100).toFixed(2) + " %"
-                            : "-"}
-                        </td>
-                      )}
+                      <td className="px-4 py-3 text-right text-gray-900 text-sm">
+                        {salesByClient.reduce((sum, r) => sum + Number(r.totalAmount), 0) !== 0
+                          ? ((salesByClient.reduce((sum, r) => sum + Number(r.totalProfit), 0) / salesByClient.reduce((sum, r) => sum + Number(r.totalAmount), 0)) * 100).toFixed(2) + " %"
+                          : "-"}
+                      </td>
                     </tr>
                   </tfoot>
                 )}
