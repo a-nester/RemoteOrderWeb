@@ -85,11 +85,7 @@ export default function OrderForm({
     (initialData as any)?.salesType || "Готівковий",
   );
   const [organization, setOrganization] = useState<Organization | null>(null);
-  const [orgSalesTypes, setOrgSalesTypes] = useState<string[]>([
-    "Готівковий",
-    "р/р ФОП",
-    "з ПДВ",
-  ]);
+  const orgSalesTypes = ["Готівковий", "р/р ФОП", "з ПДВ"];
 
   // UI State
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
@@ -176,9 +172,6 @@ export default function OrderForm({
       setPriceTypes(priceTypesData.filter((pt) => !pt.isDeleted));
       if (orgData) {
         setOrganization(orgData);
-        if (orgData.salesTypes) {
-          setOrgSalesTypes(orgData.salesTypes);
-        }
       }
 
       if (needsWarehouse) {

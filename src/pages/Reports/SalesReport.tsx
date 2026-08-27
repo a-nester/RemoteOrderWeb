@@ -10,7 +10,6 @@ import { buyerReturnService } from "../../services/buyerReturnService";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/auth.store";
 import { AuthService } from "../../services/auth.service";
-import { OrganizationService } from "../../services/organization.service";
 import { CounterpartyService } from "../../services/counterparty.service";
 import type { Counterparty, CounterpartyGroup } from "../../types/counterparty";
 import * as XLSX from "xlsx-js-style";
@@ -848,15 +847,11 @@ export default function SalesReport() {
 
   useEffect(() => {
     Promise.all([
-      OrganizationService.getOrganization(),
       CounterpartyService.getGroups(),
       CounterpartyService.getAll(),
     ])
-      .then(([orgs, groupsData, cpData]) => {
-        const org = Array.isArray(orgs) ? orgs[0] : orgs;
-        if (org && org.salesTypes) {
-          setSalesTypesList(org.salesTypes);
-        }
+      .then(([groupsData, cpData]) => {
+        setSalesTypesList(["Готівковий", "р/р ФОП", "з ПДВ"]);
         setGroupsList(groupsData || []);
         setCounterpartiesList(cpData || []);
       })

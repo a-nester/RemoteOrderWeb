@@ -39,7 +39,7 @@ export default function CounterpartyForm({
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [territories, setTerritories] = useState<Territory[]>([]);
-  const [salesTypes, setSalesTypes] = useState<string[]>(["Готівковий", "р/р ФОП", "з ПДВ"]);
+  const salesTypes = ["Готівковий", "р/р ФОП", "з ПДВ"];
   const [isCreateTerritoryOpen, setIsCreateTerritoryOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,10 +65,6 @@ export default function CounterpartyForm({
             organizationId: prev.organizationId || defaultOrg.id,
           }));
         }
-      }
-
-      if (orgs.length > 0 && orgs[0].salesTypes && orgs[0].salesTypes.length > 0) {
-        setSalesTypes(orgs[0].salesTypes);
       }
     } catch (error) {
       console.error(error);
