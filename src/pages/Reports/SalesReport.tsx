@@ -109,6 +109,33 @@ function aggregateSalesByPeriod(sales: SaleItem[], period: ChartPeriod): PeriodB
   return Array.from(bucketsMap.values()).sort((a, b) => a.key.localeCompare(b.key));
 }
 
+function groupArrayBySalesType<T extends { salesType?: string }>(items: T[]): Array<{ salesType: string; items: T[] }> {
+  const map = new Map<string, T[]>();
+
+  items.forEach((item) => {
+    const st = item.salesType && item.salesType !== "-" ? item.salesType : "Не визначено";
+    if (!map.has(st)) {
+      map.set(st, []);
+    }
+    map.get(st)!.push(item);
+  });
+
+  const order = ["Готівковий", "р/р ФОП", "з ПДВ", "Не визначено"];
+  const keys = Array.from(map.keys()).sort((a, b) => {
+    const idxA = order.indexOf(a);
+    const idxB = order.indexOf(b);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    return a.localeCompare(b);
+  });
+
+  return keys.map((salesType) => ({
+    salesType,
+    items: map.get(salesType)!,
+  }));
+}
+
 interface SalesChartProps {
   sales: SaleItem[];
   chartType: ChartType;
@@ -1400,47 +1427,121 @@ export default function SalesReport() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {sales.map((row, index) => (
-                    <tr key={row.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                        {index + 1}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {row.number}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(row.date).toLocaleString('uk-UA')}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {row.counterpartyName || t("common.unknown", "Unknown")}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                        {row.warehouseName}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${row.salesType === 'з ПДВ' ? 'bg-purple-100 text-purple-800' : row.salesType === 'Готівковий' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                          {row.salesType}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            row.status === "POSTED"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {row.status === "POSTED" ? "Проведено" : "Збережено"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                        {formatNum(row.amount)} {row.currency}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
-                        {formatNum(row.profit)} ₴
-                      </td>
-                    </tr>
-                  ))}
+                  {groupBySalesType ? (
+                    groupArrayBySalesType(sales).map((group) => {
+                      const groupAmount = group.items.reduce((sum, r) => sum + r.amount, 0);
+                      const groupProfit = group.items.reduce((sum, r) => sum + r.profit, 0);
+                      return (
+                        <Fragment key={group.salesType}>
+                          <tr className="bg-blue-50/80 dark:bg-blue-900/30 border-y border-blue-200">
+                            <td colSpan={9} className="px-4 py-2 text-xs font-bold text-blue-900 dark:text-blue-200">
+                              <span className="flex items-center gap-2">
+                                <span>📌 Вид продажу:</span>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${group.salesType === 'з ПДВ' ? 'bg-purple-100 text-purple-800' : group.salesType === 'Готівковий' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                                  {group.salesType}
+                                </span>
+                                <span className="text-gray-500 font-normal">({group.items.length} документів)</span>
+                              </span>
+                            </td>
+                          </tr>
+                          {group.items.map((row, index) => (
+                            <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {index + 1}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {row.number}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {new Date(row.date).toLocaleString('uk-UA')}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {row.counterpartyName || t("common.unknown", "Unknown")}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {row.warehouseName}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${row.salesType === 'з ПДВ' ? 'bg-purple-100 text-purple-800' : row.salesType === 'Готівковий' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                  {row.salesType}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    row.status === "POSTED"
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-yellow-100 text-yellow-800"
+                                  }`}
+                                >
+                                  {row.status === "POSTED" ? "Проведено" : "Збережено"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                {formatNum(row.amount)} {row.currency}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
+                                {formatNum(row.profit)} ₴
+                              </td>
+                            </tr>
+                          ))}
+                          <tr className="bg-gray-100/90 font-semibold border-b-2 border-gray-300">
+                            <td colSpan={7} className="px-4 py-2 text-right text-gray-700 text-xs">
+                              Підсумок [{group.salesType}]:
+                            </td>
+                            <td className="px-4 py-2 text-right text-gray-900 text-sm font-bold">
+                              {formatNum(groupAmount)} ₴
+                            </td>
+                            <td className="px-4 py-2 text-right text-green-600 text-sm font-bold">
+                              {formatNum(groupProfit)} ₴
+                            </td>
+                          </tr>
+                        </Fragment>
+                      );
+                    })
+                  ) : (
+                    sales.map((row, index) => (
+                      <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          {index + 1}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {row.number}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(row.date).toLocaleString('uk-UA')}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {row.counterpartyName || t("common.unknown", "Unknown")}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          {row.warehouseName}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${row.salesType === 'з ПДВ' ? 'bg-purple-100 text-purple-800' : row.salesType === 'Готівковий' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                            {row.salesType}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              row.status === "POSTED"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {row.status === "POSTED" ? "Проведено" : "Збережено"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                          {formatNum(row.amount)} {row.currency}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
+                          {formatNum(row.profit)} ₴
+                        </td>
+                      </tr>
+                    ))
+                  )}
                   {sales.length === 0 && (
                     <tr>
                       <td
@@ -1502,7 +1603,50 @@ export default function SalesReport() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {salesByClient.map((row, index) => renderClientRow(row, index))}
+                  {groupBySalesType ? (
+                    groupArrayBySalesType(salesByClient).map((group) => {
+                      const groupDocs = group.items.reduce((sum, r) => sum + Number(r.documentsCount), 0);
+                      const groupAmount = group.items.reduce((sum, r) => sum + Number(r.totalAmount), 0);
+                      const groupProfit = group.items.reduce((sum, r) => sum + Number(r.totalProfit), 0);
+                      const groupMargin = groupAmount !== 0 ? ((groupProfit / groupAmount) * 100).toFixed(2) + " %" : "-";
+
+                      return (
+                        <Fragment key={group.salesType}>
+                          <tr className="bg-blue-50/80 dark:bg-blue-900/30 border-y border-blue-200">
+                            <td colSpan={7} className="px-4 py-2 text-xs font-bold text-blue-900 dark:text-blue-200">
+                              <span className="flex items-center gap-2">
+                                <span>📌 Вид продажу:</span>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${group.salesType === 'з ПДВ' ? 'bg-purple-100 text-purple-800' : group.salesType === 'Готівковий' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                                  {group.salesType}
+                                </span>
+                                <span className="text-gray-500 font-normal">({group.items.length} клієнтів)</span>
+                              </span>
+                            </td>
+                          </tr>
+                          {group.items.map((row, index) => renderClientRow(row, index))}
+                          <tr className="bg-gray-100/90 font-semibold border-b-2 border-gray-300">
+                            <td colSpan={3} className="px-4 py-2 text-right text-gray-700 text-xs">
+                              Підсумок [{group.salesType}]:
+                            </td>
+                            <td className="px-4 py-2 text-right text-gray-900 text-sm font-bold">
+                              {groupDocs}
+                            </td>
+                            <td className="px-4 py-2 text-right text-gray-900 text-sm font-bold">
+                              {formatNum(groupAmount)} ₴
+                            </td>
+                            <td className="px-4 py-2 text-right text-green-600 text-sm font-bold">
+                              {formatNum(groupProfit)} ₴
+                            </td>
+                            <td className="px-4 py-2 text-right text-gray-900 text-sm font-bold">
+                              {groupMargin}
+                            </td>
+                          </tr>
+                        </Fragment>
+                      );
+                    })
+                  ) : (
+                    salesByClient.map((row, index) => renderClientRow(row, index))
+                  )}
                   {salesByClient.length === 0 && (
                     <tr>
                       <td
@@ -1581,55 +1725,151 @@ export default function SalesReport() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {salesByProduct.map((row, index) => {
-                    const avgPrice = Number(row.totalQuantity) !== 0 
-                      ? (Number(row.totalAmount) / Number(row.totalQuantity)).toFixed(2) 
-                      : "0.00";
-                    const margin = Number(row.totalAmount) !== 0 
-                      ? ((Number(row.totalProfit) / Number(row.totalAmount)) * 100).toFixed(2) 
-                      : "0.00";
+                  {groupBySalesType ? (
+                    groupArrayBySalesType(salesByProduct).map((group) => {
+                      const groupQty = group.items.reduce((sum, r) => sum + Number(r.totalQuantity), 0);
+                      const groupAmount = group.items.reduce((sum, r) => sum + Number(r.totalAmount), 0);
+                      const groupCost = group.items.reduce((sum, r) => sum + Number(r.totalPurchaseCost), 0);
+                      const groupProfit = group.items.reduce((sum, r) => sum + Number(r.totalProfit), 0);
+                      const groupMargin = groupAmount !== 0 ? ((groupProfit / groupAmount) * 100).toFixed(2) + " %" : "-";
 
-                    return (
-                      <tr key={index} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {index + 1}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {row.productName}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
-                            {row.productCategory || "Без категорії"}
-                          </span>
-                        </td>
-                        {groupBySalesType && (
+                      return (
+                        <Fragment key={group.salesType}>
+                          <tr className="bg-blue-50/80 dark:bg-blue-900/30 border-y border-blue-200">
+                            <td colSpan={10} className="px-4 py-2 text-xs font-bold text-blue-900 dark:text-blue-200">
+                              <span className="flex items-center gap-2">
+                                <span>📌 Вид продажу:</span>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${group.salesType === 'з ПДВ' ? 'bg-purple-100 text-purple-800' : group.salesType === 'Готівковий' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                                  {group.salesType}
+                                </span>
+                                <span className="text-gray-500 font-normal">({group.items.length} позицій)</span>
+                              </span>
+                            </td>
+                          </tr>
+                          {group.items.map((row, index) => {
+                            const avgPrice = Number(row.totalQuantity) !== 0 
+                              ? (Number(row.totalAmount) / Number(row.totalQuantity)).toFixed(2) 
+                              : "0.00";
+                            const margin = Number(row.totalAmount) !== 0 
+                              ? ((Number(row.totalProfit) / Number(row.totalAmount)) * 100).toFixed(2) 
+                              : "0.00";
+
+                            return (
+                              <tr key={index} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                  {index + 1}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                  {row.productName}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
+                                    {row.productCategory || "Без категорії"}
+                                  </span>
+                                </td>
+                                {groupBySalesType && (
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${row.salesType === 'з ПДВ' ? 'bg-purple-100 text-purple-800' : row.salesType === 'Готівковий' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                      {row.salesType || "-"}
+                                    </span>
+                                  </td>
+                                )}
+                                <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                  {formatNum(row.totalQuantity)}
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                                  {avgPrice} ₴
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                  {formatNum(row.totalAmount)} ₴
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                                  {formatNum(row.totalPurchaseCost)} ₴
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
+                                  {formatNum(row.totalProfit)} ₴
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 text-right">
+                                  {margin} %
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          <tr className="bg-gray-100/90 font-semibold border-b-2 border-gray-300">
+                            <td colSpan={4} className="px-4 py-2 text-right text-gray-700 text-xs">
+                              Підсумок [{group.salesType}]:
+                            </td>
+                            <td className="px-4 py-2 text-right text-gray-900 text-sm font-bold">
+                              {formatNum(groupQty)}
+                            </td>
+                            <td className="px-4 py-2 text-right text-gray-500 text-xs">-</td>
+                            <td className="px-4 py-2 text-right text-gray-900 text-sm font-bold">
+                              {formatNum(groupAmount)} ₴
+                            </td>
+                            <td className="px-4 py-2 text-right text-gray-500 text-sm font-medium">
+                              {formatNum(groupCost)} ₴
+                            </td>
+                            <td className="px-4 py-2 text-right text-green-600 text-sm font-bold">
+                              {formatNum(groupProfit)} ₴
+                            </td>
+                            <td className="px-4 py-2 text-right text-gray-900 text-sm font-bold">
+                              {groupMargin}
+                            </td>
+                          </tr>
+                        </Fragment>
+                      );
+                    })
+                  ) : (
+                    salesByProduct.map((row, index) => {
+                      const avgPrice = Number(row.totalQuantity) !== 0 
+                        ? (Number(row.totalAmount) / Number(row.totalQuantity)).toFixed(2) 
+                        : "0.00";
+                      const margin = Number(row.totalAmount) !== 0 
+                        ? ((Number(row.totalProfit) / Number(row.totalAmount)) * 100).toFixed(2) 
+                        : "0.00";
+
+                      return (
+                        <tr key={index} className="hover:bg-gray-50 transition-colors">
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${row.salesType === 'з ПДВ' ? 'bg-purple-100 text-purple-800' : row.salesType === 'Готівковий' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                              {row.salesType || "-"}
+                            {index + 1}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {row.productName}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
+                              {row.productCategory || "Без категорії"}
                             </span>
                           </td>
-                        )}
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                          {formatNum(row.totalQuantity)}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
-                          {avgPrice} ₴
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                          {formatNum(row.totalAmount)} ₴
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
-                          {formatNum(row.totalPurchaseCost)} ₴
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
-                          {formatNum(row.totalProfit)} ₴
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 text-right">
-                          {margin} %
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          {groupBySalesType && (
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${row.salesType === 'з ПДВ' ? 'bg-purple-100 text-purple-800' : row.salesType === 'Готівковий' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                {row.salesType || "-"}
+                              </span>
+                            </td>
+                          )}
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                            {formatNum(row.totalQuantity)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                            {avgPrice} ₴
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                            {formatNum(row.totalAmount)} ₴
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
+                            {formatNum(row.totalPurchaseCost)} ₴
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
+                            {formatNum(row.totalProfit)} ₴
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 text-right">
+                            {margin} %
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                   {salesByProduct.length === 0 && (
                     <tr>
                       <td
