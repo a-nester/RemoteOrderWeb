@@ -34,6 +34,7 @@ import OrdersArchive from "./pages/Orders/OrdersArchive";
 import RealizationsArchive from "./pages/Archive/RealizationsArchive";
 import GoodsReceiptList from "./pages/GoodsReceipt";
 import GoodsReceiptEdit from "./pages/GoodsReceipt/Edit";
+import InventoryCountList from "./pages/InventoryCount";
 import StockBalancesReport from "./pages/Reports/StockBalances";
 import SalesReport from "./pages/Reports/SalesReport";
 import ReconciliationReport from "./pages/Reports/ReconciliationReport";
@@ -159,6 +160,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <InventoryReport />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/inventory-count"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <InventoryCountList />
                 </Layout>
               </ProtectedRoute>
             }
