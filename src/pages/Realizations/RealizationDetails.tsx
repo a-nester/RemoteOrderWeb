@@ -10,11 +10,15 @@ import { OrganizationService } from "../../services/organization.service";
 import type { Realization } from "../../types/realization";
 import type { Organization } from "../../types/organization";
 import { numberToWordsUk } from "../../utils/numberToWords";
+import { useAuthStore } from "../../store/auth.store";
 
 export default function RealizationDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const user = useAuthStore((state) => state.user);
+  const canUnpost = user?.role === 'admin' || (user as any)?.permissions?.canUnpostRealization === true;
+
   const [realization, setRealization] = useState<Realization | null>(null);
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
@@ -119,6 +123,11 @@ export default function RealizationDetails() {
 
   const handleUnpost = async () => {
     if (!id) return;
+
+    if (!canUnpost) {
+      alert("Доступ заборонено: у вас відсутні права на розпроведення накладних. Зверніться до адміністратора.");
+      return;
+    }
 
     if (
       !window.confirm(
@@ -310,7 +319,13 @@ export default function RealizationDetails() {
         {isPosted && (
           <button
             onClick={handleUnpost}
-            className="flex items-center px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            disabled={!canUnpost}
+            title={!canUnpost ? "У вас відсутні права на розпроведення накладних" : "Розпровести реалізацію"}
+            className={`flex items-center px-4 py-2 rounded font-medium text-white transition-colors ${
+              canUnpost
+                ? "bg-red-600 hover:bg-red-700 cursor-pointer"
+                : "bg-red-300 dark:bg-red-950/60 dark:text-red-300 cursor-not-allowed opacity-75"
+            }`}
           >
             Розпровести
           </button>
