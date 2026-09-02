@@ -1,8 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { X, CheckCircle, Save, Search, Printer } from 'lucide-react';
+import { X, CheckCircle, Save, Search, Printer, Plus } from 'lucide-react';
 import { StockTransferService } from '../../services/stockTransfer.service';
 import type { StockTransferItem } from '../../services/stockTransfer.service';
 import { OrganizationService } from '../../services/organization.service';
+import { ProductsService } from '../../services/products.service';
+import ProductSelector from '../../components/ProductSelector';
+import type { Product } from '../../types/product';
 import type { Warehouse } from '../../types/organization';
 import { numberToWordsUk } from '../../utils/numberToWords';
 
@@ -26,10 +29,13 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
   const [fetchingStock, setFetchingStock] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isPrintMode, setIsPrintMode] = useState(false);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       loadWarehouses();
+      loadProducts();
       if (documentId) {
         loadDocument(documentId);
       } else {
@@ -37,6 +43,38 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
       }
     }
   }, [isOpen, documentId]);
+
+  const loadProducts = async () => {
+    try {
+      const data = await ProductsService.fetchProducts();
+      setAllProducts(data.products || []);
+    } catch (err) {
+      console.error('Failed to load products for selector:', err);
+    }
+  };
+
+  const handleProductSelect = (product: Product) => {
+    const exists = items.some((i) => i.productId === product.id);
+    if (exists) {
+      alert(`Товар "${product.name}" вже є в списку переміщення`);
+      return;
+    }
+
+    const price = Number(product.prices?.['enterPrice'] || product.prices?.['base'] || Object.values(product.prices || {})[0] || 0);
+
+    const newItem: StockTransferItem = {
+      productId: product.id,
+      productName: product.name,
+      productCode: product.barcode || product.id.slice(0, 8),
+      unit: product.unit,
+      availableQty: 0,
+      quantity: 1,
+      price,
+    };
+
+    setItems((prev) => [...prev, newItem]);
+    setIsProductSelectorOpen(false);
+  };
 
   const loadWarehouses = async () => {
     try {
@@ -382,7 +420,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
               />
             </div>
 
-            {/* Search Items */}
+            {/* Search Items & Product Picker */}
             <div className="flex justify-between items-center gap-4 pt-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
@@ -394,6 +432,18 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-white"
                 />
               </div>
+
+              {!isReadOnly && (
+                <button
+                  type="button"
+                  onClick={() => setIsProductSelectorOpen(true)}
+                  className="flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm transition-colors whitespace-nowrap shadow-sm"
+                >
+                  <Plus size={18} className="mr-1.5" />
+                  Підбір товару
+                </button>
+              )}
+
               {fetchingStock && (
                 <span className="text-sm text-blue-600 animate-pulse">Завантаження залишків склада...</span>
               )}
@@ -506,6 +556,14 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
           )}
         </div>
       </div>
+
+      <ProductSelector
+        isOpen={isProductSelectorOpen}
+        onClose={() => setIsProductSelectorOpen(false)}
+        products={allProducts}
+        onSelect={handleProductSelect}
+        priceSlug="enterPrice"
+      />
     </div>
   );
 }

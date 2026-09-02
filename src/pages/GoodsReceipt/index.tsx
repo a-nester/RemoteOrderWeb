@@ -5,6 +5,8 @@ import { GoodsReceiptService } from "../../services/goodsReceipt.service";
 import type { GoodsReceipt } from "../../types/goodsReceipt";
 import { format } from "date-fns";
 import DocumentActionsDropdown from "../../components/DocumentActionsDropdown";
+import { useAuthStore } from "../../store/auth.store";
+import { AuthService } from "../../services/auth.service";
 
 export default function GoodsReceiptList() {
   const navigate = useNavigate();
@@ -12,7 +14,20 @@ export default function GoodsReceiptList() {
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  const { user, setPreferences } = useAuthStore();
+  const defaultSort = user?.preferences?.goodsReceiptSort || (localStorage.getItem("goods_receipt_sortOrder") as "asc" | "desc") || "desc";
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">(defaultSort);
+
+  const toggleSort = async () => {
+    const newSort = sortOrder === "asc" ? "desc" : "asc";
+    setSortOrder(newSort);
+    localStorage.setItem("goods_receipt_sortOrder", newSort);
+
+    const newPrefs = { ...user?.preferences, goodsReceiptSort: newSort };
+    setPreferences(newPrefs);
+    await AuthService.updatePreferences(newPrefs);
+  };
 
   useEffect(() => {
     loadDocs();
@@ -109,9 +124,7 @@ export default function GoodsReceiptList() {
             <tr>
               <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-                onClick={() =>
-                  setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
-                }
+                onClick={toggleSort}
               >
                 <div className="flex items-center gap-1">
                   Дата
