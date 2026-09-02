@@ -65,18 +65,19 @@ export default function SupplierReturnDetails() {
     } catch (error: any) {
       console.error("Failed to post return", error);
       const errData = error.response?.data?.error;
-      
-      if (errData && errData.code === 'INSUFFICIENT_STOCK') {
+      const msg = error.response?.data?.message || 
+                  (typeof errData === 'string' ? errData : errData?.message) || 
+                  error.message || 
+                  t("common.error", "Failed to post return");
+
+      if (errData && typeof errData === 'object' && errData.code === 'INSUFFICIENT_STOCK') {
         setStockError({
           productName: errData.productName,
           needed: errData.needed,
           missing: errData.missing
         });
       } else {
-        alert(
-          errData ||
-            t("common.error", "Failed to post return"),
-        );
+        alert(msg);
       }
       setLoading(false);
     }
@@ -104,8 +105,11 @@ export default function SupplierReturnDetails() {
     } catch (error: any) {
       console.log("UNPOST ERROR:", error.response?.data);
       alert(
-        error.response?.data?.error ||
-          t("common.error", "Failed to unpost return"),
+        error.response?.data?.message ||
+          error.response?.data?.error?.message ||
+          (typeof error.response?.data?.error === 'string' ? error.response?.data?.error : null) ||
+          error.message ||
+          t("common.error", "Failed to unpost return")
       );
       setLoading(false);
     }

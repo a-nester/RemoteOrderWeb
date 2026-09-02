@@ -69,7 +69,8 @@ export default function SupplierReturnCreate() {
           navigate("/supplier-returns", { state: { highlight: res.id } });
         } catch (postError: any) {
           console.error("Failed to post supplier return", postError);
-          const errorMsg = postError.response?.data?.error?.message || 
+          const errorMsg = postError.response?.data?.message ||
+                           postError.response?.data?.error?.message || 
                            postError.response?.data?.error || 
                            postError.message || 
                            "Невідома помилка проведення";
@@ -84,7 +85,7 @@ export default function SupplierReturnCreate() {
       }
     } catch (error: any) {
       console.error("Failed to create supplier return", error);
-      const msg = error.response?.data?.error?.message || error.response?.data?.error || error.message || "Помилка створення документа";
+      const msg = error.response?.data?.message || error.response?.data?.error?.message || error.response?.data?.error || error.message || "Помилка створення документа";
       showError(typeof msg === 'object' ? JSON.stringify(msg) : String(msg));
     } finally {
       setSaving(false);
