@@ -35,6 +35,7 @@ import RealizationsArchive from "./pages/Archive/RealizationsArchive";
 import GoodsReceiptList from "./pages/GoodsReceipt";
 import GoodsReceiptEdit from "./pages/GoodsReceipt/Edit";
 import InventoryCountList from "./pages/InventoryCount";
+import StockTransferList from "./pages/StockTransfer";
 import StockBalancesReport from "./pages/Reports/StockBalances";
 import SalesReport from "./pages/Reports/SalesReport";
 import ReconciliationReport from "./pages/Reports/ReconciliationReport";
@@ -170,6 +171,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <InventoryCountList />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/stock-transfers"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <StockTransferList />
                 </Layout>
               </ProtectedRoute>
             }
