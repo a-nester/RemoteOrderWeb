@@ -243,6 +243,9 @@ export default function BuyerReturnList() {
                 {t("menu.counterparties", "Counterparty")}
               </th>
               <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {t("common.warehouse", "Склад")}
+              </th>
+              <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 {t("common.status", "Status")}
               </th>
               <th className="px-6 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -275,6 +278,9 @@ export default function BuyerReturnList() {
                   </td>
                   <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {item.counterpartyName || "-"}
+                  </td>
+                  <td className="px-6 py-1 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                    {item.warehouseName || "-"}
                   </td>
                   <td className="px-6 py-1 whitespace-nowrap">
                     <span
@@ -315,7 +321,7 @@ export default function BuyerReturnList() {
             {filteredAndSortedBuyerReturns.length === 0 && (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400"
                 >
                   {t("common.noData", "No buyer returns found")}
@@ -349,8 +355,11 @@ export default function BuyerReturnList() {
                 {item.status}
               </span>
             </div>
-            <div className="text-sm text-gray-700 dark:text-gray-300">
+            <div className="text-sm font-medium text-gray-900 dark:text-white">
               {item.counterpartyName}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              Склад: <span className="font-semibold text-gray-700 dark:text-gray-300">{item.warehouseName || "-"}</span>
             </div>
             <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-700">
               <span className="font-bold text-gray-900 dark:text-white">
