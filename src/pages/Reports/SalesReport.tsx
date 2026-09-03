@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/auth.store";
 import { AuthService } from "../../services/auth.service";
 import { CounterpartyService } from "../../services/counterparty.service";
+import { OrganizationService } from "../../services/organization.service";
 import type { Counterparty, CounterpartyGroup } from "../../types/counterparty";
 import * as XLSX from "xlsx-js-style";
 import { Download, Printer, ChevronDown, ChevronRight, BarChart2 } from "lucide-react";
@@ -23,6 +24,8 @@ interface SaleItem {
   counterpartyName?: string;
   warehouseName: string;
   amount: number;
+  cleanCost: number;
+  costWithVat: number;
   currency: string;
   status: string;
   profit: number;
@@ -736,6 +739,7 @@ function MultiSelectDropdown<T>({
 export default function SalesReport() {
   const { t } = useTranslation();
   const { user, setPreferences } = useAuthStore();
+  const [vatCoeff, setVatCoeff] = useState<number>(1.0);
 
   // Active tab state (with user preferences / localStorage memory)
   const [activeTab, setActiveTab] = useState<TabType>(() => {
@@ -876,11 +880,15 @@ export default function SalesReport() {
     Promise.all([
       CounterpartyService.getGroups(),
       CounterpartyService.getAll(),
+      OrganizationService.getOrganization().catch(() => null),
     ])
-      .then(([groupsData, cpData]) => {
+      .then(([groupsData, cpData, orgData]) => {
         setSalesTypesList(["Готівковий", "р/р ФОП", "з ПДВ"]);
         setGroupsList(groupsData || []);
         setCounterpartiesList(cpData || []);
+        if (orgData && orgData.vatCostCoefficient) {
+          setVatCoeff(Number(orgData.vatCostCoefficient));
+        }
       })
       .catch((err) => console.error("Failed to load report dependencies", err));
   }, []);
@@ -964,6 +972,12 @@ export default function SalesReport() {
         const mapped: SaleItem[] = combined.map((r) => {
           const isReturn = r.type === 'RETURN';
           const sign = isReturn && r.status === 'POSTED' ? -1 : 1;
+          const amt = Number(r.amount) * sign;
+          const prf = Number(r.profit ?? 0);
+          const st = (r as any).salesType || "-";
+          const isVat = st === 'з ПДВ';
+          const costWithVat = (r as any).costWithVat !== undefined ? Number((r as any).costWithVat) : (amt - prf);
+          const cleanCost = (r as any).cleanCost !== undefined ? Number((r as any).cleanCost) : (isVat && vatCoeff > 1 ? costWithVat / vatCoeff : costWithVat);
           return {
             id: r.id,
             number: isReturn ? `Пов. #${r.number}` : r.number,
@@ -971,11 +985,13 @@ export default function SalesReport() {
             counterpartyId: (r as any).counterpartyId,
             counterpartyName: r.counterpartyName ?? "",
             warehouseName: r.warehouseName ?? "",
-            amount: Number(r.amount) * sign,
+            amount: amt,
+            cleanCost: cleanCost,
+            costWithVat: costWithVat,
             currency: r.currency,
             status: r.status,
-            profit: Number(r.profit ?? 0), // Profit is already net-changed in DB
-            salesType: (r as any).salesType || "-",
+            profit: prf,
+            salesType: st,
           };
         });
         setSales(mapped);
@@ -1056,31 +1072,44 @@ export default function SalesReport() {
         "Вид продажу": row.salesType,
         "Статус": row.status === "POSTED" ? "Проведено" : "Збережено",
         "Сума": Number(row.amount),
-        "Собівартість": Number(row.amount) - Number(row.profit),
+        "Чиста собівартість": Number(row.cleanCost),
+        "Собівартість з ПДВ": Number(row.costWithVat),
         "Валюта": row.currency,
         "Прибуток": Number(row.profit)
       }));
     } else if (activeTab === "byClient") {
-      excelData = salesByClient.map(row => ({
-        "Клієнт": row.clientName,
-        "К-ть Документів": Number(row.documentsCount),
-        "Вид продажу": row.salesType || "-",
-        "Сума Продажу": Number(row.totalAmount),
-        "Собівартість": Number(row.totalAmount) - Number(row.totalProfit),
-        "Прибуток": Number(row.totalProfit)
-      }));
+      excelData = salesByClient.map(row => {
+        const isVat = row.salesType === 'з ПДВ';
+        const cVat = row.totalCostWithVat !== undefined ? Number(row.totalCostWithVat) : (Number(row.totalAmount) - Number(row.totalProfit));
+        const cClean = row.totalCleanCost !== undefined ? Number(row.totalCleanCost) : (isVat && vatCoeff > 1 ? cVat / vatCoeff : cVat);
+        return {
+          "Клієнт": row.clientName,
+          "К-ть Документів": Number(row.documentsCount),
+          "Вид продажу": row.salesType || "-",
+          "Сума Продажу": Number(row.totalAmount),
+          "Чиста собівартість": cClean,
+          "Собівартість з ПДВ": cVat,
+          "Прибуток": Number(row.totalProfit)
+        };
+      });
       sheetName = "По_Клієнтам";
     } else if (activeTab === "byProduct") {
-      excelData = salesByProduct.map(row => ({
-        "Товар": row.productName,
-        "Категорія": row.productCategory || "Без категорії",
-        "Вид продажу": row.salesType || "-",
-        "К-ть": Number(row.totalQuantity),
-        "Ціна за од. (₴)": Number(row.totalQuantity) !== 0 ? (Number(row.totalAmount) / Number(row.totalQuantity)).toFixed(2) : "0.00",
-        "Сума Продажу": Number(row.totalAmount),
-        "Собівартість": Number(row.totalPurchaseCost),
-        "Прибуток": Number(row.totalProfit)
-      }));
+      excelData = salesByProduct.map(row => {
+        const isVat = row.salesType === 'з ПДВ';
+        const cVat = row.totalCostWithVat !== undefined ? Number(row.totalCostWithVat) : Number(row.totalPurchaseCost);
+        const cClean = row.totalCleanCost !== undefined ? Number(row.totalCleanCost) : (isVat && vatCoeff > 1 ? cVat / vatCoeff : cVat);
+        return {
+          "Товар": row.productName,
+          "Категорія": row.productCategory || "Без категорії",
+          "Вид продажу": row.salesType || "-",
+          "К-ть": Number(row.totalQuantity),
+          "Ціна за од. (₴)": Number(row.totalQuantity) !== 0 ? (Number(row.totalAmount) / Number(row.totalQuantity)).toFixed(2) : "0.00",
+          "Сума Продажу": Number(row.totalAmount),
+          "Чиста собівартість": cClean,
+          "Собівартість з ПДВ": cVat,
+          "Прибуток": Number(row.totalProfit)
+        };
+      });
       sheetName = "По_Товарам";
     }
 
@@ -1099,6 +1128,10 @@ export default function SalesReport() {
     const isExpanded = !!expandedClients[key];
     const details = clientDetails[key];
     const isLoading = loadingDetails[key];
+
+    const isVat = row.salesType === 'з ПДВ';
+    const costWithVat = row.totalCostWithVat !== undefined ? Number(row.totalCostWithVat) : (Number(row.totalAmount) - Number(row.totalProfit));
+    const cleanCost = row.totalCleanCost !== undefined ? Number(row.totalCleanCost) : (isVat && vatCoeff > 1 ? costWithVat / vatCoeff : costWithVat);
 
     return (
       <Fragment key={key}>
@@ -1128,7 +1161,10 @@ export default function SalesReport() {
             {formatNum(row.totalAmount)}
           </td>
           <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 text-right">
-            {formatNum(Number(row.totalAmount) - Number(row.totalProfit))}
+            {formatNum(cleanCost)}
+          </td>
+          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 text-right">
+            {formatNum(costWithVat)}
           </td>
           <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
             {formatNum(row.totalProfit)}
@@ -1139,7 +1175,7 @@ export default function SalesReport() {
         </tr>
         {isExpanded && (
             <tr className="bg-gray-50/50">
-                <td colSpan={groupBySalesType ? 8 : 7} className="px-8 py-4">
+                <td colSpan={groupBySalesType ? 9 : 8} className="px-8 py-4">
                     {isLoading ? (
                         <div className="text-sm text-gray-500 text-center py-2">Завантаження деталей...</div>
                     ) : details && details.length > 0 ? (
@@ -1149,20 +1185,27 @@ export default function SalesReport() {
                                     <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Товар</th>
                                     <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">К-сть</th>
                                     <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Сума</th>
-                                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Собівартість</th>
+                                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Чиста собівартість</th>
+                                    <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Собівартість з ПДВ</th>
                                     <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Прибуток</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {details.map((d, i) => (
-                                    <tr key={i} className="hover:bg-gray-50">
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{d.productName || "Невідомий товар"}</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 text-right">{Number(d.quantity).toFixed(2)} {d.unit}</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatNum(d.amount)}</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-700 text-right">{formatNum(Number(d.amount) - Number(d.profit))}</td>
-                                        <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-green-600 text-right">{formatNum(d.profit)}</td>
-                                    </tr>
-                                ))}
+                                {details.map((d, i) => {
+                                    const dIsVat = row.salesType === 'з ПДВ';
+                                    const dCostWithVat = d.costWithVat !== undefined ? Number(d.costWithVat) : (Number(d.amount) - Number(d.profit));
+                                    const dCleanCost = d.cleanCost !== undefined ? Number(d.cleanCost) : (dIsVat && vatCoeff > 1 ? dCostWithVat / vatCoeff : dCostWithVat);
+                                    return (
+                                        <tr key={i} className="hover:bg-gray-50">
+                                            <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{d.productName || "Невідомий товар"}</td>
+                                            <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 text-right">{Number(d.quantity).toFixed(2)} {d.unit}</td>
+                                            <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatNum(d.amount)}</td>
+                                            <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-700 text-right">{formatNum(dCleanCost)}</td>
+                                            <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-700 text-right">{formatNum(dCostWithVat)}</td>
+                                            <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-green-600 text-right">{formatNum(d.profit)}</td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     ) : (
@@ -1429,7 +1472,10 @@ export default function SalesReport() {
                       {t("common.amount", "Amount")}
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Собівартість
+                      Чиста собівартість
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Собівартість з ПДВ
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Прибуток
@@ -1440,11 +1486,13 @@ export default function SalesReport() {
                   {groupBySalesType ? (
                     groupArrayBySalesType(sales).map((group) => {
                       const groupAmount = group.items.reduce((sum, r) => sum + r.amount, 0);
+                      const groupCleanCost = group.items.reduce((sum, r) => sum + r.cleanCost, 0);
+                      const groupCostWithVat = group.items.reduce((sum, r) => sum + r.costWithVat, 0);
                       const groupProfit = group.items.reduce((sum, r) => sum + r.profit, 0);
                       return (
                         <Fragment key={group.salesType}>
                           <tr className="bg-blue-50/80 dark:bg-blue-900/30 border-y border-blue-200">
-                            <td colSpan={10} className="px-4 py-2 text-xs font-bold text-blue-900 dark:text-blue-200">
+                            <td colSpan={11} className="px-4 py-2 text-xs font-bold text-blue-900 dark:text-blue-200">
                               <span className="flex items-center gap-2">
                                 <span>📌 Вид продажу:</span>
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${group.salesType === 'з ПДВ' ? 'bg-purple-100 text-purple-800' : group.salesType === 'Готівковий' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
@@ -1491,7 +1539,10 @@ export default function SalesReport() {
                                 {formatNum(row.amount)} {row.currency}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 text-right">
-                                {formatNum(row.amount - row.profit)} ₴
+                                {formatNum(row.cleanCost)} ₴
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 text-right">
+                                {formatNum(row.costWithVat)} ₴
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
                                 {formatNum(row.profit)} ₴
@@ -1506,7 +1557,10 @@ export default function SalesReport() {
                               {formatNum(groupAmount)} ₴
                             </td>
                             <td className="px-4 py-2 text-right text-gray-700 text-sm font-bold">
-                              {formatNum(groupAmount - groupProfit)} ₴
+                              {formatNum(groupCleanCost)} ₴
+                            </td>
+                            <td className="px-4 py-2 text-right text-gray-700 text-sm font-bold">
+                              {formatNum(groupCostWithVat)} ₴
                             </td>
                             <td className="px-4 py-2 text-right text-green-600 text-sm font-bold">
                               {formatNum(groupProfit)} ₴
@@ -1553,7 +1607,10 @@ export default function SalesReport() {
                           {formatNum(row.amount)} {row.currency}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 text-right">
-                          {formatNum(row.amount - row.profit)} ₴
+                          {formatNum(row.cleanCost)} ₴
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 text-right">
+                          {formatNum(row.costWithVat)} ₴
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
                           {formatNum(row.profit)} ₴
@@ -1564,7 +1621,7 @@ export default function SalesReport() {
                   {sales.length === 0 && (
                     <tr>
                       <td
-                        colSpan={10}
+                        colSpan={11}
                         className="px-6 py-10 text-center text-gray-500"
                       >
                         {t("common.noData", "No data available")}
@@ -1582,7 +1639,10 @@ export default function SalesReport() {
                         {formatNum(sales.reduce((sum, r) => sum + r.amount, 0))} ₴
                       </td>
                       <td className="px-4 py-3 text-right text-gray-700 text-sm">
-                        {formatNum(sales.reduce((sum, r) => sum + (r.amount - r.profit), 0))} ₴
+                        {formatNum(sales.reduce((sum, r) => sum + r.cleanCost, 0))} ₴
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-700 text-sm">
+                        {formatNum(sales.reduce((sum, r) => sum + r.costWithVat, 0))} ₴
                       </td>
                       <td className="px-4 py-3 text-right text-green-600 text-sm">
                         {formatNum(sales.reduce((sum, r) => sum + r.profit, 0))} ₴
@@ -1617,7 +1677,10 @@ export default function SalesReport() {
                       {t("common.amount", "Amount")}
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Собівартість
+                      Чиста собівартість
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Собівартість з ПДВ
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Прибуток
@@ -1632,14 +1695,19 @@ export default function SalesReport() {
                     groupArrayBySalesType(salesByClient).map((group) => {
                       const groupDocs = group.items.reduce((sum, r) => sum + Number(r.documentsCount), 0);
                       const groupAmount = group.items.reduce((sum, r) => sum + Number(r.totalAmount), 0);
-                      const groupCost = group.items.reduce((sum, r) => sum + (Number(r.totalAmount) - Number(r.totalProfit)), 0);
+                      const groupCleanCost = group.items.reduce((sum, r) => {
+                        const isVat = r.salesType === 'з ПДВ';
+                        const cVat = r.totalCostWithVat !== undefined ? Number(r.totalCostWithVat) : (Number(r.totalAmount) - Number(r.totalProfit));
+                        return sum + (r.totalCleanCost !== undefined ? Number(r.totalCleanCost) : (isVat && vatCoeff > 1 ? cVat / vatCoeff : cVat));
+                      }, 0);
+                      const groupCostWithVat = group.items.reduce((sum, r) => sum + (r.totalCostWithVat !== undefined ? Number(r.totalCostWithVat) : (Number(r.totalAmount) - Number(r.totalProfit))), 0);
                       const groupProfit = group.items.reduce((sum, r) => sum + Number(r.totalProfit), 0);
                       const groupMargin = groupAmount !== 0 ? ((groupProfit / groupAmount) * 100).toFixed(2) + " %" : "-";
 
                       return (
                         <Fragment key={group.salesType}>
                           <tr className="bg-blue-50/80 dark:bg-blue-900/30 border-y border-blue-200">
-                            <td colSpan={8} className="px-4 py-2 text-xs font-bold text-blue-900 dark:text-blue-200">
+                            <td colSpan={9} className="px-4 py-2 text-xs font-bold text-blue-900 dark:text-blue-200">
                               <span className="flex items-center gap-2">
                                 <span>📌 Вид продажу:</span>
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${group.salesType === 'з ПДВ' ? 'bg-purple-100 text-purple-800' : group.salesType === 'Готівковий' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
@@ -1661,7 +1729,10 @@ export default function SalesReport() {
                               {formatNum(groupAmount)} ₴
                             </td>
                             <td className="px-4 py-2 text-right text-gray-700 text-sm font-bold">
-                              {formatNum(groupCost)} ₴
+                              {formatNum(groupCleanCost)} ₴
+                            </td>
+                            <td className="px-4 py-2 text-right text-gray-700 text-sm font-bold">
+                              {formatNum(groupCostWithVat)} ₴
                             </td>
                             <td className="px-4 py-2 text-right text-green-600 text-sm font-bold">
                               {formatNum(groupProfit)} ₴
@@ -1679,7 +1750,7 @@ export default function SalesReport() {
                   {salesByClient.length === 0 && (
                     <tr>
                       <td
-                        colSpan={groupBySalesType ? 8 : 7}
+                        colSpan={groupBySalesType ? 9 : 8}
                         className="px-6 py-10 text-center text-gray-500"
                       >
                         {t("common.noData", "No data available")}
@@ -1700,7 +1771,14 @@ export default function SalesReport() {
                         {formatNum(salesByClient.reduce((sum, r) => sum + Number(r.totalAmount), 0))} ₴
                       </td>
                       <td className="px-4 py-3 text-right text-gray-700 text-sm">
-                        {formatNum(salesByClient.reduce((sum, r) => sum + (Number(r.totalAmount) - Number(r.totalProfit)), 0))} ₴
+                        {formatNum(salesByClient.reduce((sum, r) => {
+                          const isVat = r.salesType === 'з ПДВ';
+                          const cVat = r.totalCostWithVat !== undefined ? Number(r.totalCostWithVat) : (Number(r.totalAmount) - Number(r.totalProfit));
+                          return sum + (r.totalCleanCost !== undefined ? Number(r.totalCleanCost) : (isVat && vatCoeff > 1 ? cVat / vatCoeff : cVat));
+                        }, 0))} ₴
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-700 text-sm">
+                        {formatNum(salesByClient.reduce((sum, r) => sum + (r.totalCostWithVat !== undefined ? Number(r.totalCostWithVat) : (Number(r.totalAmount) - Number(r.totalProfit))), 0))} ₴
                       </td>
                       <td className="px-4 py-3 text-right text-green-600 text-sm">
                         {formatNum(salesByClient.reduce((sum, r) => sum + Number(r.totalProfit), 0))} ₴
@@ -1746,7 +1824,10 @@ export default function SalesReport() {
                       {t("common.amount", "Amount")}
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Собівартість
+                      Чиста собівартість
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Собівартість з ПДВ
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Прибуток
@@ -1761,14 +1842,19 @@ export default function SalesReport() {
                     groupArrayBySalesType(salesByProduct).map((group) => {
                       const groupQty = group.items.reduce((sum, r) => sum + Number(r.totalQuantity), 0);
                       const groupAmount = group.items.reduce((sum, r) => sum + Number(r.totalAmount), 0);
-                      const groupCost = group.items.reduce((sum, r) => sum + Number(r.totalPurchaseCost), 0);
+                      const groupCleanCost = group.items.reduce((sum, r) => {
+                        const isVat = r.salesType === 'з ПДВ';
+                        const cVat = r.totalCostWithVat !== undefined ? Number(r.totalCostWithVat) : Number(r.totalPurchaseCost);
+                        return sum + (r.totalCleanCost !== undefined ? Number(r.totalCleanCost) : (isVat && vatCoeff > 1 ? cVat / vatCoeff : cVat));
+                      }, 0);
+                      const groupCostWithVat = group.items.reduce((sum, r) => sum + (r.totalCostWithVat !== undefined ? Number(r.totalCostWithVat) : Number(r.totalPurchaseCost)), 0);
                       const groupProfit = group.items.reduce((sum, r) => sum + Number(r.totalProfit), 0);
                       const groupMargin = groupAmount !== 0 ? ((groupProfit / groupAmount) * 100).toFixed(2) + " %" : "-";
 
                       return (
                         <Fragment key={group.salesType}>
                           <tr className="bg-blue-50/80 dark:bg-blue-900/30 border-y border-blue-200">
-                            <td colSpan={10} className="px-4 py-2 text-xs font-bold text-blue-900 dark:text-blue-200">
+                            <td colSpan={11} className="px-4 py-2 text-xs font-bold text-blue-900 dark:text-blue-200">
                               <span className="flex items-center gap-2">
                                 <span>📌 Вид продажу:</span>
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${group.salesType === 'з ПДВ' ? 'bg-purple-100 text-purple-800' : group.salesType === 'Готівковий' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
@@ -1785,6 +1871,9 @@ export default function SalesReport() {
                             const margin = Number(row.totalAmount) !== 0 
                               ? ((Number(row.totalProfit) / Number(row.totalAmount)) * 100).toFixed(2) 
                               : "0.00";
+                            const isVat = row.salesType === 'з ПДВ';
+                            const costWithVat = row.totalCostWithVat !== undefined ? Number(row.totalCostWithVat) : Number(row.totalPurchaseCost);
+                            const cleanCost = row.totalCleanCost !== undefined ? Number(row.totalCleanCost) : (isVat && vatCoeff > 1 ? costWithVat / vatCoeff : costWithVat);
 
                             return (
                               <tr key={index} className="hover:bg-gray-50 transition-colors">
@@ -1815,8 +1904,11 @@ export default function SalesReport() {
                                 <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                                   {formatNum(row.totalAmount)} ₴
                                 </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
-                                  {formatNum(row.totalPurchaseCost)} ₴
+                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 text-right">
+                                  {formatNum(cleanCost)} ₴
+                                </td>
+                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 text-right">
+                                  {formatNum(costWithVat)} ₴
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
                                   {formatNum(row.totalProfit)} ₴
@@ -1828,7 +1920,7 @@ export default function SalesReport() {
                             );
                           })}
                           <tr className="bg-gray-100/90 font-semibold border-b-2 border-gray-300">
-                            <td colSpan={4} className="px-4 py-2 text-right text-gray-700 text-xs">
+                            <td colSpan={groupBySalesType ? 5 : 4} className="px-4 py-2 text-right text-gray-700 text-xs">
                               Підсумок [{group.salesType}]:
                             </td>
                             <td className="px-4 py-2 text-right text-gray-900 text-sm font-bold">
@@ -1838,8 +1930,11 @@ export default function SalesReport() {
                             <td className="px-4 py-2 text-right text-gray-900 text-sm font-bold">
                               {formatNum(groupAmount)} ₴
                             </td>
-                            <td className="px-4 py-2 text-right text-gray-500 text-sm font-medium">
-                              {formatNum(groupCost)} ₴
+                            <td className="px-4 py-2 text-right text-gray-700 text-sm font-bold">
+                              {formatNum(groupCleanCost)} ₴
+                            </td>
+                            <td className="px-4 py-2 text-right text-gray-700 text-sm font-bold">
+                              {formatNum(groupCostWithVat)} ₴
                             </td>
                             <td className="px-4 py-2 text-right text-green-600 text-sm font-bold">
                               {formatNum(groupProfit)} ₴
@@ -1859,6 +1954,9 @@ export default function SalesReport() {
                       const margin = Number(row.totalAmount) !== 0 
                         ? ((Number(row.totalProfit) / Number(row.totalAmount)) * 100).toFixed(2) 
                         : "0.00";
+                      const isVat = row.salesType === 'з ПДВ';
+                      const costWithVat = row.totalCostWithVat !== undefined ? Number(row.totalCostWithVat) : Number(row.totalPurchaseCost);
+                      const cleanCost = row.totalCleanCost !== undefined ? Number(row.totalCleanCost) : (isVat && vatCoeff > 1 ? costWithVat / vatCoeff : costWithVat);
 
                       return (
                         <tr key={index} className="hover:bg-gray-50 transition-colors">
@@ -1889,8 +1987,11 @@ export default function SalesReport() {
                           <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                             {formatNum(row.totalAmount)} ₴
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 text-right">
-                            {formatNum(row.totalPurchaseCost)} ₴
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 text-right">
+                            {formatNum(cleanCost)} ₴
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-700 text-right">
+                            {formatNum(costWithVat)} ₴
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-600 text-right">
                             {formatNum(row.totalProfit)} ₴
@@ -1905,7 +2006,7 @@ export default function SalesReport() {
                   {salesByProduct.length === 0 && (
                     <tr>
                       <td
-                        colSpan={groupBySalesType ? 10 : 9}
+                        colSpan={groupBySalesType ? 11 : 10}
                         className="px-6 py-10 text-center text-gray-500"
                       >
                         {t("common.noData", "No data available")}
@@ -1926,8 +2027,15 @@ export default function SalesReport() {
                       <td className="px-4 py-3 text-right text-gray-900 text-sm">
                         {formatNum(salesByProduct.reduce((sum, r) => sum + Number(r.totalAmount), 0))} ₴
                       </td>
-                      <td className="px-4 py-3 text-right text-gray-500 text-sm">
-                        {formatNum(salesByProduct.reduce((sum, r) => sum + Number(r.totalPurchaseCost), 0))} ₴
+                      <td className="px-4 py-3 text-right text-gray-700 text-sm">
+                        {formatNum(salesByProduct.reduce((sum, r) => {
+                          const isVat = r.salesType === 'з ПДВ';
+                          const cVat = r.totalCostWithVat !== undefined ? Number(r.totalCostWithVat) : Number(r.totalPurchaseCost);
+                          return sum + (r.totalCleanCost !== undefined ? Number(r.totalCleanCost) : (isVat && vatCoeff > 1 ? cVat / vatCoeff : cVat));
+                        }, 0))} ₴
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-700 text-sm">
+                        {formatNum(salesByProduct.reduce((sum, r) => sum + (r.totalCostWithVat !== undefined ? Number(r.totalCostWithVat) : Number(r.totalPurchaseCost)), 0))} ₴
                       </td>
                       <td className="px-4 py-3 text-right text-green-600 text-sm">
                         {formatNum(salesByProduct.reduce((sum, r) => sum + Number(r.totalProfit), 0))} ₴

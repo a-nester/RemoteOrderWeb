@@ -21,6 +21,8 @@ export interface SalesByClient {
   clientName: string;
   documentsCount: string | number;
   totalAmount: string | number;
+  totalCleanCost?: string | number;
+  totalCostWithVat?: string | number;
   totalProfit: string | number;
   salesType?: string;
 }
@@ -30,8 +32,10 @@ export interface SalesByClientDetail {
   unit: string;
   quantity: string | number;
   amount: string | number;
+  cleanCost?: string | number;
+  costWithVat?: string | number;
   profit: string | number;
-  averagePrice: string | number;
+  averagePrice?: string | number;
 }
 
 export interface SalesByProduct {
@@ -40,6 +44,8 @@ export interface SalesByProduct {
   productCategory: string;
   totalQuantity: string | number;
   totalAmount: string | number;
+  totalCleanCost?: string | number;
+  totalCostWithVat?: string | number;
   totalPurchaseCost: string | number;
   totalProfit: string | number;
   salesType?: string;
