@@ -768,7 +768,7 @@ export default function SalesReport() {
         setLoadingDetails(prev => ({ ...prev, [key]: true }));
         try {
             const data = await ReportsService.getSalesByClientDetails(
-                clientRow.clientId, dateFrom || undefined, dateTo || undefined, clientRow.salesType
+                clientRow.clientId, dateFrom || undefined, dateTo || undefined, clientRow.salesType || (selectedSalesTypes.length > 0 ? selectedSalesTypes.join(",") : undefined)
             );
             setClientDetails(prev => ({ ...prev, [key]: data }));
         } catch (e) {
@@ -796,7 +796,15 @@ export default function SalesReport() {
 
   const [groupBySalesType, setGroupBySalesType] = useState<boolean>(() => user?.preferences?.salesGroupBySalesType || false);
   const [includeReturns, setIncludeReturns] = useState<boolean>(() => user?.preferences?.salesIncludeReturns || false);
-  const [salesType, setSalesType] = useState<string>(() => user?.preferences?.salesSalesType || "");
+  const [selectedSalesTypes, setSelectedSalesTypes] = useState<string[]>(() => {
+    if (user?.preferences?.salesSelectedSalesTypes && Array.isArray(user.preferences.salesSelectedSalesTypes)) {
+      return user.preferences.salesSelectedSalesTypes;
+    }
+    if (user?.preferences?.salesSalesType) {
+      return [user.preferences.salesSalesType];
+    }
+    return [];
+  });
   const [salesTypesList, setSalesTypesList] = useState<string[]>([]);
 
   // Chart Options state with User Preferences & localStorage memory
@@ -830,7 +838,8 @@ export default function SalesReport() {
       salesSelectedCounterpartyIds: selectedCounterpartyIds,
       salesGroupBySalesType: groupBySalesType,
       salesIncludeReturns: includeReturns,
-      salesSalesType: salesType,
+      salesSelectedSalesTypes: selectedSalesTypes,
+      salesSalesType: selectedSalesTypes.join(","),
       salesChartType: chartType,
       salesChartPeriod: chartPeriod,
       salesShowSales: showSales,
@@ -950,9 +959,9 @@ export default function SalesReport() {
           }
         }
 
-        if (salesType)
+        if (selectedSalesTypes.length > 0)
           combined = combined.filter(
-            (d) => d.type === "REALIZATION" && (d as any).salesType === salesType
+            (d) => d.type === "REALIZATION" && selectedSalesTypes.includes((d as any).salesType || "")
           );
 
         // Sort by date DESC
@@ -1012,13 +1021,15 @@ export default function SalesReport() {
           }
         }
 
+        const salesTypeParam = selectedSalesTypes.length > 0 ? selectedSalesTypes.join(",") : undefined;
+
         if (activeTab === "byClient") {
           const data = await ReportsService.getSalesByClient(
             dateFrom,
             dateTo,
             filterCounterparty,
             groupBySalesType,
-            salesType,
+            salesTypeParam,
             includeReturns,
             filterGroupIds,
             filterCounterpartyIds
@@ -1030,7 +1041,7 @@ export default function SalesReport() {
             dateTo,
             filterCounterparty,
             groupBySalesType,
-            salesType,
+            salesTypeParam,
             includeReturns,
             filterGroupIds,
             filterCounterpartyIds
@@ -1049,7 +1060,7 @@ export default function SalesReport() {
   useEffect(() => {
     fetchSales();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, groupBySalesType, includeReturns]);
+  }, [activeTab, groupBySalesType, includeReturns, selectedSalesTypes]);
 
   const formatNum = (num: any) => Number(num || 0).toFixed(2);
 
@@ -1339,18 +1350,17 @@ export default function SalesReport() {
           <label className="block text-sm mb-1 text-gray-600 font-medium">
             {t("reports.salesType", "Вид продажу")}
           </label>
-          <select
-            value={salesType}
-            onChange={(e) => setSalesType(e.target.value)}
-            className="border border-gray-300 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white min-w-[150px]"
-          >
-            <option value="">{t("reports.allSalesTypes", "Всі види")}</option>
-            {salesTypesList.map((st) => (
-              <option key={st} value={st}>
-                {st}
-              </option>
-            ))}
-          </select>
+          <MultiSelectDropdown
+            items={salesTypesList}
+            selectedIds={selectedSalesTypes}
+            onChange={(ids) => {
+              setSelectedSalesTypes(ids);
+              saveAllPreferences({ salesSelectedSalesTypes: ids, salesSalesType: ids.join(",") });
+            }}
+            getId={(st) => st}
+            getName={(st) => st}
+            placeholder="Всі види"
+          />
         </div>
         <div className="flex items-center mb-2 mr-4">
           <label className="flex items-center cursor-pointer">
