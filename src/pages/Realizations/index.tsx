@@ -136,9 +136,10 @@ export default function RealizationList() {
         await RealizationService.postRealization(id);
       }
       loadData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error toggling status", error);
-      alert(t("common.error", "Failed to change status"));
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || t("common.error", "Failed to change status");
+      alert(errorMessage);
     }
   };
 
