@@ -1,6 +1,6 @@
 export type PriceDocumentStatus = 'DRAFT' | 'APPLIED';
 export type InputMethod = 'MANUAL' | 'FORMULA';
-export type RoundingMethod = 'NONE' | 'NEAREST_1' | 'NEAREST_5' | 'NEAREST_10' | 'UP_1' | 'UP_5' | 'UP_10';
+export type RoundingMethod = 'UP' | 'DOWN' | 'NONE' | 'NEAREST_1' | 'NEAREST_5' | 'NEAREST_10' | 'UP_1' | 'UP_5' | 'UP_10';
 
 export interface PriceDocumentItem {
     id: string;

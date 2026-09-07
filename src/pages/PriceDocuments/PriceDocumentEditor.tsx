@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Plus, Trash, Check, Save, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Plus, Trash, Check, Save, RotateCcw, Calculator } from 'lucide-react';
 import { PriceDocumentsService } from '../../services/priceDocuments.service';
 import { PriceTypesService } from '../../services/priceTypes.service';
 import { ProductsService } from '../../services/products.service';
@@ -152,7 +152,7 @@ export default function PriceDocumentEditor() {
     const handleApplyFormula = () => {
         const markup = document.markupPercentage;
         if (markup === undefined || markup === null || isNaN(markup)) {
-            setNotification({ type: 'error', message: 'Please enter a valid markup percentage' });
+            setNotification({ type: 'error', message: 'Будь ласка, введіть відсоток націнки' });
             return;
         }
 
@@ -161,22 +161,36 @@ export default function PriceDocumentEditor() {
             : 'standard'; 
 
         if (!sourceSlug) {
-             setNotification({ type: 'error', message: 'Invalid source price type' });
-             return;
+            setNotification({ type: 'error', message: 'Некоректний базовий тип ціни' });
+            return;
         }
+
+        const roundingValue = document.roundingValue;
+        const roundingMethod = document.roundingMethod || 'UP'; // 'UP' (до більшого) by default
 
         const updatedItems = (document.items || []).map(item => {
             const product = products.find(p => p.id === item.productId);
             if (!product) return item;
 
             const basePrice = (product.prices as any)[sourceSlug] || 0;
-            // 1. Calculate with markup
+            // 1. Calculate price with markup
             let newPrice = basePrice * (1 + markup / 100);
             
-            // 2. Apply rounding if set
-            const rounding = document.roundingValue;
-            if (rounding && rounding > 0) {
-                 newPrice = Math.round(newPrice / rounding) * rounding;
+            // 2. Apply rounding depending on method (UP - до більшого, DOWN - до меншого)
+            if (roundingValue && roundingValue > 0) {
+                if (roundingMethod === 'DOWN') {
+                    newPrice = Math.floor(newPrice / roundingValue) * roundingValue;
+                } else {
+                    newPrice = Math.ceil(newPrice / roundingValue) * roundingValue;
+                }
+            } else {
+                if (roundingMethod === 'DOWN') {
+                    newPrice = Math.floor(newPrice * 100) / 100;
+                } else if (roundingMethod === 'UP') {
+                    newPrice = Math.ceil(newPrice * 100) / 100;
+                } else {
+                    newPrice = Math.round(newPrice * 100) / 100;
+                }
             }
 
             return {
@@ -186,7 +200,7 @@ export default function PriceDocumentEditor() {
         });
 
         setDocument(prev => ({ ...prev, items: updatedItems }));
-        setNotification({ type: 'success', message: 'Prices recalculated successfully' });
+        setNotification({ type: 'success', message: 'Ціни успішно розраховано' });
     };
 
     const handleAddItem = (prod: Product) => {
@@ -367,12 +381,24 @@ export default function PriceDocumentEditor() {
                                             value={document.markupPercentage || ''}
                                             onChange={e => setDocument({...document, markupPercentage: parseFloat(e.target.value)})}
                                             disabled={!isEditing}
-                                            placeholder="e.g. 10"
+                                            placeholder="напр. 10"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('priceDocument.rounding', 'Rounding (0.01 - 10)')}</label>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('priceDocument.roundingMethod', 'Метод округлення')}</label>
+                                    <select
+                                        className="mt-1 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                        value={document.roundingMethod || 'UP'}
+                                        onChange={e => setDocument({...document, roundingMethod: e.target.value as any})}
+                                        disabled={!isEditing}
+                                    >
+                                        <option value="UP">До більшого (за замовчуванням)</option>
+                                        <option value="DOWN">До меншого</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('priceDocument.rounding', 'Крок округлення (0.01 - 10)')}</label>
                                     <div className="mt-1 flex rounded-md shadow-sm">
                                         <input
                                             type="number"
@@ -383,15 +409,16 @@ export default function PriceDocumentEditor() {
                                             value={document.roundingValue || ''}
                                             onChange={e => setDocument({...document, roundingValue: parseFloat(e.target.value)})}
                                             disabled={!isEditing}
-                                            placeholder="e.g. 0.5"
+                                            placeholder="напр. 0.5"
                                         />
                                         <button
                                             type="button"
                                             onClick={handleApplyFormula}
                                             disabled={!isEditing}
-                                            className="inline-flex items-center px-4 py-2 border border-l-0 border-gray-300 rounded-r-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium"
+                                            className="inline-flex items-center px-4 py-2 border border-l-0 border-gray-300 rounded-r-md bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-sm font-medium transition-colors"
                                         >
-                                            {t('common.apply', 'Apply')}
+                                            <Calculator className="h-4 w-4 mr-1.5" />
+                                            {t('priceDocument.calculate', 'Розрахувати')}
                                         </button>
                                     </div>
                                 </div>
