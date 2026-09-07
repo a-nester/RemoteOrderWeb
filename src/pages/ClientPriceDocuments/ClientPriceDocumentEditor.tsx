@@ -406,7 +406,7 @@ export default function ClientPriceDocumentEditor() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                         type="text"
-                        placeholder="Пошук товару в таблиці за кодом або назвою..."
+                        placeholder="Пошук товару в таблиці за назвою..."
                         value={productSearch}
                         onChange={(e) => setProductSearch(e.target.value)}
                         className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -444,7 +444,6 @@ export default function ClientPriceDocumentEditor() {
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Код</th>
                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Найменування товару</th>
                             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider w-28">Вхід (грн)</th>
                             <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Базова ціна (грн)</th>
@@ -454,17 +453,14 @@ export default function ClientPriceDocumentEditor() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
-                            <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">Підготовка товарів...</td></tr>
+                            <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">Підготовка товарів...</td></tr>
                         ) : !counterpartyId ? (
-                            <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">Будь ласка, оберіть клієнта вище</td></tr>
+                            <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">Будь ласка, оберіть клієнта вище</td></tr>
                         ) : filteredItems.length === 0 ? (
-                            <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">Товарів не знайдено</td></tr>
+                            <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">Товарів не знайдено</td></tr>
                         ) : (
                             filteredItems.map((item) => (
                                 <tr key={item.productId} className="hover:bg-gray-50 transition">
-                                    <td className="px-4 py-3 text-xs font-mono text-gray-500">
-                                        {item.productCode || '—'}
-                                    </td>
                                     <td className="px-4 py-3 text-sm font-medium text-gray-900">
                                         {item.productName}
                                         {item.productUnit && <span className="text-xs text-gray-400 font-normal ml-1">({item.productUnit})</span>}
@@ -496,6 +492,7 @@ export default function ClientPriceDocumentEditor() {
                         )}
                     </tbody>
                 </table>
+
             </div>
         </div>
     );
