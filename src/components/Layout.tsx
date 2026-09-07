@@ -172,6 +172,7 @@ export default function Layout({ children, title }: LayoutProps) {
                   {hasAccess("priceEditor", "priceSettings") && (
                     <NavLink
                       to="/price-documents"
+                      end
                       className={({ isActive }) =>
                         clsx(
                           "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
@@ -186,6 +187,23 @@ export default function Layout({ children, title }: LayoutProps) {
                       {t("menu.priceSettings")}
                     </NavLink>
                   )}
+                  {hasAccess("priceEditor", "priceSettings") && (
+                    <NavLink
+                      to="/price-documents/client-prices"
+                      className={({ isActive }) =>
+                        clsx(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                        )
+                      }
+                    >
+                      <span className="w-5 mr-3"></span>
+                      Установка цін клієнтів
+                    </NavLink>
+                  )}
+
                   {/* Price Types - Assuming route /price-types exists or will exist */}
                   {hasAccess("priceEditor", "priceTypes") && (
                     <NavLink

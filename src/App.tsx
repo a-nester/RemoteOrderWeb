@@ -7,7 +7,10 @@ import ProductForm from "./pages/ProductForm";
 import PriceListPrint from "./pages/PriceListPrint";
 import PriceDocumentList from "./pages/PriceDocuments";
 import PriceDocumentEditor from "./pages/PriceDocuments/PriceDocumentEditor";
+import ClientPriceDocumentsList from "./pages/ClientPriceDocuments/ClientPriceDocumentsList";
+import ClientPriceDocumentEditor from "./pages/ClientPriceDocuments/ClientPriceDocumentEditor";
 import Layout from "./components/Layout";
+
 import { ThemeProvider } from "./context/ThemeContext";
 import Settings from "./pages/Settings";
 import PriceTypes from "./pages/PriceTypes";
@@ -116,6 +119,26 @@ function App() {
             }
           />
           <Route
+            path="/price-documents/client-prices"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ClientPriceDocumentsList />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/price-documents/client-prices/:id"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ClientPriceDocumentEditor />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/price-documents/:id"
             element={
               <ProtectedRoute>
@@ -125,6 +148,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/price-types"
             element={
