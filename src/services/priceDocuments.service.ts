@@ -56,6 +56,10 @@ export const PriceDocumentsService = {
         await axios.post(`${DOCS_API_URL}/${id}/apply`, {}, { headers: getAuthHeader() });
     },
 
+    async unpostDocument(id: string): Promise<void> {
+        await axios.post(`${DOCS_API_URL}/${id}/unpost`, {}, { headers: getAuthHeader() });
+    },
+
     async copyDocument(id: string): Promise<PriceDocument> {
         const response = await axios.post(`${DOCS_API_URL}/${id}/copy`, {}, { headers: getAuthHeader() });
         const data = response.data;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Plus, Trash, Check, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Trash, Check, Save, RotateCcw } from 'lucide-react';
 import { PriceDocumentsService } from '../../services/priceDocuments.service';
 import { PriceTypesService } from '../../services/priceTypes.service';
 import { ProductsService } from '../../services/products.service';
@@ -131,6 +131,21 @@ export default function PriceDocumentEditor() {
         } catch (error) {
             console.error('Error applying document', error);
             alert('Failed to apply document');
+        }
+    };
+
+    const handleUnpost = async () => {
+        if (!id || isNew) return;
+        if (!confirm(t('priceDocument.confirmUnpost', 'Ви впевнені, що хочете розпровести документ встановлення цін? Ціни товарів будуть повернуті до попередніх значень.'))) return;
+        
+        try {
+            await PriceDocumentsService.unpostDocument(id);
+            setNotification({ type: 'success', message: t('priceDocument.unpostSuccess', 'Документ успішно розпроведено') });
+            setIsEditing(false);
+            loadData();
+        } catch (error: any) {
+            console.error('Error unposting document', error);
+            setNotification({ type: 'error', message: error.response?.data?.error || error.message || t('priceDocument.unpostFailed', 'Не вдалося розпровести документ') });
         }
     };
 
@@ -266,6 +281,15 @@ export default function PriceDocumentEditor() {
                                 >
                                     <Check className="h-4 w-4 mr-2" />
                                     {t('priceDocument.applyPrices', 'Apply Prices')}
+                                </button>
+                            )}
+                            {document.status === 'APPLIED' && !isNew && (
+                                <button
+                                    onClick={handleUnpost}
+                                    className="flex-1 md:flex-none justify-center inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700"
+                                >
+                                    <RotateCcw className="h-4 w-4 mr-2" />
+                                    {t('priceDocument.unpost', 'Розпровести')}
                                 </button>
                             )}
                         </>

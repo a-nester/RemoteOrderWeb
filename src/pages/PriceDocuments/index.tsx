@@ -82,6 +82,24 @@ export default function PriceDocumentList() {
                                         >
                                             View
                                         </button>
+                                        {doc.status === 'APPLIED' && (
+                                            <button 
+                                                className="text-amber-600 hover:text-amber-900 mr-4"
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    if (!confirm('Ви впевнені, що хочете розпровести цей документ встановлення цін?')) return;
+                                                    try {
+                                                        await PriceDocumentsService.unpostDocument(doc.id);
+                                                        loadDocuments();
+                                                    } catch (error: any) {
+                                                        console.error('Failed to unpost document', error);
+                                                        alert(error.response?.data?.error || error.message || 'Failed to unpost document');
+                                                    }
+                                                }}
+                                            >
+                                                Unpost
+                                            </button>
+                                        )}
                                         <button 
                                             className="text-gray-600 hover:text-gray-900"
                                             onClick={async (e) => {
