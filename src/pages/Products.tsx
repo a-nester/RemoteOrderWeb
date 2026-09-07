@@ -124,7 +124,7 @@ function ProductsContent() {
     AuthService.updatePreferences(newPrefs).catch(console.error);
   };
 
-  const handleDownloadPriceList = (priceTypeId: string, format: 'excel' | 'pdf') => {
+  const handleDownloadPriceList = (priceTypeId: string, format: 'excel' | 'pdf', clientName?: string) => {
     const priceTypeName = priceTypeId === 'standard' 
       ? 'Standard' 
       : priceTypes.find(pt => pt.slug === priceTypeId || pt.id === priceTypeId)?.name || priceTypeId;
@@ -135,12 +135,15 @@ function ProductsContent() {
       : products;
 
     if (format === 'excel') {
-      generateExcelPriceList(productsForPriceList, priceTypeId, priceTypeName, allowedCategories);
+      generateExcelPriceList(productsForPriceList, priceTypeId, priceTypeName, allowedCategories, clientName);
     } else {
       const categoriesParam = selectedCategories.length > 0
         ? `&categories=${encodeURIComponent(selectedCategories.join(','))}`
         : '';
-      window.open(`/products/print?priceType=${priceTypeId}${categoriesParam}`, '_blank');
+      const clientParam = clientName && clientName.trim()
+        ? `&clientName=${encodeURIComponent(clientName.trim())}`
+        : '';
+      window.open(`/products/print?priceType=${priceTypeId}${categoriesParam}${clientParam}`, '_blank');
     }
   };
 

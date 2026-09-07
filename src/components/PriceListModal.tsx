@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, FileSpreadsheet, FileText, Download } from 'lucide-react';
+import { X, FileSpreadsheet, FileText, Download, ChevronDown } from 'lucide-react';
+import { CounterpartyService } from '../services/counterparty.service';
 import type { PriceType } from '../types/priceType';
+import type { Counterparty } from '../types/counterparty';
 
 interface PriceListModalProps {
     isOpen: boolean;
     onClose: () => void;
     priceTypes: PriceType[];
     selectedCategories?: string[];
-    onDownload: (priceTypeId: string, format: 'excel' | 'pdf') => void;
+    onDownload: (priceTypeId: string, format: 'excel' | 'pdf', clientName?: string) => void;
 }
 
 export default function PriceListModal({ isOpen, onClose, priceTypes, selectedCategories, onDownload }: PriceListModalProps) {
@@ -16,10 +18,33 @@ export default function PriceListModal({ isOpen, onClose, priceTypes, selectedCa
     const [selectedPriceType, setSelectedPriceType] = useState<string>(priceTypes[0]?.slug || 'standard');
     const [format, setFormat] = useState<'excel' | 'pdf'>('excel');
 
+    // Counterparty selection state
+    const [counterparties, setCounterparties] = useState<Counterparty[]>([]);
+    const [selectedCounterparty, setSelectedCounterparty] = useState<Counterparty | null>(null);
+    const [clientSearchText, setClientSearchText] = useState('');
+    const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            CounterpartyService.getAll()
+                .then(data => setCounterparties(data))
+                .catch(console.error);
+        }
+    }, [isOpen]);
+
+    const filteredCounterparties = useMemo(() => {
+        if (!clientSearchText.trim()) return counterparties;
+        const lower = clientSearchText.toLowerCase();
+        return counterparties.filter(c => 
+            c.name.toLowerCase().includes(lower) || 
+            (c.code && c.code.toLowerCase().includes(lower))
+        );
+    }, [counterparties, clientSearchText]);
+
     if (!isOpen) return null;
 
     const handleDownload = () => {
-        onDownload(selectedPriceType, format);
+        onDownload(selectedPriceType, format, selectedCounterparty?.name);
         onClose();
     };
 
@@ -45,6 +70,93 @@ export default function PriceListModal({ isOpen, onClose, priceTypes, selectedCa
                             <span className="text-gray-600 dark:text-gray-300 line-clamp-2">{selectedCategories.join(', ')}</span>
                         </div>
                     )}
+
+                    {/* Counterparty / Client Selector (Searchable Combobox) */}
+                    <div className="relative">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            {t('priceList.selectClient', 'Клієнт (необов’язково)')}
+                        </label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={isClientDropdownOpen ? clientSearchText : (selectedCounterparty ? selectedCounterparty.name : clientSearchText)}
+                                onChange={(e) => {
+                                    setClientSearchText(e.target.value);
+                                    if (!isClientDropdownOpen) setIsClientDropdownOpen(true);
+                                    if (selectedCounterparty && e.target.value !== selectedCounterparty.name) {
+                                        setSelectedCounterparty(null);
+                                    }
+                                }}
+                                onFocus={() => {
+                                    setIsClientDropdownOpen(true);
+                                    if (selectedCounterparty) {
+                                        setClientSearchText('');
+                                    }
+                                }}
+                                placeholder="Введіть назву клієнта або виберіть зі списку..."
+                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 pl-3 pr-10 text-sm"
+                            />
+                            {selectedCounterparty ? (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedCounterparty(null);
+                                        setClientSearchText('');
+                                    }}
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                >
+                                    <X size={16} />
+                                </button>
+                            ) : (
+                                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+                                    <ChevronDown size={18} />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Dropdown menu */}
+                        {isClientDropdownOpen && (
+                            <>
+                                <div 
+                                    className="fixed inset-0 z-10" 
+                                    onClick={() => setIsClientDropdownOpen(false)} 
+                                />
+                                <ul className="absolute z-20 mt-1 w-full max-h-52 overflow-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-1 text-sm">
+                                    <li
+                                        onClick={() => {
+                                            setSelectedCounterparty(null);
+                                            setClientSearchText('');
+                                            setIsClientDropdownOpen(false);
+                                        }}
+                                        className="px-3 py-2 cursor-pointer hover:bg-indigo-50 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 italic"
+                                    >
+                                        -- Не вибрано --
+                                    </li>
+                                    {filteredCounterparties.map((cp) => (
+                                        <li
+                                            key={cp.id}
+                                            onClick={() => {
+                                                setSelectedCounterparty(cp);
+                                                setClientSearchText(cp.name);
+                                                setIsClientDropdownOpen(false);
+                                            }}
+                                            className={`px-3 py-2 cursor-pointer hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white ${
+                                                selectedCounterparty?.id === cp.id ? 'bg-indigo-50 dark:bg-gray-700 font-semibold text-indigo-600 dark:text-indigo-400' : 'text-gray-900 dark:text-white'
+                                            }`}
+                                        >
+                                            {cp.name}
+                                        </li>
+                                    ))}
+                                    {filteredCounterparties.length === 0 && (
+                                        <li className="px-3 py-2 text-gray-500 dark:text-gray-400 text-center">
+                                            Клієнтів не знайдено
+                                        </li>
+                                    )}
+                                </ul>
+                            </>
+                        )}
+                    </div>
+
                     {/* Price Type Selector */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

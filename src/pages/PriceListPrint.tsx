@@ -10,6 +10,7 @@ import type { Product } from '../types/product';
 export default function PriceListPrint() {
     const [searchParams] = useSearchParams();
     const priceTypeId = searchParams.get('priceType') || 'standard';
+    const clientName = searchParams.get('clientName');
     
     const { products, loadProducts } = useProductsStore();
     const [organization, setOrganization] = useState<Organization | null>(null);
@@ -30,20 +31,22 @@ export default function PriceListPrint() {
 
     useEffect(() => {
         if (loaded) {
+            const fileNameDate = new Date().toISOString().split('T')[0];
+            if (clientName && clientName.trim()) {
+                const sanitizedClient = clientName.trim().replace(/[\/\\?%*:|"<>]/g, '_');
+                document.title = `PriceList_${sanitizedClient}_${fileNameDate}`;
+            } else {
+                document.title = `PriceList_${fileNameDate}`;
+            }
+
             const timer = setTimeout(() => {
                 window.print();
             }, 600);
             return () => clearTimeout(timer);
         }
-    }, [loaded]);
+    }, [loaded, clientName]);
 
     const allowedCategories = organization?.categories;
-
-    const priceTypeName = useMemo(() => {
-        if (priceTypeId === 'standard') return 'Standard Price';
-        const found = priceTypes.find(pt => pt.slug === priceTypeId || pt.id === priceTypeId);
-        return found ? found.name : priceTypeId;
-    }, [priceTypeId, priceTypes]);
 
     const categoriesParam = searchParams.get('categories');
     const selectedCategories = useMemo(() => {
@@ -101,9 +104,9 @@ export default function PriceListPrint() {
                 <div className="font-bold mt-1 text-indigo-900">Відділ продажу: моб. 097 7788277</div>
             </div>
 
-            {/* Title Banner */}
+            {/* Title Banner (without priceTypeName as per user requirement) */}
             <div className="bg-yellow-300 border border-black p-2.5 text-center font-bold text-base uppercase mb-2 shadow-sm">
-                ПРАЙС-ЛИСТ ({priceTypeName}) на {date} р.
+                ПРАЙС-ЛИСТ на {date} р.
             </div>
 
             {/* Table */}

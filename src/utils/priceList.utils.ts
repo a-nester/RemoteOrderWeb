@@ -5,7 +5,8 @@ export const generateExcelPriceList = (
   products: Product[],
   priceType: string,
   priceTypeName: string,
-  allowedCategories?: string[]
+  allowedCategories?: string[],
+  clientName?: string
 ) => {
   const wb = XLSX.utils.book_new();
   const date = new Date().toLocaleDateString('uk-UA');
@@ -83,9 +84,9 @@ export const generateExcelPriceList = (
     [{ v: 'ПП «СМАКОСИР» Рівненська обл., Дубенський р-н, с. Пасіки, вул. Берестецька, 2 б.', s: textStyle }],
     [{ v: 'Відділ продажу: моб. 097 7788277', s: { font: { bold: true, sz: 10, name: 'Arial' } } }],
     [], // Empty row
-    // Row 5: Yellow Title
+    // Row 5: Yellow Title (without priceTypeName as per user requirement)
     [
-      { v: `ПРАЙС-ЛИСТ (${priceTypeName}) на ${date} р.`, s: titleRowStyle },
+      { v: `ПРАЙС-ЛИСТ на ${date} р.`, s: titleRowStyle },
       { v: '', s: titleRowStyle },
       { v: '', s: titleRowStyle },
       { v: '', s: titleRowStyle },
@@ -165,7 +166,17 @@ export const generateExcelPriceList = (
   const link = document.createElement('a');
   link.href = url;
   const fileNameDate = new Date().toISOString().split('T')[0];
-  link.download = `PriceList_${priceTypeName}_${fileNameDate}.xlsx`;
+  
+  // Format filename according to client selection rule:
+  // If client selected: PriceList_[ClientName]_[Date].xlsx
+  // If NO client selected: PriceList_[Date].xlsx (no client name, no price type name)
+  if (clientName && clientName.trim()) {
+    const sanitizedClient = clientName.trim().replace(/[\/\\?%*:|"<>]/g, '_');
+    link.download = `PriceList_${sanitizedClient}_${fileNameDate}.xlsx`;
+  } else {
+    link.download = `PriceList_${fileNameDate}.xlsx`;
+  }
+
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
