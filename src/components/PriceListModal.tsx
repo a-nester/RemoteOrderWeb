@@ -37,7 +37,7 @@ export default function PriceListModal({ isOpen, onClose, priceTypes, selectedCa
         const lower = clientSearchText.toLowerCase();
         return counterparties.filter(c => 
             c.name.toLowerCase().includes(lower) || 
-            (c.code && c.code.toLowerCase().includes(lower))
+            (c.contactPerson && c.contactPerson.toLowerCase().includes(lower))
         );
     }, [counterparties, clientSearchText]);
 

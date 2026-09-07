@@ -4,7 +4,7 @@ import type { Product } from '../types/product';
 export const generateExcelPriceList = (
   products: Product[],
   priceType: string,
-  priceTypeName: string,
+  _priceTypeName?: string,
   allowedCategories?: string[],
   clientName?: string
 ) => {

@@ -2,9 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useProductsStore } from '../store/products.store';
 import { OrganizationService } from '../services/organization.service';
-import { PriceTypesService } from '../services/priceTypes.service';
 import type { Organization } from '../types/organization';
-import type { PriceType } from '../types/priceType';
 import type { Product } from '../types/product';
 
 export default function PriceListPrint() {
@@ -14,15 +12,13 @@ export default function PriceListPrint() {
     
     const { products, loadProducts } = useProductsStore();
     const [organization, setOrganization] = useState<Organization | null>(null);
-    const [priceTypes, setPriceTypes] = useState<PriceType[]>([]);
     const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
         const init = async () => {
             await Promise.all([
                 loadProducts().catch(console.error),
-                OrganizationService.getOrganization().then(setOrganization).catch(console.error),
-                PriceTypesService.fetchPriceTypes().then(setPriceTypes).catch(console.error)
+                OrganizationService.getOrganization().then(setOrganization).catch(console.error)
             ]);
             setLoaded(true);
         };
