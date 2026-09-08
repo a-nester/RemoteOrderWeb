@@ -5,6 +5,7 @@ export interface ClientPriceDocumentItem {
     productCode?: string;
     productName?: string;
     productUnit?: string;
+    category?: string;
     costPrice: number;
     basePrice: number;
     discountPercent: number;

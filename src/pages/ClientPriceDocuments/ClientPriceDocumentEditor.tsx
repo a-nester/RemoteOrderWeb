@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, Fragment } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, CheckCircle, RotateCcw, Search, Percent, UserCheck, Copy } from 'lucide-react';
 import { ClientPriceDocumentsService } from '../../services/clientPriceDocuments.service';
@@ -535,36 +535,54 @@ export default function ClientPriceDocumentEditor() {
                         ) : filteredItems.length === 0 ? (
                             <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">Товарів не знайдено</td></tr>
                         ) : (
-                            filteredItems.map((item) => (
-                                <tr key={item.productId} className="hover:bg-gray-50 transition">
-                                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                                        {item.productName}
-                                        {item.productUnit && <span className="text-xs text-gray-400 font-normal ml-1">({item.productUnit})</span>}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-right text-gray-500 font-mono">
-                                        {item.costPrice ? item.costPrice.toFixed(2) : '0.00'}
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-right text-gray-700 font-medium font-mono">
-                                        {item.basePrice ? item.basePrice.toFixed(2) : '0.00'}
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                        <input
-                                            type="number"
-                                            step="0.5"
-                                            min="0"
-                                            max="100"
-                                            disabled={isReadOnly}
-                                            value={item.discountPercent || ''}
-                                            onChange={(e) => handleItemDiscountChange(item.productId, e.target.value)}
-                                            className="w-24 px-2 py-1 border border-indigo-200 rounded text-center text-sm font-bold text-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-50"
-                                            placeholder="0"
-                                        />
-                                    </td>
-                                    <td className="px-4 py-3 text-sm text-right font-bold text-emerald-700 font-mono">
-                                        {item.finalPrice ? item.finalPrice.toFixed(2) : '0.00'}
-                                    </td>
-                                </tr>
-                            ))
+                            (() => {
+                                const groupedItems = filteredItems.reduce((acc, item) => {
+                                    const category = item.category || 'Без категорії';
+                                    if (!acc[category]) acc[category] = [];
+                                    acc[category].push(item);
+                                    return acc;
+                                }, {} as Record<string, ClientPriceDocumentItem[]>);
+
+                                return Object.keys(groupedItems).sort().map(category => (
+                                    <Fragment key={category}>
+                                        <tr className="bg-gray-100 border-y border-gray-200">
+                                            <td colSpan={5} className="px-4 py-2 text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                                {category}
+                                            </td>
+                                        </tr>
+                                        {groupedItems[category].sort((a, b) => (a.productName || '').localeCompare(b.productName || '')).map((item) => (
+                                            <tr key={item.productId} className="hover:bg-gray-50 transition">
+                                                <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                                                    {item.productName}
+                                                    {item.productUnit && <span className="text-xs text-gray-400 font-normal ml-1">({item.productUnit})</span>}
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-right text-gray-500 font-mono">
+                                                    {item.costPrice ? item.costPrice.toFixed(2) : '0.00'}
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-right text-gray-700 font-medium font-mono">
+                                                    {item.basePrice ? item.basePrice.toFixed(2) : '0.00'}
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    <input
+                                                        type="number"
+                                                        step="0.5"
+                                                        min="0"
+                                                        max="100"
+                                                        disabled={isReadOnly}
+                                                        value={item.discountPercent || ''}
+                                                        onChange={(e) => handleItemDiscountChange(item.productId, e.target.value)}
+                                                        className="w-24 px-2 py-1 border border-indigo-200 rounded text-center text-sm font-bold text-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-50"
+                                                        placeholder="0"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-right font-bold text-emerald-700 font-mono">
+                                                    {item.finalPrice ? item.finalPrice.toFixed(2) : '0.00'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </Fragment>
+                                ));
+                            })()
                         )}
                     </tbody>
                 </table>
