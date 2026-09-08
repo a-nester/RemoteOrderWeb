@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Search, X } from "lucide-react";
 import type { Product } from "../types/product";
 import type { StockBalance } from "../services/reports.service";
+import type { ActiveClientDiscount } from "../types/clientPriceDocument";
 
 interface ProductSelectorProps {
   isOpen: boolean;
@@ -13,7 +14,7 @@ interface ProductSelectorProps {
   stockBalances?: StockBalance[];
   addedItemsMap?: Record<string, number>;
   allowedCategories?: string[];
-  activeDiscounts?: Record<string, number>;
+  activeDiscounts?: Record<string, ActiveClientDiscount | number>;
 }
 
 export default function ProductSelector({
@@ -185,11 +186,41 @@ export default function ProductSelector({
                                 product.prices?.standard ||
                                 0,
                             );
-                            const discountPercent = activeDiscounts[product.id] || 0;
-                            const effectivePrice =
-                              discountPercent > 0
-                                ? Math.round(basePrice * (1 - discountPercent / 100) * 100) / 100
-                                : basePrice;
+                            const discountEntry = activeDiscounts[product.id];
+                            let discountPercent = 0;
+                            let roundingMethod: 'UP' | 'DOWN' = 'UP';
+                            let roundingValue: number | undefined = undefined;
+
+                            if (typeof discountEntry === 'number') {
+                              discountPercent = discountEntry;
+                            } else if (discountEntry && typeof discountEntry === 'object') {
+                              discountPercent = Number(discountEntry.discountPercent) || 0;
+                              roundingMethod = discountEntry.roundingMethod || 'UP';
+                              roundingValue = discountEntry.roundingValue !== undefined && discountEntry.roundingValue !== null ? Number(discountEntry.roundingValue) : undefined;
+                            }
+
+                            let effectivePrice = basePrice;
+                            if (discountPercent > 0) {
+                              const discountFactor = (100 - discountPercent) / 100;
+                              const raw = basePrice * discountFactor;
+                              const step = Number(roundingValue || 0);
+
+                              let calculatedPrice = raw;
+                              if (step > 0) {
+                                if (roundingMethod === 'DOWN') {
+                                  calculatedPrice = Math.floor(raw / step) * step;
+                                } else {
+                                  calculatedPrice = Math.ceil(raw / step) * step;
+                                }
+                              } else {
+                                if (roundingMethod === 'DOWN') {
+                                  calculatedPrice = Math.floor(raw * 100) / 100;
+                                } else {
+                                  calculatedPrice = Math.ceil(raw * 100) / 100;
+                                }
+                              }
+                              effectivePrice = Math.round(calculatedPrice * 100) / 100;
+                            }
 
                             if (discountPercent > 0) {
                               return (

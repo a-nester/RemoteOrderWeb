@@ -50,4 +50,7 @@ export interface ActiveClientDiscount {
     productName: string;
     discountPercent: number;
     documentId?: string;
+    roundingMethod?: 'UP' | 'DOWN';
+    roundingValue?: number;
+    finalPrice?: number;
 }
