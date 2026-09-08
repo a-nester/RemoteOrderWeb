@@ -23,6 +23,7 @@ export interface ClientPriceDocument {
     status: 'DRAFT' | 'APPLIED';
     comment?: string;
     roundingMethod?: 'UP' | 'DOWN';
+    roundingValue?: number;
     createdBy?: number;
     createdByName?: string;
     postedBy?: number;

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, Fragment } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, CheckCircle, RotateCcw, Search, Percent, UserCheck, Copy } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle, RotateCcw, Search, Percent, UserCheck, Copy, Calculator } from 'lucide-react';
 import { ClientPriceDocumentsService } from '../../services/clientPriceDocuments.service';
 import { CounterpartyService } from '../../services/counterparty.service';
 import type { ClientPriceDocumentItem } from '../../types/clientPriceDocument';
@@ -22,12 +22,31 @@ const deduplicateItems = (rawItems: ClientPriceDocumentItem[]): ClientPriceDocum
     return Array.from(map.values());
 };
 
-const calculateFinalPrice = (basePrice: number, discountPercent: number, roundingMethod: 'UP' | 'DOWN' = 'UP'): number => {
+const calculateFinalPrice = (
+    basePrice: number, 
+    discountPercent: number, 
+    roundingMethod: 'UP' | 'DOWN' = 'UP',
+    roundingValInput?: string | number
+): number => {
     const discountFactor = (100 - (discountPercent || 0)) / 100;
     const raw = (basePrice || 0) * discountFactor;
-    return roundingMethod === 'DOWN'
-        ? Math.floor(raw * 100) / 100
-        : Math.ceil(raw * 100) / 100;
+    const step = typeof roundingValInput === 'number' ? roundingValInput : parseFloat(String(roundingValInput || '0'));
+
+    let result = raw;
+    if (step && step > 0) {
+        if (roundingMethod === 'DOWN') {
+            result = Math.floor(raw / step) * step;
+        } else {
+            result = Math.ceil(raw / step) * step;
+        }
+    } else {
+        if (roundingMethod === 'DOWN') {
+            result = Math.floor(raw * 100) / 100;
+        } else {
+            result = Math.ceil(raw * 100) / 100;
+        }
+    }
+    return Math.round(result * 100) / 100;
 };
 
 export default function ClientPriceDocumentEditor() {
@@ -45,6 +64,7 @@ export default function ClientPriceDocumentEditor() {
     const [counterparties, setCounterparties] = useState<CounterpartyOption[]>([]);
     const [priceTypeName, setPriceTypeName] = useState<string>('');
     const [roundingMethod, setRoundingMethod] = useState<'UP' | 'DOWN'>('UP');
+    const [roundingValue, setRoundingValue] = useState<string>('');
     const [status, setStatus] = useState<'DRAFT' | 'APPLIED'>('DRAFT');
     const [comment, setComment] = useState<string>('');
 
@@ -82,6 +102,7 @@ export default function ClientPriceDocumentEditor() {
             setCounterpartyId(doc.counterpartyId);
             setPriceTypeName(doc.priceTypeName || 'Не призначено');
             setRoundingMethod(doc.roundingMethod || 'UP');
+            setRoundingValue(doc.roundingValue !== undefined && doc.roundingValue !== null ? String(doc.roundingValue) : '');
             setStatus(doc.status);
             setComment(doc.comment || '');
             setItems(deduplicateItems(doc.items || []));
@@ -110,7 +131,7 @@ export default function ClientPriceDocumentEditor() {
                 setPriceTypeName(prepared.priceTypeName || 'Не призначено');
                 const preparedItems = (prepared.items || []).map((item: ClientPriceDocumentItem) => ({
                     ...item,
-                    finalPrice: calculateFinalPrice(item.basePrice, item.discountPercent || 0, roundingMethod)
+                    finalPrice: calculateFinalPrice(item.basePrice, item.discountPercent || 0, roundingMethod, roundingValue)
                 }));
                 setItems(deduplicateItems(preparedItems));
             } catch (error: any) {
@@ -126,7 +147,15 @@ export default function ClientPriceDocumentEditor() {
         setRoundingMethod(method);
         setItems(prev => prev.map(item => ({
             ...item,
-            finalPrice: calculateFinalPrice(item.basePrice, item.discountPercent || 0, method)
+            finalPrice: calculateFinalPrice(item.basePrice, item.discountPercent || 0, method, roundingValue)
+        })));
+    };
+
+    // Handle button click "Застосувати заокруглення"
+    const handleApplyRounding = () => {
+        setItems(prev => prev.map(item => ({
+            ...item,
+            finalPrice: calculateFinalPrice(item.basePrice, item.discountPercent || 0, roundingMethod, roundingValue)
         })));
     };
 
@@ -135,7 +164,7 @@ export default function ClientPriceDocumentEditor() {
         const val = Math.min(100, Math.max(0, parseFloat(valStr) || 0));
         setItems(prev => prev.map(item => {
             if (item.productId === productId) {
-                const finalPrice = calculateFinalPrice(item.basePrice, val, roundingMethod);
+                const finalPrice = calculateFinalPrice(item.basePrice, val, roundingMethod, roundingValue);
                 return {
                     ...item,
                     discountPercent: val,
@@ -152,7 +181,7 @@ export default function ClientPriceDocumentEditor() {
         if (isNaN(val)) return;
 
         setItems(prev => prev.map(item => {
-            const finalPrice = calculateFinalPrice(item.basePrice, val, roundingMethod);
+            const finalPrice = calculateFinalPrice(item.basePrice, val, roundingMethod, roundingValue);
             return {
                 ...item,
                 discountPercent: val,
@@ -170,11 +199,13 @@ export default function ClientPriceDocumentEditor() {
 
         setSaving(true);
         try {
+            const parsedValue = roundingValue !== '' && !isNaN(parseFloat(roundingValue)) ? parseFloat(roundingValue) : undefined;
             const payload = {
                 counterpartyId,
                 date: docDate,
                 comment,
                 roundingMethod,
+                roundingValue: parsedValue,
                 items
             };
 
@@ -206,11 +237,13 @@ export default function ClientPriceDocumentEditor() {
         setSaving(true);
         try {
             let targetId = id;
+            const parsedValue = roundingValue !== '' && !isNaN(parseFloat(roundingValue)) ? parseFloat(roundingValue) : undefined;
             const payload = {
                 counterpartyId,
                 date: docDate,
                 comment,
                 roundingMethod,
+                roundingValue: parsedValue,
                 items
             };
 
@@ -372,7 +405,7 @@ export default function ClientPriceDocumentEditor() {
             </div>
 
             {/* Document Details Form */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 {/* Client Search Dropdown */}
                 <div className="relative">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -445,6 +478,35 @@ export default function ClientPriceDocumentEditor() {
                     </select>
                 </div>
 
+                {/* Rounding Value / Step & Apply Button */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Крок заокруглення
+                    </label>
+                    <div className="flex rounded-lg shadow-sm">
+                        <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            disabled={isReadOnly}
+                            placeholder="0.1, 0.5, 1"
+                            value={roundingValue}
+                            onChange={(e) => setRoundingValue(e.target.value)}
+                            className="w-24 px-3 py-2 border border-gray-300 rounded-l-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100"
+                        />
+                        <button
+                            type="button"
+                            disabled={isReadOnly}
+                            onClick={handleApplyRounding}
+                            title="Застосувати заокруглення"
+                            className="inline-flex items-center px-3 py-2 border border-l-0 border-indigo-600 rounded-r-lg bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-medium transition disabled:opacity-50 whitespace-nowrap"
+                        >
+                            <Calculator className="h-4 w-4 mr-1" />
+                            Застосувати
+                        </button>
+                    </div>
+                </div>
+
                 {/* Date */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -460,7 +522,7 @@ export default function ClientPriceDocumentEditor() {
                 </div>
 
                 {/* Comment */}
-                <div className="md:col-span-4">
+                <div className="md:col-span-2 lg:col-span-5">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                         Коментар
                     </label>
