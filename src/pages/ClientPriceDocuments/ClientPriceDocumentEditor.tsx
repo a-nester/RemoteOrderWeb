@@ -118,27 +118,25 @@ export default function ClientPriceDocumentEditor() {
         }
     };
 
-    // When selecting a new counterparty in creation mode
+    // When selecting a counterparty
     const handleSelectCounterparty = async (cp: CounterpartyOption) => {
         setCounterpartyId(cp.id);
         setCpSearch(cp.name);
         setIsCpDropdownOpen(false);
 
-        if (isNew) {
-            setLoading(true);
-            try {
-                const prepared = await ClientPriceDocumentsService.prepareItems(cp.id);
-                setPriceTypeName(prepared.priceTypeName || 'Не призначено');
-                const preparedItems = (prepared.items || []).map((item: ClientPriceDocumentItem) => ({
-                    ...item,
-                    finalPrice: calculateFinalPrice(item.basePrice, item.discountPercent || 0, roundingMethod, roundingValue)
-                }));
-                setItems(deduplicateItems(preparedItems));
-            } catch (error: any) {
-                alert(error.response?.data?.error || error.message || 'Помилка завантаження товарів');
-            } finally {
-                setLoading(false);
-            }
+        setLoading(true);
+        try {
+            const prepared = await ClientPriceDocumentsService.prepareItems(cp.id);
+            setPriceTypeName(prepared.priceTypeName || 'Не призначено');
+            const preparedItems = (prepared.items || []).map((item: ClientPriceDocumentItem) => ({
+                ...item,
+                finalPrice: calculateFinalPrice(item.basePrice, item.discountPercent || 0, roundingMethod, roundingValue)
+            }));
+            setItems(deduplicateItems(preparedItems));
+        } catch (error: any) {
+            alert(error.response?.data?.error || error.message || 'Помилка завантаження товарів');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -416,7 +414,7 @@ export default function ClientPriceDocumentEditor() {
                         <input
                             type="text"
                             placeholder="Оберіть клієнта..."
-                            disabled={!isNew || isReadOnly}
+                            disabled={isReadOnly}
                             value={cpSearch}
                             onChange={(e) => {
                                 setCpSearch(e.target.value);
@@ -427,7 +425,7 @@ export default function ClientPriceDocumentEditor() {
                         />
                     </div>
 
-                    {isCpDropdownOpen && isNew && (
+                    {isCpDropdownOpen && !isReadOnly && (
                         <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                             {filteredCounterparties.length === 0 ? (
                                 <div className="p-3 text-sm text-gray-500 text-center">Клієнтів не знайдено</div>
