@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, CheckCircle, FileText, Trash2, RotateCcw } from 'lucide-react';
+import { Plus, Search, CheckCircle, FileText, Trash2, RotateCcw, Copy } from 'lucide-react';
 import { ClientPriceDocumentsService } from '../../services/clientPriceDocuments.service';
 import type { ClientPriceDocument } from '../../types/clientPriceDocument';
 
@@ -24,6 +24,17 @@ export default function ClientPriceDocumentsList() {
             console.error('Failed to load client price documents', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleCopy = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (!confirm('Ви впевнені, що хочете скопіювати цей документ встановлення цін?')) return;
+        try {
+            const newDoc = await ClientPriceDocumentsService.copyDocument(id);
+            navigate(`/price-documents/client-prices/${newDoc.id}`);
+        } catch (error: any) {
+            alert(error.response?.data?.error || error.message || 'Помилка копіювання');
         }
     };
 
@@ -174,6 +185,15 @@ export default function ClientPriceDocumentsList() {
                                             >
                                                 <FileText className="h-4 w-4" />
                                                 <span className="hidden md:inline">Відкрити</span>
+                                            </button>
+
+                                            <button 
+                                                className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
+                                                onClick={(e) => handleCopy(e, doc.id)}
+                                                title="Скопіювати документ"
+                                            >
+                                                <Copy className="h-4 w-4" />
+                                                <span className="hidden md:inline">Копіювати</span>
                                             </button>
 
                                             {doc.status === 'DRAFT' && (

@@ -61,6 +61,11 @@ export const ClientPriceDocumentsService = {
         await axios.delete(`${CLIENT_DOCS_API_URL}/${id}`, { headers: getAuthHeader() });
     },
 
+    async copyDocument(id: string): Promise<ClientPriceDocument> {
+        const response = await axios.post(`${CLIENT_DOCS_API_URL}/${id}/copy`, {}, { headers: getAuthHeader() });
+        return response.data;
+    },
+
     async fetchActiveDiscounts(counterpartyId: string): Promise<ActiveClientDiscount[]> {
         const response = await axios.get(`${CLIENT_DOCS_API_URL}/discounts/${counterpartyId}`, { headers: getAuthHeader() });
         return response.data;

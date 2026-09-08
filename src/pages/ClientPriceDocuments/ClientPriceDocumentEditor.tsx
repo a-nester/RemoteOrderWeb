@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, CheckCircle, RotateCcw, Search, Percent, UserCheck } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle, RotateCcw, Search, Percent, UserCheck, Copy } from 'lucide-react';
 import { ClientPriceDocumentsService } from '../../services/clientPriceDocuments.service';
 import { CounterpartyService } from '../../services/counterparty.service';
 import type { ClientPriceDocumentItem } from '../../types/clientPriceDocument';
@@ -11,6 +11,16 @@ interface CounterpartyOption {
     contactPerson?: string;
     priceTypeName?: string;
 }
+
+const deduplicateItems = (rawItems: ClientPriceDocumentItem[]): ClientPriceDocumentItem[] => {
+    const map = new Map<string, ClientPriceDocumentItem>();
+    (rawItems || []).forEach(item => {
+        if (item && item.productId) {
+            map.set(item.productId, item);
+        }
+    });
+    return Array.from(map.values());
+};
 
 export default function ClientPriceDocumentEditor() {
     const { id } = useParams<{ id: string }>();
@@ -64,7 +74,7 @@ export default function ClientPriceDocumentEditor() {
             setPriceTypeName(doc.priceTypeName || 'Не призначено');
             setStatus(doc.status);
             setComment(doc.comment || '');
-            setItems(doc.items || []);
+            setItems(deduplicateItems(doc.items || []));
 
             if (doc.counterpartyName) {
                 setCpSearch(doc.counterpartyName);
@@ -88,7 +98,7 @@ export default function ClientPriceDocumentEditor() {
             try {
                 const prepared = await ClientPriceDocumentsService.prepareItems(cp.id);
                 setPriceTypeName(prepared.priceTypeName || 'Не призначено');
-                setItems(prepared.items);
+                setItems(deduplicateItems(prepared.items));
             } catch (error: any) {
                 alert(error.response?.data?.error || error.message || 'Помилка завантаження товарів');
             } finally {
@@ -217,6 +227,22 @@ export default function ClientPriceDocumentEditor() {
         }
     };
 
+    // Copy document
+    const handleCopy = async () => {
+        if (!id || isNew) return;
+        if (!confirm('Ви впевнені, що хочете скопіювати цей документ встановлення цін?')) return;
+        setSaving(true);
+        try {
+            const newDoc = await ClientPriceDocumentsService.copyDocument(id);
+            alert('Документ успішно скопійовано');
+            navigate(`/price-documents/client-prices/${newDoc.id}`);
+        } catch (error: any) {
+            alert(error.response?.data?.error || error.message || 'Помилка копіювання документа');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     // Filtered items by search term
     const filteredItems = useMemo(() => {
         if (!productSearch.trim()) return items;
@@ -296,6 +322,17 @@ export default function ClientPriceDocumentEditor() {
                                 Провести
                             </button>
                         </>
+                    )}
+
+                    {!isNew && (
+                        <button
+                            onClick={handleCopy}
+                            disabled={saving || loading}
+                            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition disabled:opacity-50"
+                        >
+                            <Copy className="h-4 w-4 mr-2 text-gray-500" />
+                            Скопіювати
+                        </button>
                     )}
 
                     {isReadOnly && (
