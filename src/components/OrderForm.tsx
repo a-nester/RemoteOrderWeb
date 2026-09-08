@@ -27,6 +27,37 @@ import OrderItemsTable from "./OrderItemsTable";
 import QuantityModal from "./QuantityModal";
 import ImportBuyerReturnsModal from "./modals/ImportBuyerReturnsModal";
 import type { BuyerReturnItem } from "../services/buyerReturnService";
+import { ClientPriceDocumentsService } from "../services/clientPriceDocuments.service";
+
+const getEffectiveProductPrice = (
+  product: Product,
+  priceSlug: string,
+  discountsMap: Record<string, number> = {}
+) => {
+  let basePrice = 0;
+  let isPriceMissing = false;
+
+  if (product.prices && product.prices[priceSlug] !== undefined) {
+    basePrice = Number(product.prices[priceSlug]) || 0;
+  } else {
+    isPriceMissing = true;
+    basePrice = 0;
+  }
+
+  const discountPercent = discountsMap[product.id] || 0;
+  let price = basePrice;
+
+  if (!isPriceMissing && discountPercent > 0) {
+    price = Math.round(basePrice * (1 - discountPercent / 100) * 100) / 100;
+  }
+
+  return {
+    price,
+    basePrice,
+    discountPercent,
+    isPriceMissing,
+  };
+};
 
 interface OrderFormProps {
   initialData?: Order;
@@ -97,6 +128,34 @@ export default function OrderForm({
   // Combobox State
   const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
   const [clientSearchTerm, setClientSearchTerm] = useState("");
+  const [activeDiscounts, setActiveDiscounts] = useState<Record<string, number>>({});
+
+  // Fetch active discounts whenever counterparty changes
+  useEffect(() => {
+    if (!counterpartyId) {
+      setActiveDiscounts({});
+      return;
+    }
+    let isMounted = true;
+    ClientPriceDocumentsService.fetchActiveDiscounts(counterpartyId)
+      .then((discounts) => {
+        if (!isMounted) return;
+        const map: Record<string, number> = {};
+        (discounts || []).forEach((d) => {
+          if (d.productId && typeof d.discountPercent === "number") {
+            map[d.productId] = d.discountPercent;
+          }
+        });
+        setActiveDiscounts(map);
+      })
+      .catch((err) => {
+        console.error("Failed to load active discounts for counterparty", err);
+        if (isMounted) setActiveDiscounts({});
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [counterpartyId]);
 
   useEffect(() => {
     loadData();
@@ -382,7 +441,7 @@ export default function OrderForm({
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const selectCounterparty = (newClientId: string) => {
+  const selectCounterparty = async (newClientId: string) => {
     console.log("OrderForm: Client changed to", newClientId);
     setCounterpartyId(newClientId);
     setIsClientDropdownOpen(false);
@@ -401,14 +460,18 @@ export default function OrderForm({
     );
     const newSlug = pt?.slug || "standard";
 
-    console.log(
-      "OrderForm: New Price Type Slug:",
-      newSlug,
-      "Client:",
-      client,
-      "PT Object:",
-      pt,
-    );
+    let newDiscountsMap: Record<string, number> = {};
+    try {
+      const discounts = await ClientPriceDocumentsService.fetchActiveDiscounts(newClientId);
+      (discounts || []).forEach((d) => {
+        if (d.productId && typeof d.discountPercent === "number") {
+          newDiscountsMap[d.productId] = d.discountPercent;
+        }
+      });
+    } catch (err) {
+      console.error("Failed to load active discounts for selected client", err);
+    }
+    setActiveDiscounts(newDiscountsMap);
 
     if (items.length === 0) return;
 
@@ -420,15 +483,11 @@ export default function OrderForm({
           return item;
         }
 
-        let newPrice = 0;
-        let isPriceMissing = false;
-        
-        if (product.prices && product.prices[newSlug] !== undefined) {
-          newPrice = Number(product.prices[newSlug]);
-        } else {
-          isPriceMissing = true;
-          newPrice = 0;
-        }
+        const { price: newPrice, isPriceMissing } = getEffectiveProductPrice(
+          product,
+          newSlug,
+          newDiscountsMap
+        );
 
         console.log(
           `OrderForm: Updating item ${product.name} price to ${newPrice} (${newSlug})`,
@@ -464,15 +523,11 @@ export default function OrderForm({
         const product = products.find((p) => p.id === item.productId);
         if (!product) return item;
 
-        let newPrice = 0;
-        let isPriceMissing = false;
-        
-        if (product.prices && product.prices[priceSlug] !== undefined) {
-          newPrice = Number(product.prices[priceSlug]);
-        } else {
-          isPriceMissing = true;
-          newPrice = 0;
-        }
+        const { price: newPrice, isPriceMissing } = getEffectiveProductPrice(
+          product,
+          priceSlug,
+          activeDiscounts
+        );
 
         return {
           ...item,
@@ -837,6 +892,7 @@ export default function OrderForm({
           return acc;
         }, {} as Record<string, number>)}
         allowedCategories={organization?.categories}
+        activeDiscounts={activeDiscounts}
       />
 
       <QuantityModal
@@ -846,16 +902,21 @@ export default function OrderForm({
         price={
           (() => {
             if (!selectedProductForQty) return 0;
-            if (selectedProductForQty.prices && selectedProductForQty.prices[priceSlug] !== undefined) {
-              return Number(selectedProductForQty.prices[priceSlug]);
-            }
-            return 0; // missing price
+            return getEffectiveProductPrice(
+              selectedProductForQty,
+              priceSlug,
+              activeDiscounts
+            ).price;
           })()
         }
         isPriceMissing={
           (() => {
             if (!selectedProductForQty) return false;
-            return !(selectedProductForQty.prices && selectedProductForQty.prices[priceSlug] !== undefined);
+            return getEffectiveProductPrice(
+              selectedProductForQty,
+              priceSlug,
+              activeDiscounts
+            ).isPriceMissing;
           })()
         }
         stockBalance={(() => {

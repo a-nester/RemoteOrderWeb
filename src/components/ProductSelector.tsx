@@ -13,6 +13,7 @@ interface ProductSelectorProps {
   stockBalances?: StockBalance[];
   addedItemsMap?: Record<string, number>;
   allowedCategories?: string[];
+  activeDiscounts?: Record<string, number>;
 }
 
 export default function ProductSelector({
@@ -24,6 +25,7 @@ export default function ProductSelector({
   stockBalances = [],
   addedItemsMap = {},
   allowedCategories,
+  activeDiscounts = {},
 }: ProductSelectorProps) {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
@@ -177,11 +179,33 @@ export default function ProductSelector({
                           </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-right">
-                          {Number(
-                            product.prices?.[priceSlug] ||
-                              product.prices?.standard ||
-                              0,
-                          ).toFixed(2)}
+                          {(() => {
+                            const basePrice = Number(
+                              product.prices?.[priceSlug] ||
+                                product.prices?.standard ||
+                                0,
+                            );
+                            const discountPercent = activeDiscounts[product.id] || 0;
+                            const effectivePrice =
+                              discountPercent > 0
+                                ? Math.round(basePrice * (1 - discountPercent / 100) * 100) / 100
+                                : basePrice;
+
+                            if (discountPercent > 0) {
+                              return (
+                                <div className="flex flex-col items-end">
+                                  <span className="font-semibold text-green-600 dark:text-green-400">
+                                    {effectivePrice.toFixed(2)}
+                                  </span>
+                                  <span className="text-xs text-gray-400 line-through">
+                                    {basePrice.toFixed(2)} (-{discountPercent}%)
+                                  </span>
+                                </div>
+                              );
+                            }
+
+                            return effectivePrice.toFixed(2);
+                          })()}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-indigo-600 dark:text-indigo-400 text-right">
                           {stockBalances.find((sb) => sb.productId === product.id)
