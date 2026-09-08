@@ -21,6 +21,7 @@ export interface ClientPriceDocument {
     priceTypeName?: string;
     status: 'DRAFT' | 'APPLIED';
     comment?: string;
+    roundingMethod?: 'UP' | 'DOWN';
     createdBy?: number;
     createdByName?: string;
     postedBy?: number;

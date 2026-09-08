@@ -22,6 +22,14 @@ const deduplicateItems = (rawItems: ClientPriceDocumentItem[]): ClientPriceDocum
     return Array.from(map.values());
 };
 
+const calculateFinalPrice = (basePrice: number, discountPercent: number, roundingMethod: 'UP' | 'DOWN' = 'UP'): number => {
+    const discountFactor = (100 - (discountPercent || 0)) / 100;
+    const raw = (basePrice || 0) * discountFactor;
+    return roundingMethod === 'DOWN'
+        ? Math.floor(raw * 100) / 100
+        : Math.ceil(raw * 100) / 100;
+};
+
 export default function ClientPriceDocumentEditor() {
     const { id } = useParams<{ id: string }>();
     const isNew = !id || id === 'new';
@@ -36,6 +44,7 @@ export default function ClientPriceDocumentEditor() {
     const [counterpartyId, setCounterpartyId] = useState<string>('');
     const [counterparties, setCounterparties] = useState<CounterpartyOption[]>([]);
     const [priceTypeName, setPriceTypeName] = useState<string>('');
+    const [roundingMethod, setRoundingMethod] = useState<'UP' | 'DOWN'>('UP');
     const [status, setStatus] = useState<'DRAFT' | 'APPLIED'>('DRAFT');
     const [comment, setComment] = useState<string>('');
 
@@ -72,6 +81,7 @@ export default function ClientPriceDocumentEditor() {
             setDocDate(doc.date ? new Date(doc.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
             setCounterpartyId(doc.counterpartyId);
             setPriceTypeName(doc.priceTypeName || 'Не призначено');
+            setRoundingMethod(doc.roundingMethod || 'UP');
             setStatus(doc.status);
             setComment(doc.comment || '');
             setItems(deduplicateItems(doc.items || []));
@@ -98,7 +108,11 @@ export default function ClientPriceDocumentEditor() {
             try {
                 const prepared = await ClientPriceDocumentsService.prepareItems(cp.id);
                 setPriceTypeName(prepared.priceTypeName || 'Не призначено');
-                setItems(deduplicateItems(prepared.items));
+                const preparedItems = (prepared.items || []).map((item: ClientPriceDocumentItem) => ({
+                    ...item,
+                    finalPrice: calculateFinalPrice(item.basePrice, item.discountPercent || 0, roundingMethod)
+                }));
+                setItems(deduplicateItems(preparedItems));
             } catch (error: any) {
                 alert(error.response?.data?.error || error.message || 'Помилка завантаження товарів');
             } finally {
@@ -107,13 +121,21 @@ export default function ClientPriceDocumentEditor() {
         }
     };
 
+    // Handle rounding method change and update all item prices
+    const handleRoundingMethodChange = (method: 'UP' | 'DOWN') => {
+        setRoundingMethod(method);
+        setItems(prev => prev.map(item => ({
+            ...item,
+            finalPrice: calculateFinalPrice(item.basePrice, item.discountPercent || 0, method)
+        })));
+    };
+
     // Update discount % for a specific item
     const handleItemDiscountChange = (productId: string, valStr: string) => {
         const val = Math.min(100, Math.max(0, parseFloat(valStr) || 0));
         setItems(prev => prev.map(item => {
             if (item.productId === productId) {
-                const discountFactor = (100 - val) / 100;
-                const finalPrice = Math.round(item.basePrice * discountFactor * 100) / 100;
+                const finalPrice = calculateFinalPrice(item.basePrice, val, roundingMethod);
                 return {
                     ...item,
                     discountPercent: val,
@@ -130,8 +152,7 @@ export default function ClientPriceDocumentEditor() {
         if (isNaN(val)) return;
 
         setItems(prev => prev.map(item => {
-            const discountFactor = (100 - val) / 100;
-            const finalPrice = Math.round(item.basePrice * discountFactor * 100) / 100;
+            const finalPrice = calculateFinalPrice(item.basePrice, val, roundingMethod);
             return {
                 ...item,
                 discountPercent: val,
@@ -153,6 +174,7 @@ export default function ClientPriceDocumentEditor() {
                 counterpartyId,
                 date: docDate,
                 comment,
+                roundingMethod,
                 items
             };
 
@@ -188,6 +210,7 @@ export default function ClientPriceDocumentEditor() {
                 counterpartyId,
                 date: docDate,
                 comment,
+                roundingMethod,
                 items
             };
 
@@ -349,7 +372,7 @@ export default function ClientPriceDocumentEditor() {
             </div>
 
             {/* Document Details Form */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 grid grid-cols-1 md:grid-cols-4 gap-6">
                 {/* Client Search Dropdown */}
                 <div className="relative">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -406,6 +429,22 @@ export default function ClientPriceDocumentEditor() {
                     />
                 </div>
 
+                {/* Rounding Method */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Метод округлення цін
+                    </label>
+                    <select
+                        disabled={isReadOnly}
+                        value={roundingMethod}
+                        onChange={(e) => handleRoundingMethodChange(e.target.value as 'UP' | 'DOWN')}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 font-medium"
+                    >
+                        <option value="UP">До більшого (за замовчуванням)</option>
+                        <option value="DOWN">До меншого</option>
+                    </select>
+                </div>
+
                 {/* Date */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -421,7 +460,7 @@ export default function ClientPriceDocumentEditor() {
                 </div>
 
                 {/* Comment */}
-                <div className="md:col-span-3">
+                <div className="md:col-span-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                         Коментар
                     </label>
