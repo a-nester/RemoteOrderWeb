@@ -45,7 +45,11 @@ const getEffectiveProductPrice = (
     basePrice = 0;
   }
 
-  const discountEntry = discountsMap[product.id];
+  const pIdStr = String(product.id || "");
+  const discountEntry =
+    discountsMap[product.id] ||
+    (pIdStr ? discountsMap[pIdStr] : undefined) ||
+    (pIdStr ? discountsMap[pIdStr.toLowerCase()] : undefined);
   let discountPercent = 0;
   let roundingMethod: 'UP' | 'DOWN' = 'UP';
   let roundingValue: number | undefined = undefined;
@@ -174,7 +178,9 @@ export default function OrderForm({
         const map: Record<string, ActiveClientDiscount> = {};
         (discounts || []).forEach((d) => {
           if (d.productId && typeof d.discountPercent === "number") {
-            map[d.productId] = d;
+            const pIdStr = String(d.productId);
+            map[pIdStr] = d;
+            map[pIdStr.toLowerCase()] = d;
           }
         });
         setActiveDiscounts(map);
@@ -496,7 +502,9 @@ export default function OrderForm({
       const discounts = await ClientPriceDocumentsService.fetchActiveDiscounts(newClientId);
       (discounts || []).forEach((d) => {
         if (d.productId && typeof d.discountPercent === "number") {
-          newDiscountsMap[d.productId] = d;
+          const pIdStr = String(d.productId);
+          newDiscountsMap[pIdStr] = d;
+          newDiscountsMap[pIdStr.toLowerCase()] = d;
         }
       });
     } catch (err) {

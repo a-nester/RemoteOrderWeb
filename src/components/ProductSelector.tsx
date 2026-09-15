@@ -186,7 +186,11 @@ export default function ProductSelector({
                                 product.prices?.standard ||
                                 0,
                             );
-                            const discountEntry = activeDiscounts[product.id];
+                            const pIdStr = String(product.id || "");
+                            const discountEntry =
+                              activeDiscounts[product.id] ||
+                              (pIdStr ? activeDiscounts[pIdStr] : undefined) ||
+                              (pIdStr ? activeDiscounts[pIdStr.toLowerCase()] : undefined);
                             let discountPercent = 0;
                             let roundingMethod: 'UP' | 'DOWN' = 'UP';
                             let roundingValue: number | undefined = undefined;
