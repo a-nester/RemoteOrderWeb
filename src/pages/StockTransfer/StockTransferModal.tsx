@@ -5,6 +5,7 @@ import type { StockTransferItem } from '../../services/stockTransfer.service';
 import { OrganizationService } from '../../services/organization.service';
 import { ProductsService } from '../../services/products.service';
 import ProductSelector from '../../components/ProductSelector';
+import QuantityModal from '../../components/QuantityModal';
 import type { Product } from '../../types/product';
 import type { Warehouse } from '../../types/organization';
 import { numberToWordsUk } from '../../utils/numberToWords';
@@ -32,6 +33,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
   const [isPrintMode, setIsPrintMode] = useState(false);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
+  const [selectedProductForQty, setSelectedProductForQty] = useState<Product | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -54,31 +56,39 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
     }
   };
 
-  const handleProductSelect = (product: Product) => {
-    const exists = items.some((i) => i.productId === product.id);
-    if (exists) {
-      alert(`Товар "${product.name}" вже є в списку переміщення`);
-      return;
-    }
-
+  const handleConfirmQuantity = (product: Product, quantity: number, price: number) => {
+    const roundedQty = Math.round(quantity * 1000) / 1000;
     const stockItem = warehouseStockItems.find((s) => s.productId === product.id);
     const availableQty = stockItem ? stockItem.availableQty : 0;
-    const price = stockItem && stockItem.price > 0
-      ? stockItem.price
-      : Number(product.prices?.['enterPrice'] || product.prices?.['base'] || Object.values(product.prices || {})[0] || 0);
 
-    const newItem: StockTransferItem = {
-      productId: product.id,
-      productName: product.name,
-      productCode: product.barcode || product.id.slice(0, 8),
-      unit: product.unit,
-      availableQty,
-      quantity: 1,
-      price,
-    };
+    setItems((prev) => {
+      const existingIndex = prev.findIndex((i) => i.productId === product.id);
+      if (existingIndex >= 0) {
+        const newItems = [...prev];
+        const existingItem = newItems[existingIndex];
+        const newQty = Math.round((Number(existingItem.quantity || 0) + roundedQty) * 1000) / 1000;
+        newItems[existingIndex] = {
+          ...existingItem,
+          quantity: newQty,
+          price: price > 0 ? price : existingItem.price,
+          availableQty,
+        };
+        return newItems;
+      } else {
+        const newItem: StockTransferItem = {
+          productId: product.id,
+          productName: product.name,
+          productCode: product.barcode || product.id.slice(0, 8),
+          unit: product.unit,
+          availableQty,
+          quantity: roundedQty,
+          price,
+        };
+        return [...prev, newItem];
+      }
+    });
 
-    setItems((prev) => [...prev, newItem]);
-    setIsProductSelectorOpen(false);
+    setSelectedProductForQty(null);
   };
 
   const handleRemoveItem = (productId: string) => {
@@ -104,6 +114,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
     setDocNumber('');
     setDocDate(new Date().toISOString());
     setIsPrintMode(false);
+    setSelectedProductForQty(null);
   };
 
   const loadDocument = async (id: string) => {
@@ -195,6 +206,13 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
 
   const activeTransferredItems = useMemo(() => {
     return items.filter(item => Number(item.quantity || 0) > 0);
+  }, [items]);
+
+  const addedItemsMap = useMemo(() => {
+    return items.reduce((acc, item) => {
+      acc[item.productId] = (acc[item.productId] || 0) + Number(item.quantity || 0);
+      return acc;
+    }, {} as Record<string, number>);
   }, [items]);
 
   const totals = useMemo(() => {
@@ -422,7 +440,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
                   value={fromWarehouseId}
                   onChange={(e) => handleFromWarehouseChange(e.target.value)}
                   disabled={isReadOnly || !!documentId}
-                  className="w-full border border-gray-300 dark:border-gray-600 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white disabled:bg-gray-100"
+                  className="w-full border border-gray-300 dark:border-gray-600 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-900 dark:disabled:text-gray-100 disabled:opacity-100 font-medium"
                 >
                   <option value="">-- Виберіть склад-відправник --</option>
                   {warehouses.map((wh) => (
@@ -441,7 +459,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
                   value={toWarehouseId}
                   onChange={(e) => setToWarehouseId(e.target.value)}
                   disabled={isReadOnly}
-                  className="w-full border border-gray-300 dark:border-gray-600 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white disabled:bg-gray-100"
+                  className="w-full border border-gray-300 dark:border-gray-600 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-900 dark:disabled:text-gray-100 disabled:opacity-100 font-medium"
                 >
                   <option value="">-- Виберіть склад-отримувач --</option>
                   {warehouses
@@ -634,8 +652,32 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
         isOpen={isProductSelectorOpen}
         onClose={() => setIsProductSelectorOpen(false)}
         products={allProducts}
-        onSelect={handleProductSelect}
+        onSelect={(prod) => setSelectedProductForQty(prod)}
         priceSlug="enterPrice"
+        addedItemsMap={addedItemsMap}
+      />
+
+      <QuantityModal
+        isOpen={selectedProductForQty !== null}
+        onClose={() => setSelectedProductForQty(null)}
+        product={selectedProductForQty}
+        price={(() => {
+          if (!selectedProductForQty) return 0;
+          const stockItem = warehouseStockItems.find((s) => s.productId === selectedProductForQty.id);
+          if (stockItem && stockItem.price > 0) return stockItem.price;
+          return Number(
+            selectedProductForQty.prices?.['enterPrice'] ||
+            selectedProductForQty.prices?.['base'] ||
+            Object.values(selectedProductForQty.prices || {})[0] || 0
+          );
+        })()}
+        isPriceMissing={false}
+        stockBalance={(() => {
+          if (!selectedProductForQty) return null;
+          const stockItem = warehouseStockItems.find((s) => s.productId === selectedProductForQty.id);
+          return stockItem ? (stockItem.availableQty ?? 0) : 0;
+        })()}
+        onConfirm={handleConfirmQuantity}
       />
     </div>
   );
