@@ -273,6 +273,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
 
       if (documentId) {
         await StockTransferService.update(documentId, {
+          date: docDate,
           fromWarehouseId,
           toWarehouseId,
           comment,
@@ -280,6 +281,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
         });
       } else {
         const created = await StockTransferService.create({
+          date: docDate,
           fromWarehouseId,
           toWarehouseId,
           comment,
@@ -331,6 +333,15 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
             </span>
           </div>
           <div className="flex items-center gap-3">
+            {isPrintMode && (
+              <button
+                onClick={handlePrint}
+                className="flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
+              >
+                <Printer size={18} className="mr-1.5" />
+                Друк
+              </button>
+            )}
             <button
               onClick={() => setIsPrintMode(!isPrintMode)}
               className="flex items-center px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 transition-colors"
@@ -427,8 +438,9 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
             <div className="pt-6 text-center print:hidden">
               <button
                 onClick={handlePrint}
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-bold shadow-md hover:bg-blue-700 transition-colors"
+                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-bold shadow-md hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
               >
+                <Printer size={18} />
                 Роздрукувати накладну
               </button>
             </div>
@@ -436,7 +448,20 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
         ) : (
           /* Form Editor Body */
           <div className="p-6 overflow-y-auto flex-1 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Дата документа <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="datetime-local"
+                  value={docDate ? docDate.slice(0, 16) : ''}
+                  onChange={(e) => setDocDate(e.target.value)}
+                  disabled={isReadOnly}
+                  className="w-full border border-gray-300 dark:border-gray-600 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-900 dark:disabled:text-gray-100 font-medium"
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Склад-відправник (Звідки) <span className="text-red-500">*</span>
