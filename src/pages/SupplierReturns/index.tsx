@@ -15,6 +15,8 @@ import DocumentActionsDropdown from "../../components/DocumentActionsDropdown";
 import { useAuthStore } from "../../store/auth.store";
 import { AuthService } from "../../services/auth.service";
 
+import DateQuickFilter, { getPresetDateRange } from "../../components/DateQuickFilter";
+
 export default function SupplierReturnList() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -38,17 +40,23 @@ export default function SupplierReturnList() {
     await AuthService.updatePreferences(newPrefs);
   };
 
-  // Date filters
-  const [startDate, setStartDate] = useState(() => {
-    return localStorage.getItem("supplier_return_startDate") || "";
+  // Date filters with persistence
+  const [datePreset, setDatePreset] = useState<string>(() => {
+    return localStorage.getItem("supplier_return_date_preset") || "month";
   });
-  const [endDate, setEndDate] = useState(() => {
+
+  const [startDate, setStartDate] = useState<string>(() => {
+    const saved = localStorage.getItem("supplier_return_startDate");
+    if (saved !== null) return saved;
+    const range = getPresetDateRange(datePreset);
+    return range ? range.start : "";
+  });
+
+  const [endDate, setEndDate] = useState<string>(() => {
     const saved = localStorage.getItem("supplier_return_endDate");
-    if (saved) return saved;
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth() + 1, 0)
-      .toISOString()
-      .split("T")[0];
+    if (saved !== null) return saved;
+    const range = getPresetDateRange(datePreset);
+    return range ? range.end : "";
   });
 
   const [highlightId, setHighlightId] = useState<string | null>(
@@ -73,9 +81,10 @@ export default function SupplierReturnList() {
   }, [highlightId, supplierReturns]);
 
   useEffect(() => {
+    localStorage.setItem("supplier_return_date_preset", datePreset);
     localStorage.setItem("supplier_return_startDate", startDate);
     localStorage.setItem("supplier_return_endDate", endDate);
-  }, [startDate, endDate]);
+  }, [datePreset, startDate, endDate]);
 
   useEffect(() => {
     loadData();
@@ -183,47 +192,46 @@ export default function SupplierReturnList() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 shadow rounded-lg sticky top-0 z-10 dark:bg-gray-800 gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center bg-white p-4 shadow rounded-lg sticky top-0 z-10 dark:bg-gray-800 gap-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
           <FileText className="mr-3" />
           Повернення постачальнику
         </h1>
 
-        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
           {/* Search Input */}
-          <div className="relative flex-1 md:w-64">
+          <div className="relative flex-1 sm:w-64">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+              <Search className="h-4 w-4 text-gray-400" />
             </div>
             <input
               type="text"
               placeholder={t("common.search", "Search...")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white h-[42px]"
+              className="pl-9 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm dark:bg-gray-700 dark:text-white h-[42px]"
             />
           </div>
 
-          {/* Date Filters */}
-          <div className="flex gap-2 items-center">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 h-[42px]"
-            />
-            <span className="text-gray-500">-</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 h-[42px]"
-            />
-          </div>
+          <DateQuickFilter
+            datePreset={datePreset}
+            startDate={startDate}
+            endDate={endDate}
+            onPresetChange={(preset, start, end) => {
+              setDatePreset(preset);
+              setStartDate(start);
+              setEndDate(end);
+            }}
+            onDateChange={(start, end) => {
+              setDatePreset("custom");
+              setStartDate(start);
+              setEndDate(end);
+            }}
+          />
 
           <button
             onClick={() => navigate("/supplier-returns/create")}
-            className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors h-[42px]"
+            className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors h-[42px] font-medium"
           >
             <Plus className="mr-2" size={18} />
             {t("action.create", "Create")}

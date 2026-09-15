@@ -6,6 +6,8 @@ import { OrganizationService } from '../../services/organization.service';
 import type { Warehouse } from '../../types/organization';
 import StockTransferModal from './StockTransferModal';
 
+import DateQuickFilter, { getPresetDateRange } from '../../components/DateQuickFilter';
+
 export default function StockTransferList() {
   const [documents, setDocuments] = useState<StockTransferDocument[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -16,10 +18,34 @@ export default function StockTransferList() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDocId, setEditingDocId] = useState<string | null>(null);
 
+  const [datePreset, setDatePreset] = useState<string>(() => {
+    return localStorage.getItem("stock_transfer_date_preset") || "month";
+  });
+
+  const [startDate, setStartDate] = useState<string>(() => {
+    const saved = localStorage.getItem("stock_transfer_startDate");
+    if (saved !== null) return saved;
+    const range = getPresetDateRange(datePreset);
+    return range ? range.start : "";
+  });
+
+  const [endDate, setEndDate] = useState<string>(() => {
+    const saved = localStorage.getItem("stock_transfer_endDate");
+    if (saved !== null) return saved;
+    const range = getPresetDateRange(datePreset);
+    return range ? range.end : "";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("stock_transfer_date_preset", datePreset);
+    localStorage.setItem("stock_transfer_startDate", startDate);
+    localStorage.setItem("stock_transfer_endDate", endDate);
+  }, [datePreset, startDate, endDate]);
+
   useEffect(() => {
     loadWarehouses();
     loadDocuments();
-  }, [selectedFromWhId, selectedToWhId, selectedStatus]);
+  }, [selectedFromWhId, selectedToWhId, selectedStatus, startDate, endDate]);
 
   const loadWarehouses = async () => {
     try {
@@ -37,6 +63,8 @@ export default function StockTransferList() {
         fromWarehouseId: selectedFromWhId,
         toWarehouseId: selectedToWhId,
         status: selectedStatus,
+        dateFrom: startDate,
+        dateTo: endDate,
       });
       setDocuments(data);
     } catch (err) {
@@ -104,7 +132,7 @@ export default function StockTransferList() {
           <select
             value={selectedFromWhId}
             onChange={(e) => setSelectedFromWhId(e.target.value)}
-            className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 dark:text-white"
+            className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 dark:text-white h-[42px]"
           >
             <option value="">Усі склади</option>
             {warehouses.map((wh) => (
@@ -120,7 +148,7 @@ export default function StockTransferList() {
           <select
             value={selectedToWhId}
             onChange={(e) => setSelectedToWhId(e.target.value)}
-            className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 dark:text-white"
+            className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 dark:text-white h-[42px]"
           >
             <option value="">Усі склади</option>
             {warehouses.map((wh) => (
@@ -136,7 +164,7 @@ export default function StockTransferList() {
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 dark:text-white"
+            className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-700 dark:text-white h-[42px]"
           >
             <option value="">Усі статуси</option>
             <option value="DRAFT">Чернетка</option>
@@ -144,9 +172,28 @@ export default function StockTransferList() {
           </select>
         </div>
 
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 mb-1">Період</label>
+          <DateQuickFilter
+            datePreset={datePreset}
+            startDate={startDate}
+            endDate={endDate}
+            onPresetChange={(preset, start, end) => {
+              setDatePreset(preset);
+              setStartDate(start);
+              setEndDate(end);
+            }}
+            onDateChange={(start, end) => {
+              setDatePreset("custom");
+              setStartDate(start);
+              setEndDate(end);
+            }}
+          />
+        </div>
+
         <button
           onClick={loadDocuments}
-          className="mt-5 p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-colors text-gray-600 dark:text-gray-200"
+          className="mt-5 p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-colors text-gray-600 dark:text-gray-200 h-[42px] w-[42px] flex items-center justify-center"
           title="Оновити"
         >
           <RefreshCw size={18} />

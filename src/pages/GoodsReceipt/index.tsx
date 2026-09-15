@@ -8,12 +8,36 @@ import DocumentActionsDropdown from "../../components/DocumentActionsDropdown";
 import { useAuthStore } from "../../store/auth.store";
 import { AuthService } from "../../services/auth.service";
 
+import DateQuickFilter, { getPresetDateRange } from "../../components/DateQuickFilter";
+
 export default function GoodsReceiptList() {
   const navigate = useNavigate();
   const [docs, setDocs] = useState<GoodsReceipt[]>([]);
   const [loading, setLoading] = useState(true);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+
+  const [datePreset, setDatePreset] = useState<string>(() => {
+    return localStorage.getItem("goods_receipt_date_preset") || "month";
+  });
+
+  const [startDate, setStartDate] = useState<string>(() => {
+    const saved = localStorage.getItem("goods_receipt_startDate");
+    if (saved !== null) return saved;
+    const range = getPresetDateRange(datePreset);
+    return range ? range.start : "";
+  });
+
+  const [endDate, setEndDate] = useState<string>(() => {
+    const saved = localStorage.getItem("goods_receipt_endDate");
+    if (saved !== null) return saved;
+    const range = getPresetDateRange(datePreset);
+    return range ? range.end : "";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("goods_receipt_date_preset", datePreset);
+    localStorage.setItem("goods_receipt_startDate", startDate);
+    localStorage.setItem("goods_receipt_endDate", endDate);
+  }, [datePreset, startDate, endDate]);
 
   const { user, setPreferences } = useAuthStore();
   const defaultSort = user?.preferences?.goodsReceiptSort || (localStorage.getItem("goods_receipt_sortOrder") as "asc" | "desc") || "desc";
@@ -76,44 +100,35 @@ export default function GoodsReceiptList() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
           <FileText className="mr-2" />
           Поступлення товарів
         </h1>
-        <button
-          onClick={() => navigate("/goods-receipt/new")}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          <Plus className="mr-2" size={20} />
-          Створити
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6 flex gap-4 items-end">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Від дати
-          </label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        <div className="flex flex-wrap items-center gap-4">
+          <DateQuickFilter
+            datePreset={datePreset}
+            startDate={startDate}
+            endDate={endDate}
+            onPresetChange={(preset, start, end) => {
+              setDatePreset(preset);
+              setStartDate(start);
+              setEndDate(end);
+            }}
+            onDateChange={(start, end) => {
+              setDatePreset("custom");
+              setStartDate(start);
+              setEndDate(end);
+            }}
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            До дати
-          </label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          />
+          <button
+            onClick={() => navigate("/goods-receipt/new")}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors h-[42px]"
+          >
+            <Plus className="mr-2" size={20} />
+            Створити
+          </button>
         </div>
       </div>
 
