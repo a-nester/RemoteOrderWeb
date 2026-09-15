@@ -12,6 +12,7 @@ export interface StockTransferItem {
   availableQty?: number;
   price: number;
   total?: number;
+  weight?: number;
 }
 
 export interface StockTransferDocument {

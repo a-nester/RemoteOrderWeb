@@ -8,7 +8,6 @@ import ProductSelector from '../../components/ProductSelector';
 import QuantityModal from '../../components/QuantityModal';
 import type { Product } from '../../types/product';
 import type { Warehouse } from '../../types/organization';
-import { numberToWordsUk } from '../../utils/numberToWords';
 
 interface StockTransferModalProps {
   isOpen: boolean;
@@ -60,6 +59,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
     const roundedQty = Math.round(quantity * 1000) / 1000;
     const stockItem = warehouseStockItems.find((s) => s.productId === product.id);
     const availableQty = stockItem ? stockItem.availableQty : 0;
+    const itemWeight = Number(product.weight || stockItem?.weight || 0);
 
     setItems((prev) => {
       const existingIndex = prev.findIndex((i) => i.productId === product.id);
@@ -72,6 +72,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
           quantity: newQty,
           price: price > 0 ? price : existingItem.price,
           availableQty,
+          weight: itemWeight || existingItem.weight,
         };
         return newItems;
       } else {
@@ -83,6 +84,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
           availableQty,
           quantity: roundedQty,
           price,
+          weight: itemWeight,
         };
         return [...prev, newItem];
       }
@@ -134,6 +136,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
         quantity: Number(item.quantity || 0),
         total: Number(item.total || 0),
         availableQty: Number(item.availableQty || 0),
+        weight: Number(item.weight || 0),
       }));
       setItems(parsedItems);
 
@@ -156,16 +159,17 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
         ...item,
         price: Number(item.price || 0),
         availableQty: Number(item.availableQty || 0),
+        weight: Number(item.weight || 0),
       }));
       setWarehouseStockItems(stockItems);
 
-      // Update available quantity for existing items in document
+      // Update available quantity and weight for existing items in document
       setItems((prev) => {
         const source = currentItems || prev;
         return source.map((item) => {
           const matched = stockItems.find((s) => s.productId === item.productId);
           return matched
-            ? { ...item, availableQty: Number(matched.availableQty || 0) }
+            ? { ...item, availableQty: Number(matched.availableQty || 0), weight: item.weight || matched.weight }
             : item;
         });
       });
@@ -218,15 +222,18 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
   const totals = useMemo(() => {
     let totalQty = 0;
     let totalSum = 0;
+    let totalWeight = 0;
 
     items.forEach((item) => {
       const qty = Number(item.quantity || 0);
       const price = Number(item.price || 0);
+      const weight = Number(item.weight || 0);
       totalQty += qty;
       totalSum += qty * price;
+      totalWeight += qty * weight;
     });
 
-    return { totalQty, totalSum };
+    return { totalQty, totalSum, totalWeight };
   }, [items]);
 
   const fromWhName = useMemo(() => {
@@ -373,14 +380,15 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
                   <th className="px-3 py-2 text-left font-bold border-r">Товар</th>
                   <th className="px-3 py-2 text-center font-bold border-r">Од.</th>
                   <th className="px-3 py-2 text-right font-bold border-r">Кількість</th>
-                  <th className="px-3 py-2 text-right font-bold border-r">Ціна (собівартість)</th>
-                  <th className="px-3 py-2 text-right font-bold">Сума</th>
+                  <th className="px-3 py-2 text-right font-bold border-r">Вага од. (кг)</th>
+                  <th className="px-3 py-2 text-right font-bold">Загальна вага (кг)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {activeTransferredItems.map((item, idx) => {
                   const qty = Number(item.quantity || 0);
-                  const price = Number(item.price || 0);
+                  const weight = Number(item.weight || 0);
+                  const itemWeight = qty * weight;
                   return (
                     <tr key={item.productId}>
                       <td className="px-3 py-1.5 border-r text-center">{idx + 1}</td>
@@ -388,8 +396,8 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
                       <td className="px-3 py-1.5 border-r font-medium">{item.productName}</td>
                       <td className="px-3 py-1.5 border-r text-center">{item.unit || 'шт'}</td>
                       <td className="px-3 py-1.5 border-r text-right font-bold">{qty}</td>
-                      <td className="px-3 py-1.5 border-r text-right">{price.toFixed(2)} ₴</td>
-                      <td className="px-3 py-1.5 text-right font-bold">{(qty * price).toFixed(2)} ₴</td>
+                      <td className="px-3 py-1.5 border-r text-right">{weight > 0 ? weight.toFixed(3) : '-'}</td>
+                      <td className="px-3 py-1.5 text-right font-bold">{itemWeight > 0 ? itemWeight.toFixed(3) : '-'}</td>
                     </tr>
                   );
                 })}
@@ -398,12 +406,9 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
 
             <div className="pt-2 border-t border-gray-400 space-y-2">
               <div className="flex justify-between items-center font-bold text-sm">
-                <span>Всього найменувань: {activeTransferredItems.length}, на суму:</span>
-                <span className="text-base">{totals.totalSum.toFixed(2)} ₴</span>
+                <span>Всього найменувань: {activeTransferredItems.length}, загальна вага: {totals.totalWeight > 0 ? `${totals.totalWeight.toFixed(3)} кг` : '—'}</span>
+                <span className="text-base">Загальна кількість: {totals.totalQty.toFixed(3)}</span>
               </div>
-              <p className="text-xs text-gray-700 italic">
-                Сума словами: {numberToWordsUk(totals.totalSum)}
-              </p>
             </div>
 
             <div className="pt-12 grid grid-cols-2 gap-16 text-sm">
@@ -608,6 +613,10 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
               <div>
                 <span className="text-xs text-gray-500 block">Загальна кількість:</span>
                 <span className="text-base font-bold text-blue-600">{totals.totalQty.toFixed(3)}</span>
+              </div>
+              <div>
+                <span className="text-xs text-gray-500 block">Загальна вага:</span>
+                <span className="text-base font-bold text-purple-600">{totals.totalWeight > 0 ? `${totals.totalWeight.toFixed(3)} кг` : '—'}</span>
               </div>
               <div>
                 <span className="text-xs text-gray-500 block">Загальна сума себевартості:</span>
