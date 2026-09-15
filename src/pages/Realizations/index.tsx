@@ -44,17 +44,64 @@ export default function RealizationList() {
     await AuthService.updatePreferences(newPrefs);
   };
 
-  // Date filters
-  const [startDate, setStartDate] = useState(() => {
-    return localStorage.getItem("realizationsStartDate") || "";
+  const getPresetDateRange = (preset: string): { start: string; end: string } | null => {
+    const now = new Date();
+    const formatDate = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    if (preset === "today") {
+      const todayStr = formatDate(now);
+      return { start: todayStr, end: todayStr };
+    }
+    if (preset === "week") {
+      const dayOfWeek = now.getDay();
+      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + diffToMonday);
+
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+
+      return { start: formatDate(monday), end: formatDate(sunday) };
+    }
+    if (preset === "month") {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      return { start: formatDate(startOfMonth), end: formatDate(endOfMonth) };
+    }
+    if (preset === "all") {
+      return { start: "", end: "" };
+    }
+    return null;
+  };
+
+  // Status and Date filters with persistence
+  const [statusFilter, setStatusFilter] = useState<string>(() => {
+    return localStorage.getItem("realization_status_filter") || "ALL";
   });
+
+  const [datePreset, setDatePreset] = useState<string>(() => {
+    return localStorage.getItem("realization_date_preset") || "month";
+  });
+
+  const [startDate, setStartDate] = useState(() => {
+    const saved = localStorage.getItem("realization_startDate");
+    if (saved !== null) return saved;
+    const initialPreset = localStorage.getItem("realization_date_preset") || "month";
+    const range = getPresetDateRange(initialPreset);
+    return range ? range.start : "";
+  });
+
   const [endDate, setEndDate] = useState(() => {
     const saved = localStorage.getItem("realization_endDate");
-    if (saved) return saved;
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth() + 1, 0)
-      .toISOString()
-      .split("T")[0];
+    if (saved !== null) return saved;
+    const initialPreset = localStorage.getItem("realization_date_preset") || "month";
+    const range = getPresetDateRange(initialPreset);
+    return range ? range.end : "";
   });
 
   const [highlightId, setHighlightId] = useState<string | null>(
@@ -76,17 +123,31 @@ export default function RealizationList() {
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [highlightId, realizations]); // add realizations to dependency so it triggers after data load
+  }, [highlightId, realizations]);
 
   useEffect(() => {
+    localStorage.setItem("realization_status_filter", statusFilter);
+  }, [statusFilter]);
+
+  useEffect(() => {
+    localStorage.setItem("realization_date_preset", datePreset);
     localStorage.setItem("realization_startDate", startDate);
     localStorage.setItem("realization_endDate", endDate);
-  }, [startDate, endDate]);
+  }, [datePreset, startDate, endDate]);
 
   useEffect(() => {
     sessionStorage.setItem("realizations_search", searchTerm);
     sessionStorage.setItem("realizations_counterparty", filterCounterparty);
   }, [searchTerm, filterCounterparty]);
+
+  const handleApplyDatePreset = (preset: string) => {
+    setDatePreset(preset);
+    const range = getPresetDateRange(preset);
+    if (range) {
+      setStartDate(range.start);
+      setEndDate(range.end);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -157,6 +218,9 @@ export default function RealizationList() {
   const filteredAndSortedRealizations = useMemo(() => {
     return [...realizations]
       .filter((a) => {
+        if (statusFilter && statusFilter !== "ALL" && a.status !== statusFilter) {
+          return false;
+        }
         if (
           searchTerm &&
           !a.number.toString().includes(searchTerm) &&
@@ -179,6 +243,7 @@ export default function RealizationList() {
       });
   }, [
     realizations,
+    statusFilter,
     searchTerm,
     startDate,
     endDate,
@@ -193,66 +258,133 @@ export default function RealizationList() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-2 shadow rounded-lg sticky top-0 z-10 dark:bg-gray-800 gap-4">
-        <h1 className="hidden lg:flex text-2xl font-bold text-gray-900 dark:text-white items-center">
-          <FileText className="mr-3" />
-          {t("menu.realizations", "Realizations")}
-        </h1>
+      <div className="bg-white p-4 shadow rounded-lg sticky top-0 z-10 dark:bg-gray-800 space-y-3">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+          <h1 className="flex text-2xl font-bold text-gray-900 dark:text-white items-center">
+            <FileText className="mr-3" />
+            {t("menu.realizations", "Realizations")}
+          </h1>
 
-        <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto items-center">
+          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 h-[42px] text-sm font-medium"
+            >
+              <option value="ALL">Всі статуси</option>
+              <option value="DRAFT">Чернетка</option>
+              <option value="POSTED">Проведено</option>
+              <option value="CANCELED">Скасовано</option>
+            </select>
+
+            {/* Quick Date Presets */}
+            <div className="inline-flex rounded-md shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden h-[42px]">
+              <button
+                type="button"
+                onClick={() => handleApplyDatePreset("today")}
+                className={`px-3 py-2 text-xs font-semibold transition-colors ${
+                  datePreset === "today"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                }`}
+              >
+                Сьогодні
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyDatePreset("week")}
+                className={`px-3 py-2 text-xs font-semibold border-l border-gray-300 dark:border-gray-600 transition-colors ${
+                  datePreset === "week"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                }`}
+              >
+                Тиждень
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyDatePreset("month")}
+                className={`px-3 py-2 text-xs font-semibold border-l border-gray-300 dark:border-gray-600 transition-colors ${
+                  datePreset === "month"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                }`}
+              >
+                Поточний місяць
+              </button>
+              <button
+                type="button"
+                onClick={() => handleApplyDatePreset("all")}
+                className={`px-3 py-2 text-xs font-semibold border-l border-gray-300 dark:border-gray-600 transition-colors ${
+                  datePreset === "all"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                }`}
+              >
+                Всі
+              </button>
+            </div>
+
+            {/* Date Inputs */}
+            <div className="flex gap-1 items-center">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setDatePreset("custom");
+                }}
+                className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 h-[42px] text-xs"
+              />
+              <span className="text-gray-500 text-xs">-</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setDatePreset("custom");
+                }}
+                className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 h-[42px] text-xs"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Second Row: Search, Counterparty Tag, Create Button */}
+        <div className="flex flex-col sm:flex-row gap-2 items-center">
           {filterCounterparty && (
-            <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium border border-blue-200 dark:border-blue-800">
-              <span className="truncate max-w-[150px]">
-                {filterCounterparty}
-              </span>
+            <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium border border-blue-200 dark:border-blue-800">
+              <span className="truncate max-w-[180px]">{filterCounterparty}</span>
               <button
                 onClick={() => setFilterCounterparty("")}
                 className="hover:text-blue-900 dark:hover:text-blue-100"
               >
-                <X className="h-4 w-4" />
+                <X className="h-3.5 w-3.5" />
               </button>
             </div>
           )}
 
-          {/* Date Filters */}
-          <div className="flex gap-2 items-center">
+          <div className="relative flex-1 w-full">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-gray-400" />
+            </div>
             <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 h-[42px]"
-            />
-            <span className="text-gray-500">-</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 h-[42px]"
+              type="text"
+              placeholder={t("common.search", "Search...")}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm dark:bg-gray-700 dark:text-white h-[42px]"
             />
           </div>
 
-          <div className="flex flex-row gap-2 w-full">
-            {/* Search Input */}
-            <div className="relative flex-1">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder={t("common.search", "Search...")}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 block w-full border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white h-[42px]"
-              />
-            </div>
-            <button
-              onClick={() => navigate("/realizations/create")}
-              className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors h-[42px]"
-            >
-              <Plus className="mr-2" size={18} />
-              {t("action.create", "Create")}
-            </button>
-          </div>
+          <button
+            onClick={() => navigate("/realizations/create")}
+            className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors h-[42px] text-sm font-semibold whitespace-nowrap w-full sm:w-auto"
+          >
+            <Plus className="mr-2" size={18} />
+            {t("action.create", "Create")}
+          </button>
         </div>
       </div>
 

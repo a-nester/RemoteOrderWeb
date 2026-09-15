@@ -360,89 +360,129 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
 
         {/* Printable View */}
         {isPrintMode ? (
-          <div className="p-8 overflow-y-auto flex-1 space-y-6 text-black bg-white print:p-0">
-            <div className="border-b-2 border-gray-800 pb-4 flex justify-between items-start">
-              <div>
-                <h1 className="text-2xl font-bold uppercase tracking-wide">Видаткова Накладна (Переміщення)</h1>
-                <p className="text-sm font-semibold">№ {docNumber || 'Чернетка'} від {new Date(docDate || Date.now()).toLocaleDateString('uk-UA')}</p>
+          <div className="p-8 overflow-y-auto flex-1 text-black bg-white print:p-0 print:overflow-visible font-sans print:text-black">
+            <div className="max-w-4xl mx-auto space-y-6">
+              {/* Document Header */}
+              <div className="border-b-2 border-black pb-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h1 className="text-xl font-bold uppercase tracking-wide">
+                      НАКЛАДНА № {docNumber || 'Чернетка'}
+                    </h1>
+                    <p className="text-sm font-semibold text-gray-800">
+                      на внутрішнє переміщення матеріальних цінностей
+                    </p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      від {docDate ? new Date(docDate).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
+                    </p>
+                  </div>
+                  <div className="text-right text-xs text-gray-600">
+                    <p className="font-bold text-gray-900 text-sm">Типова форма № З-1</p>
+                    <p>Затверджено наказом</p>
+                    <p>Державного казначейства України</p>
+                  </div>
+                </div>
               </div>
-              <div className="text-right text-sm">
-                <p className="font-bold">RemoteOrder Inc.</p>
-                <p className="text-gray-600">Внутрішнє переміщення товарно-матеріальних цінностей</p>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-8 bg-gray-50 p-4 rounded-lg border border-gray-300 text-sm">
-              <div>
-                <span className="font-bold text-gray-700 block mb-1">Склад-відправник (Звідки):</span>
-                <p className="text-base font-bold text-gray-900">{fromWhName}</p>
+              {/* Metadata Grid */}
+              <div className="border border-black p-3 text-xs space-y-2">
+                <div className="flex border-b border-gray-300 pb-1.5">
+                  <span className="w-48 font-bold text-gray-800">Відправник (Склад):</span>
+                  <span className="font-semibold text-black">{fromWhName}</span>
+                </div>
+                <div className="flex border-b border-gray-300 pb-1.5">
+                  <span className="w-48 font-bold text-gray-800">Отримувач (Склад):</span>
+                  <span className="font-semibold text-black">{toWhName}</span>
+                </div>
+                <div className="flex">
+                  <span className="w-48 font-bold text-gray-800">Примітка:</span>
+                  <span className="text-black">{comment || '—'}</span>
+                </div>
               </div>
-              <div>
-                <span className="font-bold text-gray-700 block mb-1">Склад-отримувач (Куди):</span>
-                <p className="text-base font-bold text-gray-900">{toWhName}</p>
-              </div>
-            </div>
 
-            <table className="min-w-full divide-y divide-gray-300 border border-gray-300 text-xs">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-3 py-2 text-left font-bold border-r">№</th>
-                  <th className="px-3 py-2 text-left font-bold border-r">Код</th>
-                  <th className="px-3 py-2 text-left font-bold border-r">Товар</th>
-                  <th className="px-3 py-2 text-center font-bold border-r">Од.</th>
-                  <th className="px-3 py-2 text-right font-bold border-r">Кількість</th>
-                  <th className="px-3 py-2 text-right font-bold border-r">Вага од. (кг)</th>
-                  <th className="px-3 py-2 text-right font-bold">Загальна вага (кг)</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {activeTransferredItems.map((item, idx) => {
-                  const qty = Number(item.quantity || 0);
-                  const weight = Number(item.weight || 0);
-                  const itemWeight = qty * weight;
-                  return (
-                    <tr key={item.productId}>
-                      <td className="px-3 py-1.5 border-r text-center">{idx + 1}</td>
-                      <td className="px-3 py-1.5 border-r font-mono">{item.productCode || '-'}</td>
-                      <td className="px-3 py-1.5 border-r font-medium">{item.productName}</td>
-                      <td className="px-3 py-1.5 border-r text-center">{item.unit || 'шт'}</td>
-                      <td className="px-3 py-1.5 border-r text-right font-bold">{qty}</td>
-                      <td className="px-3 py-1.5 border-r text-right">{weight > 0 ? weight.toFixed(3) : '-'}</td>
-                      <td className="px-3 py-1.5 text-right font-bold">{itemWeight > 0 ? itemWeight.toFixed(3) : '-'}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+              {/* Items Table */}
+              <table className="w-full border-collapse border border-black text-xs">
+                <thead>
+                  <tr className="bg-gray-100 print:bg-gray-200">
+                    <th className="border border-black px-2 py-1.5 text-center font-bold w-10">№</th>
+                    <th className="border border-black px-2 py-1.5 text-left font-bold w-28">Код</th>
+                    <th className="border border-black px-2 py-1.5 text-left font-bold">Найменування матеріальних цінностей</th>
+                    <th className="border border-black px-2 py-1.5 text-center font-bold w-14">Од.</th>
+                    <th className="border border-black px-2 py-1.5 text-right font-bold w-24">Кількість</th>
+                    <th className="border border-black px-2 py-1.5 text-right font-bold w-24">Вага 1 од. (кг)</th>
+                    <th className="border border-black px-2 py-1.5 text-right font-bold w-28">Загальна вага (кг)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeTransferredItems.map((item, idx) => {
+                    const qty = Number(item.quantity || 0);
+                    const weight = Number(item.weight || 0);
+                    const itemWeight = qty * weight;
+                    return (
+                      <tr key={item.productId} className="break-inside-avoid">
+                        <td className="border border-black px-2 py-1 text-center">{idx + 1}</td>
+                        <td className="border border-black px-2 py-1 font-mono text-left">{item.productCode || '-'}</td>
+                        <td className="border border-black px-2 py-1 font-medium">{item.productName}</td>
+                        <td className="border border-black px-2 py-1 text-center">{item.unit || 'шт'}</td>
+                        <td className="border border-black px-2 py-1 text-right font-bold">{qty.toLocaleString('uk-UA', { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</td>
+                        <td className="border border-black px-2 py-1 text-right">{weight > 0 ? weight.toFixed(3) : '-'}</td>
+                        <td className="border border-black px-2 py-1 text-right font-bold">{itemWeight > 0 ? itemWeight.toFixed(3) : '-'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-gray-100 print:bg-gray-200 font-bold">
+                    <td colSpan={4} className="border border-black px-2 py-1.5 text-right">Разом:</td>
+                    <td className="border border-black px-2 py-1.5 text-right">{totals.totalQty.toLocaleString('uk-UA', { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</td>
+                    <td className="border border-black px-2 py-1.5 text-right">—</td>
+                    <td className="border border-black px-2 py-1.5 text-right">{totals.totalWeight > 0 ? totals.totalWeight.toFixed(3) : '-'}</td>
+                  </tr>
+                </tfoot>
+              </table>
 
-            <div className="pt-2 border-t border-gray-400 space-y-2">
-              <div className="flex justify-between items-center font-bold text-sm">
-                <span>Всього найменувань: {activeTransferredItems.length}, загальна вага: {totals.totalWeight > 0 ? `${totals.totalWeight.toFixed(3)} кг` : '—'}</span>
-                <span className="text-base">Загальна кількість: {totals.totalQty.toFixed(3)}</span>
+              {/* Document Summary Stats */}
+              <div className="text-xs space-y-1 pt-1 border-t border-gray-400">
+                <p>
+                  <span className="font-bold">Всього найменувань:</span> {activeTransferredItems.length}
+                </p>
+                <p>
+                  <span className="font-bold">Загальна кількість:</span> {totals.totalQty.toLocaleString('uk-UA', { minimumFractionDigits: 0, maximumFractionDigits: 3 })} од.
+                </p>
+                <p>
+                  <span className="font-bold">Загальна вага товарів:</span> {totals.totalWeight > 0 ? `${totals.totalWeight.toFixed(3)} кг` : '—'}
+                </p>
               </div>
-            </div>
 
-            <div className="pt-12 grid grid-cols-2 gap-16 text-sm">
-              <div className="border-t border-gray-400 pt-2">
-                <p className="font-semibold">Сдав (комірник відправника):</p>
-                <div className="mt-8 border-b border-gray-400 w-3/4"></div>
-                <p className="text-xs text-gray-500 mt-1">(Підпис, ПІБ)</p>
+              {/* Signatures */}
+              <div className="pt-10 grid grid-cols-2 gap-12 text-xs break-inside-avoid">
+                <div>
+                  <p className="font-bold">Відпустив (Склад-відправник):</p>
+                  <div className="mt-8 border-b border-black w-full flex justify-between text-[10px] text-gray-500 pt-1">
+                    <span>(підпис)</span>
+                    <span>(П.І.Б.)</span>
+                  </div>
+                  <p className="mt-2 text-gray-600">"____" __________________ 202__ р.</p>
+                </div>
+                <div>
+                  <p className="font-bold">Прийняв (Склад-отримувач):</p>
+                  <div className="mt-8 border-b border-black w-full flex justify-between text-[10px] text-gray-500 pt-1">
+                    <span>(підпис)</span>
+                    <span>(П.І.Б.)</span>
+                  </div>
+                  <p className="mt-2 text-gray-600">"____" __________________ 202__ р.</p>
+                </div>
               </div>
-              <div className="border-t border-gray-400 pt-2">
-                <p className="font-semibold">Прийняв (комірник отримувача):</p>
-                <div className="mt-8 border-b border-gray-400 w-3/4"></div>
-                <p className="text-xs text-gray-500 mt-1">(Підпис, ПІБ)</p>
-              </div>
-            </div>
 
-            <div className="pt-6 text-center print:hidden">
-              <button
-                onClick={handlePrint}
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-bold shadow-md hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
-              >
-                <Printer size={18} />
-                Роздрукувати накладну
-              </button>
+              <div className="pt-6 text-center print:hidden">
+                <button
+                  onClick={handlePrint}
+                  className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-bold shadow-md hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
+                >
+                  <Printer size={18} />
+                  Роздрукувати накладну
+                </button>
+              </div>
             </div>
           </div>
         ) : (
