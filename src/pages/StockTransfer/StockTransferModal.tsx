@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { X, CheckCircle, Save, Search, Printer, Plus } from 'lucide-react';
+import { X, CheckCircle, Save, Search, Printer, Plus, Trash2 } from 'lucide-react';
 import { StockTransferService } from '../../services/stockTransfer.service';
 import type { StockTransferItem } from '../../services/stockTransfer.service';
 import { OrganizationService } from '../../services/organization.service';
@@ -22,6 +22,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
   const [toWarehouseId, setToWarehouseId] = useState<string>('');
   const [comment, setComment] = useState<string>('');
   const [items, setItems] = useState<StockTransferItem[]>([]);
+  const [warehouseStockItems, setWarehouseStockItems] = useState<StockTransferItem[]>([]);
   const [status, setStatus] = useState<'DRAFT' | 'POSTED' | 'CANCELLED'>('DRAFT');
   const [docNumber, setDocNumber] = useState<string>('');
   const [docDate, setDocDate] = useState<string>('');
@@ -60,20 +61,28 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
       return;
     }
 
-    const price = Number(product.prices?.['enterPrice'] || product.prices?.['base'] || Object.values(product.prices || {})[0] || 0);
+    const stockItem = warehouseStockItems.find((s) => s.productId === product.id);
+    const availableQty = stockItem ? stockItem.availableQty : 0;
+    const price = stockItem && stockItem.price > 0
+      ? stockItem.price
+      : Number(product.prices?.['enterPrice'] || product.prices?.['base'] || Object.values(product.prices || {})[0] || 0);
 
     const newItem: StockTransferItem = {
       productId: product.id,
       productName: product.name,
       productCode: product.barcode || product.id.slice(0, 8),
       unit: product.unit,
-      availableQty: 0,
+      availableQty,
       quantity: 1,
       price,
     };
 
     setItems((prev) => [...prev, newItem]);
     setIsProductSelectorOpen(false);
+  };
+
+  const handleRemoveItem = (productId: string) => {
+    setItems((prev) => prev.filter((i) => i.productId !== productId));
   };
 
   const loadWarehouses = async () => {
@@ -90,6 +99,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
     setToWarehouseId('');
     setComment('');
     setItems([]);
+    setWarehouseStockItems([]);
     setStatus('DRAFT');
     setDocNumber('');
     setDocDate(new Date().toISOString());
@@ -107,6 +117,10 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
       setDocNumber(doc.number || '');
       setDocDate(doc.date || new Date().toISOString());
       setItems(doc.items || []);
+
+      if (doc.fromWarehouseId) {
+        fetchWarehouseStock(doc.fromWarehouseId, doc.items || []);
+      }
     } catch (err) {
       console.error(err);
       alert('Помилка завантаження документу переміщення');
@@ -115,26 +129,36 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
     }
   };
 
+  const fetchWarehouseStock = async (whId: string, currentItems?: StockTransferItem[]) => {
+    if (!whId) return;
+    setFetchingStock(true);
+    try {
+      const stockItems = await StockTransferService.getStockFill(whId);
+      setWarehouseStockItems(stockItems);
+
+      // Update available quantity for existing items in document
+      setItems((prev) => {
+        const source = currentItems || prev;
+        return source.map((item) => {
+          const matched = stockItems.find((s) => s.productId === item.productId);
+          return matched
+            ? { ...item, availableQty: matched.availableQty }
+            : item;
+        });
+      });
+    } catch (err) {
+      console.error('Failed to fetch stock for warehouse:', err);
+    } finally {
+      setFetchingStock(false);
+    }
+  };
+
   const handleFromWarehouseChange = async (whId: string) => {
     setFromWarehouseId(whId);
-    if (!documentId && status === 'DRAFT') {
-      setFetchingStock(true);
-      try {
-        const stockItems = await StockTransferService.getStockFill(whId);
-        setItems(stockItems.map((item) => ({
-          productId: item.productId,
-          productName: item.productName,
-          productCode: item.productCode,
-          unit: item.unit,
-          availableQty: item.availableQty,
-          quantity: 0, // Default 0 to let user enter transferred amount
-          price: item.price,
-        })));
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setFetchingStock(false);
-      }
+    if (whId) {
+      await fetchWarehouseStock(whId);
+    } else {
+      setWarehouseStockItems([]);
     }
   };
 
@@ -428,7 +452,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Пошук товару за кодом або назвою..."
+                  placeholder="Пошук товару в таблиці за кодом або назвою..."
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-white"
                 />
               </div>
@@ -436,7 +460,13 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
               {!isReadOnly && (
                 <button
                   type="button"
-                  onClick={() => setIsProductSelectorOpen(true)}
+                  onClick={() => {
+                    if (!fromWarehouseId) {
+                      alert('Спочатку виберіть Склад-відправник');
+                      return;
+                    }
+                    setIsProductSelectorOpen(true);
+                  }}
                   className="flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm transition-colors whitespace-nowrap shadow-sm"
                 >
                   <Plus size={18} className="mr-1.5" />
@@ -461,6 +491,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
                     <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Кількість для переміщення</th>
                     <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Собівартість одиниці</th>
                     <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Сума</th>
+                    {!isReadOnly && <th className="px-3 py-2 text-center text-xs font-semibold text-gray-500 uppercase w-10"></th>}
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
@@ -494,13 +525,27 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
                         <td className="px-3 py-2 text-sm font-bold text-gray-900 dark:text-white text-right">
                           {itemTotal.toFixed(2)} ₴
                         </td>
+                        {!isReadOnly && (
+                          <td className="px-3 py-2 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem(item.productId)}
+                              className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                              title="Видалити товар"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
                   {filteredItems.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-gray-500">
-                        Товари не знайдено або відсутні на складі-відправнику
+                      <td colSpan={isReadOnly ? 7 : 8} className="py-8 text-center text-gray-500">
+                        {items.length === 0
+                          ? 'Товари не додано. Натисніть "Підбір товару" для вибору товарів.'
+                          : 'Товари за вашим пошуковим запитом не знайдено'}
                       </td>
                     </tr>
                   )}
