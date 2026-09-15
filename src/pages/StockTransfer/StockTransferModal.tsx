@@ -116,10 +116,18 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
       setStatus(doc.status);
       setDocNumber(doc.number || '');
       setDocDate(doc.date || new Date().toISOString());
-      setItems(doc.items || []);
+
+      const parsedItems = (doc.items || []).map((item) => ({
+        ...item,
+        price: Number(item.price || 0),
+        quantity: Number(item.quantity || 0),
+        total: Number(item.total || 0),
+        availableQty: Number(item.availableQty || 0),
+      }));
+      setItems(parsedItems);
 
       if (doc.fromWarehouseId) {
-        fetchWarehouseStock(doc.fromWarehouseId, doc.items || []);
+        fetchWarehouseStock(doc.fromWarehouseId, parsedItems);
       }
     } catch (err) {
       console.error(err);
@@ -133,7 +141,11 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
     if (!whId) return;
     setFetchingStock(true);
     try {
-      const stockItems = await StockTransferService.getStockFill(whId);
+      const stockItems = (await StockTransferService.getStockFill(whId)).map((item) => ({
+        ...item,
+        price: Number(item.price || 0),
+        availableQty: Number(item.availableQty || 0),
+      }));
       setWarehouseStockItems(stockItems);
 
       // Update available quantity for existing items in document
@@ -142,7 +154,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
         return source.map((item) => {
           const matched = stockItems.find((s) => s.productId === item.productId);
           return matched
-            ? { ...item, availableQty: matched.availableQty }
+            ? { ...item, availableQty: Number(matched.availableQty || 0) }
             : item;
         });
       });
@@ -182,7 +194,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
   }, [items, searchQuery]);
 
   const activeTransferredItems = useMemo(() => {
-    return items.filter(item => item.quantity > 0);
+    return items.filter(item => Number(item.quantity || 0) > 0);
   }, [items]);
 
   const totals = useMemo(() => {
@@ -190,8 +202,10 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
     let totalSum = 0;
 
     items.forEach((item) => {
-      totalQty += item.quantity;
-      totalSum += item.quantity * item.price;
+      const qty = Number(item.quantity || 0);
+      const price = Number(item.price || 0);
+      totalQty += qty;
+      totalSum += qty * price;
     });
 
     return { totalQty, totalSum };
@@ -215,7 +229,14 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
       return;
     }
 
-    const transferItems = items.filter(i => i.quantity > 0);
+    const transferItems = items
+      .filter(i => Number(i.quantity || 0) > 0)
+      .map(i => ({
+        ...i,
+        quantity: Number(i.quantity || 0),
+        price: Number(i.price || 0),
+      }));
+
     if (transferItems.length === 0) {
       alert('Вкажіть кількість принаймні для одного товару для переміщення');
       return;
@@ -339,17 +360,21 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {activeTransferredItems.map((item, idx) => (
-                  <tr key={item.productId}>
-                    <td className="px-3 py-1.5 border-r text-center">{idx + 1}</td>
-                    <td className="px-3 py-1.5 border-r font-mono">{item.productCode || '-'}</td>
-                    <td className="px-3 py-1.5 border-r font-medium">{item.productName}</td>
-                    <td className="px-3 py-1.5 border-r text-center">{item.unit || 'шт'}</td>
-                    <td className="px-3 py-1.5 border-r text-right font-bold">{item.quantity}</td>
-                    <td className="px-3 py-1.5 border-r text-right">{item.price.toFixed(2)} ₴</td>
-                    <td className="px-3 py-1.5 text-right font-bold">{(item.quantity * item.price).toFixed(2)} ₴</td>
-                  </tr>
-                ))}
+                {activeTransferredItems.map((item, idx) => {
+                  const qty = Number(item.quantity || 0);
+                  const price = Number(item.price || 0);
+                  return (
+                    <tr key={item.productId}>
+                      <td className="px-3 py-1.5 border-r text-center">{idx + 1}</td>
+                      <td className="px-3 py-1.5 border-r font-mono">{item.productCode || '-'}</td>
+                      <td className="px-3 py-1.5 border-r font-medium">{item.productName}</td>
+                      <td className="px-3 py-1.5 border-r text-center">{item.unit || 'шт'}</td>
+                      <td className="px-3 py-1.5 border-r text-right font-bold">{qty}</td>
+                      <td className="px-3 py-1.5 border-r text-right">{price.toFixed(2)} ₴</td>
+                      <td className="px-3 py-1.5 text-right font-bold">{(qty * price).toFixed(2)} ₴</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
 
@@ -496,8 +521,11 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
                 </thead>
                 <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                   {filteredItems.map((item, index) => {
-                    const itemTotal = item.quantity * item.price;
-                    const isExceeding = item.quantity > (item.availableQty || 0);
+                    const qty = Number(item.quantity || 0);
+                    const price = Number(item.price || 0);
+                    const availableQty = Number(item.availableQty || 0);
+                    const itemTotal = qty * price;
+                    const isExceeding = qty > availableQty;
 
                     return (
                       <tr key={item.productId} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
@@ -505,14 +533,14 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
                         <td className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300">{item.productCode || '-'}</td>
                         <td className="px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white">{item.productName}</td>
                         <td className="px-3 py-2 text-sm font-bold text-gray-700 dark:text-gray-300 text-right">
-                          {item.availableQty || 0} {item.unit || ''}
+                          {availableQty} {item.unit || ''}
                         </td>
                         <td className="px-3 py-2 text-right">
                           <input
                             type="number"
                             step="0.001"
                             min="0"
-                            max={item.availableQty}
+                            max={availableQty}
                             value={item.quantity}
                             disabled={isReadOnly}
                             onChange={(e) => handleQtyChange(item.productId, e.target.value)}
@@ -521,7 +549,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
                             }`}
                           />
                         </td>
-                        <td className="px-3 py-2 text-sm text-gray-500 text-right">{item.price.toFixed(2)} ₴</td>
+                        <td className="px-3 py-2 text-sm text-gray-500 text-right">{price.toFixed(2)} ₴</td>
                         <td className="px-3 py-2 text-sm font-bold text-gray-900 dark:text-white text-right">
                           {itemTotal.toFixed(2)} ₴
                         </td>

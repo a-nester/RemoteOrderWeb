@@ -100,7 +100,13 @@ export default function InventoryCountModal({ isOpen, onClose, documentId, onSuc
       setComment(doc.comment || '');
       setStatus(doc.status);
       setDocNumber(doc.number || '');
-      setItems(doc.items || []);
+      const parsedItems = (doc.items || []).map((item) => ({
+        ...item,
+        price: Number(item.price || 0),
+        accountingQty: Number(item.accountingQty || 0),
+        actualQty: Number(item.actualQty || 0),
+      }));
+      setItems(parsedItems);
     } catch (err) {
       console.error(err);
       alert('Помилка завантаження документу');
@@ -120,9 +126,9 @@ export default function InventoryCountModal({ isOpen, onClose, documentId, onSuc
           productName: item.productName,
           productCode: item.productCode,
           unit: item.unit,
-          accountingQty: item.accountingQty,
-          actualQty: item.accountingQty, // Default actual to accounting
-          price: item.price,
+          accountingQty: Number(item.accountingQty || 0),
+          actualQty: Number(item.accountingQty || 0), // Default actual to accounting
+          price: Number(item.price || 0),
         })));
       } catch (err) {
         console.error(err);
@@ -158,14 +164,17 @@ export default function InventoryCountModal({ isOpen, onClose, documentId, onSuc
     let shortage = 0;
 
     items.forEach((item) => {
-      const acTotal = item.accountingQty * item.price;
-      const actTotal = item.actualQty * item.price;
-      const diffTotal = (item.actualQty - item.accountingQty) * item.price;
+      const price = Number(item.price || 0);
+      const accQty = Number(item.accountingQty || 0);
+      const actQty = Number(item.actualQty || 0);
+      const accSum = accQty * price;
+      const actSum = actQty * price;
+      const diff = actSum - accSum;
 
-      accounting += acTotal;
-      actual += actTotal;
-      if (diffTotal > 0) surplus += diffTotal;
-      if (diffTotal < 0) shortage += Math.abs(diffTotal);
+      accounting += accSum;
+      actual += actSum;
+      if (diff > 0) surplus += diff;
+      if (diff < 0) shortage += Math.abs(diff);
     });
 
     return { accounting, actual, surplus, shortage };
@@ -185,13 +194,23 @@ export default function InventoryCountModal({ isOpen, onClose, documentId, onSuc
         await InventoryCountService.update(documentId, {
           warehouseId: selectedWarehouseId,
           comment,
-          items,
+          items: items.map(i => ({
+            ...i,
+            price: Number(i.price || 0),
+            accountingQty: Number(i.accountingQty || 0),
+            actualQty: Number(i.actualQty || 0),
+          })),
         });
       } else {
         const created = await InventoryCountService.create({
           warehouseId: selectedWarehouseId,
           comment,
-          items,
+          items: items.map(i => ({
+            ...i,
+            price: Number(i.price || 0),
+            accountingQty: Number(i.accountingQty || 0),
+            actualQty: Number(i.actualQty || 0),
+          })),
         });
         savedDocId = created.id;
       }
@@ -220,8 +239,8 @@ export default function InventoryCountModal({ isOpen, onClose, documentId, onSuc
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              {documentId ? `Інвентаризація ${docNumber ? '#' + docNumber : ''}` : 'Нова Інвентаризація'}
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              {documentId ? `Інвентаризація #${docNumber}` : 'Нова інвентаризація'}
             </h2>
             <span
               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold mt-1 ${
@@ -272,7 +291,7 @@ export default function InventoryCountModal({ isOpen, onClose, documentId, onSuc
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 disabled={isReadOnly}
-                placeholder="Коментар комірника/менеджера..."
+                placeholder="Примітка до інвентаризації..."
                 className="w-full border border-gray-300 dark:border-gray-600 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white disabled:bg-gray-100"
               />
             </div>
@@ -303,7 +322,7 @@ export default function InventoryCountModal({ isOpen, onClose, documentId, onSuc
             )}
 
             {fetchingStock && (
-              <span className="text-sm text-blue-600 animate-pulse">Завантаження товарів складу...</span>
+              <span className="text-sm text-blue-600 animate-pulse">Завантаження залишків склада...</span>
             )}
           </div>
 
@@ -315,8 +334,8 @@ export default function InventoryCountModal({ isOpen, onClose, documentId, onSuc
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase">#</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Код</th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Товар</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Обліковий залишок</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Фактичний залишок</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Облікова к-сть</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Фактична к-сть</th>
                   <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Відхилення</th>
                   <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Ціна одиниці</th>
                   <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Сума відхилення</th>
@@ -324,8 +343,11 @@ export default function InventoryCountModal({ isOpen, onClose, documentId, onSuc
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                 {filteredItems.map((item, index) => {
-                  const diff = item.actualQty - item.accountingQty;
-                  const diffTotal = diff * item.price;
+                  const price = Number(item.price || 0);
+                  const accountingQty = Number(item.accountingQty || 0);
+                  const actualQty = Number(item.actualQty || 0);
+                  const diff = actualQty - accountingQty;
+                  const diffTotal = diff * price;
 
                   return (
                     <tr key={item.productId} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
@@ -333,7 +355,7 @@ export default function InventoryCountModal({ isOpen, onClose, documentId, onSuc
                       <td className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300">{item.productCode || '-'}</td>
                       <td className="px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white">{item.productName}</td>
                       <td className="px-3 py-2 text-sm font-bold text-gray-700 dark:text-gray-300 text-right">
-                        {item.accountingQty} {item.unit || ''}
+                        {accountingQty} {item.unit || ''}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <input
@@ -349,7 +371,7 @@ export default function InventoryCountModal({ isOpen, onClose, documentId, onSuc
                       <td className={`px-3 py-2 text-sm font-bold text-right ${diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-gray-500'}`}>
                         {diff > 0 ? `+${diff.toFixed(3)}` : diff.toFixed(3)}
                       </td>
-                      <td className="px-3 py-2 text-sm text-gray-500 text-right">{item.price.toFixed(2)} ₴</td>
+                      <td className="px-3 py-2 text-sm text-gray-500 text-right">{price.toFixed(2)} ₴</td>
                       <td className={`px-3 py-2 text-sm font-bold text-right ${diffTotal > 0 ? 'text-green-600' : diffTotal < 0 ? 'text-red-600' : 'text-gray-500'}`}>
                         {diffTotal > 0 ? `+${diffTotal.toFixed(2)}` : diffTotal.toFixed(2)} ₴
                       </td>
