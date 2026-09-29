@@ -265,7 +265,7 @@ export default function BuyerReturnDetails() {
         style={{ fontFamily: "Arial, sans-serif" }}
       >
         {/* Header Section */}
-        <div className="mb-6 text-sm">
+        <div className="mb-6 text-lg">
           <div className="flex mb-2">
             <div className="w-40 font-bold underline text-left">
               Одержувач
@@ -290,16 +290,16 @@ export default function BuyerReturnDetails() {
 
         {/* Title */}
         <div className="text-center mb-6">
-          <div className="text-lg font-bold">
+          <div className="text-[22px] font-bold">
             Накладна на повернення №{buyerReturn.number}
           </div>
-          <div className="font-bold">
+          <div className="font-bold text-lg">
             від {formatDateForPrint(buyerReturn.date)}
           </div>
         </div>
 
         {/* Table */}
-        <table className="w-full border-collapse border border-black mb-6 text-sm">
+        <table className="w-full border-collapse border border-black mb-6 text-lg">
           <thead>
             <tr>
               <th className="border border-black p-1 text-center font-normal w-10">
@@ -358,13 +358,13 @@ export default function BuyerReturnDetails() {
         </table>
 
         {/* Footer Sum */}
-        <div className="mb-8 text-sm">
+        <div className="mb-8 text-lg">
           <div className="mb-1">Всього на суму:</div>
-          <div className="">{numberToWordsUk(buyerReturn.totalAmount)}</div>
+          <div className="font-bold">{numberToWordsUk(buyerReturn.totalAmount)}</div>
         </div>
 
         {/* Signatures */}
-        <div className="flex justify-between mt-12 text-sm">
+        <div className="flex justify-between mt-12 text-lg">
           <div className="flex items-end">
             <span className="mr-2">Від покупця</span>
             <div className="border-b border-black w-48 h-4"></div>

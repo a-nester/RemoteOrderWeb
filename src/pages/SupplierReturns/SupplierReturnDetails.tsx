@@ -215,24 +215,24 @@ export default function SupplierReturnDetails() {
       {/* Print Content */}
       <div className="print:block">
 
-        <h1 className="text-2xl font-bold text-center mb-6 text-gray-900 dark:text-white print:text-black">
+        <h1 className="text-[26px] font-bold text-center mb-6 text-gray-900 dark:text-white print:text-black">
           Повернення товару постачальнику № {supplierReturn.number} від {formatDateForPrint(supplierReturn.date)}
         </h1>
 
         <div className="grid grid-cols-2 gap-8 mb-8">
           <div>
-            <h3 className="text-gray-500 font-semibold mb-2">
+            <h3 className="text-gray-500 font-semibold mb-2 text-base">
               {t("common.customer", "Customer")}:
             </h3>
-            <p className="text-lg font-bold text-gray-900 dark:text-white print:text-black">
+            <p className="text-xl font-bold text-gray-900 dark:text-white print:text-black">
               {supplierReturn.supplierName}
             </p>
           </div>
           <div>
-            <h3 className="text-gray-500 font-semibold mb-2">
+            <h3 className="text-gray-500 font-semibold mb-2 text-base">
               {t("common.warehouse", "Warehouse")}:
             </h3>
-            <p className="text-lg text-gray-900 dark:text-gray-300 print:text-black">
+            <p className="text-xl text-gray-900 dark:text-gray-300 print:text-black">
               {supplierReturn.warehouseName}
             </p>
           </div>
@@ -242,19 +242,19 @@ export default function SupplierReturnDetails() {
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border dark:border-gray-700 print:border-black mb-6">
           <thead className="bg-gray-50 dark:bg-gray-900 print:bg-gray-100">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 tracking-wider print:text-black border-r print:border-black">
+              <th className="px-4 py-2 text-left text-base font-semibold text-gray-500 tracking-wider print:text-black border-r print:border-black">
                 №
               </th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 tracking-wider print:text-black border-r print:border-black">
+              <th className="px-4 py-2 text-left text-base font-semibold text-gray-500 tracking-wider print:text-black border-r print:border-black">
                 {t("common.product", "Product")}
               </th>
-              <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 tracking-wider print:text-black border-r print:border-black">
+              <th className="px-4 py-2 text-right text-base font-semibold text-gray-500 tracking-wider print:text-black border-r print:border-black">
                 {t("common.quantity", "Quantity")}
               </th>
-              <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 tracking-wider print:text-black border-r print:border-black">
+              <th className="px-4 py-2 text-right text-base font-semibold text-gray-500 tracking-wider print:text-black border-r print:border-black">
                 {t("common.price", "Price")}
               </th>
-              <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 tracking-wider print:text-black">
+              <th className="px-4 py-2 text-right text-base font-semibold text-gray-500 tracking-wider print:text-black">
                 {t("common.total", "Total")}
               </th>
             </tr>
@@ -262,19 +262,19 @@ export default function SupplierReturnDetails() {
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 print:bg-white print:divide-black border-b print:border-black">
             {supplierReturn.items?.map((item, index) => (
               <tr key={item.id || index}>
-                <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-300 border-r print:border-black print:text-black">
+                <td className="px-4 py-2 text-lg text-gray-900 dark:text-gray-300 border-r print:border-black print:text-black">
                   {index + 1}
                 </td>
-                <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-300 border-r print:border-black print:text-black">
+                <td className="px-4 py-2 text-lg text-gray-900 dark:text-gray-300 border-r print:border-black print:text-black">
                   {item.productName}
                 </td>
-                <td className="px-4 py-2 text-sm text-right text-gray-900 dark:text-gray-300 border-r print:border-black print:text-black">
+                <td className="px-4 py-2 text-lg text-right text-gray-900 dark:text-gray-300 border-r print:border-black print:text-black">
                   {Number(item.quantity)}
                 </td>
-                <td className="px-4 py-2 text-sm text-right text-gray-900 dark:text-gray-300 border-r print:border-black print:text-black">
+                <td className="px-4 py-2 text-lg text-right text-gray-900 dark:text-gray-300 border-r print:border-black print:text-black">
                   {Number(item.price).toFixed(2)}
                 </td>
-                <td className="px-4 py-2 text-sm text-right font-medium text-gray-900 dark:text-gray-100 print:text-black">
+                <td className="px-4 py-2 text-lg text-right font-medium text-gray-900 dark:text-gray-100 print:text-black">
                   {Number(item.total).toFixed(2)}
                 </td>
               </tr>
@@ -284,11 +284,11 @@ export default function SupplierReturnDetails() {
             <tr>
               <td
                 colSpan={4}
-                className="px-4 py-2 text-sm font-bold text-right text-gray-900 dark:text-white print:text-black border-r print:border-black"
+                className="px-4 py-2 text-lg font-bold text-right text-gray-900 dark:text-white print:text-black border-r print:border-black"
               >
                 {t("common.total", "Всього")}:
               </td>
-              <td className="px-4 py-2 text-sm font-bold text-right text-gray-900 dark:text-white print:text-black">
+              <td className="px-4 py-2 text-lg font-bold text-right text-gray-900 dark:text-white print:text-black">
                 {Number(supplierReturn.totalAmount).toFixed(2)} ₴
               </td>
             </tr>
@@ -297,10 +297,10 @@ export default function SupplierReturnDetails() {
 
         {supplierReturn.comment && (
           <div className="mb-6">
-            <h3 className="text-gray-500 font-semibold mb-1">
+            <h3 className="text-gray-500 font-semibold mb-1 text-base">
               Коментар:
             </h3>
-            <p className="text-gray-900 dark:text-gray-300 print:text-black">
+            <p className="text-lg text-gray-900 dark:text-gray-300 print:text-black">
               {supplierReturn.comment}
             </p>
           </div>

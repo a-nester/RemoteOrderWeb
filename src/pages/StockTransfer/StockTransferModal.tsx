@@ -366,18 +366,18 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
               <div className="border-b-2 border-black pb-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h1 className="text-xl font-bold uppercase tracking-wide">
+                    <h1 className="text-[25px] font-bold uppercase tracking-wide">
                       НАКЛАДНА № {docNumber || 'Чернетка'}
                     </h1>
-                    <p className="text-sm font-semibold text-gray-800">
+                    <p className="text-lg font-semibold text-gray-800">
                       на внутрішнє переміщення матеріальних цінностей
                     </p>
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-base text-gray-600 mt-1">
                       від {docDate ? new Date(docDate).toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
                     </p>
                   </div>
-                  <div className="text-right text-xs text-gray-600">
-                    <p className="font-bold text-gray-900 text-sm">Типова форма № З-1</p>
+                  <div className="text-right text-base text-gray-600">
+                    <p className="font-bold text-gray-900 text-lg">Типова форма № З-1</p>
                     <p>Затверджено наказом</p>
                     <p>Державного казначейства України</p>
                   </div>
@@ -385,7 +385,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
               </div>
 
               {/* Metadata Grid */}
-              <div className="border border-black p-3 text-xs space-y-2">
+              <div className="border border-black p-3 text-base space-y-2">
                 <div className="flex border-b border-gray-300 pb-1.5">
                   <span className="w-48 font-bold text-gray-800">Відправник (Склад):</span>
                   <span className="font-semibold text-black">{fromWhName}</span>
@@ -401,7 +401,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
               </div>
 
               {/* Items Table */}
-              <table className="w-full border-collapse border border-black text-xs">
+              <table className="w-full border-collapse border border-black text-base">
                 <thead>
                   <tr className="bg-gray-100 print:bg-gray-200">
                     <th className="border border-black px-2 py-1.5 text-center font-bold w-10">№</th>
@@ -442,7 +442,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
               </table>
 
               {/* Document Summary Stats */}
-              <div className="text-xs space-y-1 pt-1 border-t border-gray-400">
+              <div className="text-base space-y-1 pt-1 border-t border-gray-400">
                 <p>
                   <span className="font-bold">Всього найменувань:</span> {activeTransferredItems.length}
                 </p>
@@ -455,10 +455,10 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
               </div>
 
               {/* Signatures */}
-              <div className="pt-10 grid grid-cols-2 gap-12 text-xs break-inside-avoid">
+              <div className="pt-10 grid grid-cols-2 gap-12 text-base break-inside-avoid">
                 <div>
                   <p className="font-bold">Відпустив (Склад-відправник):</p>
-                  <div className="mt-8 border-b border-black w-full flex justify-between text-[10px] text-gray-500 pt-1">
+                  <div className="mt-8 border-b border-black w-full flex justify-between text-[14px] text-gray-500 pt-1">
                     <span>(підпис)</span>
                     <span>(П.І.Б.)</span>
                   </div>
@@ -466,7 +466,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
                 </div>
                 <div>
                   <p className="font-bold">Прийняв (Склад-отримувач):</p>
-                  <div className="mt-8 border-b border-black w-full flex justify-between text-[10px] text-gray-500 pt-1">
+                  <div className="mt-8 border-b border-black w-full flex justify-between text-[14px] text-gray-500 pt-1">
                     <span>(підпис)</span>
                     <span>(П.І.Б.)</span>
                   </div>

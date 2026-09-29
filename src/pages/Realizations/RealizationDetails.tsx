@@ -448,7 +448,7 @@ export default function RealizationDetails() {
             style={{ fontFamily: "'Times New Roman', Times, serif, Arial" }}
           >
             {/* Header Section */}
-            <div className="mb-6 text-xs leading-relaxed space-y-1.5">
+            <div className="mb-6 text-base leading-relaxed space-y-1.5">
               {/* Supplier Row */}
               <div className="flex items-start">
                 <div className="w-36 font-bold underline text-left shrink-0">
@@ -457,7 +457,7 @@ export default function RealizationDetails() {
                 <div className="text-left font-medium text-black">
                   <div className="font-bold">{realization.organizationName || organization?.name || 'ПП «СМАКОСИР»'}</div>
                   {activePrintedRequisites.length > 0 && (
-                    <div className="mt-0.5 space-y-0.5 font-normal text-[11px] text-gray-900">
+                    <div className="mt-0.5 space-y-0.5 font-normal text-[15px] text-gray-900">
                       {activePrintedRequisites.map((item) => (
                         <div key={item.label}>
                           <span className="font-semibold">{item.label}: </span>
@@ -512,16 +512,16 @@ export default function RealizationDetails() {
 
             {/* Document Title */}
             <div className="text-center my-6">
-              <h1 className="text-lg font-bold text-black tracking-tight">
+              <h1 className="text-[22px] font-bold text-black tracking-tight">
                 Видаткова накладна № {realization.number}
               </h1>
-              <div className="text-sm font-bold text-black mt-0.5">
+              <div className="text-lg font-bold text-black mt-0.5">
                 від {formatDateForPrint(realization.date)}
               </div>
             </div>
 
             {/* Table */}
-            <table className="w-full border-collapse border border-black mb-4 text-xs">
+            <table className="w-full border-collapse border border-black mb-4 text-base">
               <thead>
                 <tr className="bg-gray-100">
                   <th className="border border-black p-1.5 text-center font-bold w-8">
@@ -615,20 +615,20 @@ export default function RealizationDetails() {
             </table>
 
             {/* Sum in Words Block */}
-            <div className="mb-6 text-xs space-y-1">
+            <div className="mb-6 text-base space-y-1">
               <div className="text-black">Всього на суму:</div>
-              <div className="font-bold text-black text-sm">
+              <div className="font-bold text-black text-lg">
                 {numberToWordsUk(totalAmount)}
               </div>
               {isVat && (
-                <div className="font-bold text-black text-xs">
+                <div className="font-bold text-black text-base">
                   ПДВ: {vatAmount.toFixed(2)} грн.
                 </div>
               )}
             </div>
 
             {/* Location & Signatures Section */}
-            <div className="mt-8 text-xs space-y-6">
+            <div className="mt-8 text-base space-y-6">
               {isVat && (
                 <div className="flex items-center gap-1">
                   <span className="font-semibold">Місце складання</span>
@@ -641,10 +641,10 @@ export default function RealizationDetails() {
                 <div>
                   <div className="font-bold mb-4">Від постачальника</div>
                   <div className="border-b border-black w-full mb-1"></div>
-                  <div className="text-center font-medium text-xs min-h-[1.25rem]">
+                  <div className="text-center font-medium text-base min-h-[1.5rem]">
                     {directorName ? (directorName.toLowerCase().includes('директор') ? directorName : `директор ${directorName}`) : ''}
                   </div>
-                  <div className="text-[9px] text-gray-700 mt-2 italic">
+                  <div className="text-[13px] text-gray-700 mt-2 italic">
                     * Відповідальний за здійснення господарської операції і правильність її оформлення
                   </div>
                 </div>
@@ -653,7 +653,7 @@ export default function RealizationDetails() {
                 <div>
                   <div className="font-bold mb-4">Отримав(ла)</div>
                   <div className="border-b border-black w-full mb-1"></div>
-                  <div className="flex justify-between text-[11px] text-gray-800 mt-1 font-medium">
+                  <div className="flex justify-between text-[15px] text-gray-800 mt-1 font-medium">
                     <span>за дов.</span>
                     <span>№ ______</span>
                     <span>від __ . __ . ______</span>

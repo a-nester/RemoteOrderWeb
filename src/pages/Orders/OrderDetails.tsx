@@ -215,7 +215,7 @@ export default function OrderDetails() {
         style={{ fontFamily: "Arial, sans-serif" }}
       >
         {/* Header Section */}
-        <div className="mb-6 text-sm">
+        <div className="mb-6 text-lg">
           <div className="flex mb-2">
             <div className="w-40 font-bold underline text-left">
               {t("print.supplier", "Supplier")}
@@ -240,17 +240,17 @@ export default function OrderDetails() {
 
         {/* Title */}
         <div className="text-center mb-6">
-          <div className="text-xl font-bold">
+          <div className="text-[25px] font-bold">
             Складська накладна № {order.docNumber || order.id.slice(0, 8)}{" "}
             {/* Using docNumber or short ID for display */}
           </div>
-          <div className="font-bold">
+          <div className="font-bold text-lg">
             {t("print.from", "from")} {formatDate(order.date)}
           </div>
         </div>
 
         {/* Table */}
-        <table className="w-full border-collapse border border-black mb-6 text-sm">
+        <table className="w-full border-collapse border border-black mb-6 text-lg">
           <thead>
             <tr>
               <th className="border border-black p-1 text-center w-10">
@@ -305,7 +305,7 @@ export default function OrderDetails() {
         {/* Footer Sum Removed for Warehouse Receipt */}
 
         {/* Signatures */}
-        <div className="flex justify-between mt-12">
+        <div className="flex justify-between mt-12 text-lg">
           <div className="flex items-end">
             <span className="mr-2">
               {t("print.fromSupplier", "From supplier")}
