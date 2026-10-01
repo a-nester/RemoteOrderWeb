@@ -189,17 +189,47 @@ export default function RealizationList() {
     }
   };
 
+  const canUnpost = user?.role === "admin" || (user as any)?.permissions?.canUnpostRealization === true;
+
   const handleToggleStatus = async (id: string, currentStatus: string) => {
     try {
       if (currentStatus === "POSTED") {
+        if (!canUnpost) {
+          alert("Доступ заборонено: у вас відсутні права на розпроведення накладних. Зверніться до адміністратора.");
+          return;
+        }
+        if (
+          !window.confirm(
+            t(
+              "realization.confirmUnpost",
+              "Ви впевнені, що хочете розпровести реалізацію? Товари будуть повернуті на склад."
+            )
+          )
+        ) {
+          return;
+        }
         await RealizationService.unpostRealization(id);
       } else {
+        if (
+          !window.confirm(
+            t(
+              "realization.confirmPost",
+              "Ви впевнені, що хочете провести реалізацію? Це спише товари зі складу."
+            )
+          )
+        ) {
+          return;
+        }
         await RealizationService.postRealization(id);
       }
       loadData();
     } catch (error: any) {
       console.error("Error toggling status", error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || t("common.error", "Failed to change status");
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        t("common.error", "Failed to change status");
       alert(errorMessage);
     }
   };
