@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { X, CheckCircle, Save, Search, Plus } from 'lucide-react';
+import { X, CheckCircle, Save, Search, Plus, RotateCcw } from 'lucide-react';
 import { InventoryCountService } from '../../services/inventoryCount.service';
 import type { InventoryCountItem } from '../../services/inventoryCount.service';
 import { OrganizationService } from '../../services/organization.service';
@@ -229,6 +229,22 @@ export default function InventoryCountModal({ isOpen, onClose, documentId, onSuc
     }
   };
 
+  const handleUnpost = async () => {
+    if (!documentId) return;
+    if (!window.confirm('Ви впевнені, що хочете розпровести інвентаризацію? Складові коригування будуть скасовані.')) return;
+    setLoading(true);
+    try {
+      await InventoryCountService.unpostDocument(documentId);
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Помилка розпроведення документу');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   const isReadOnly = status === 'POSTED';
@@ -418,26 +434,37 @@ export default function InventoryCountModal({ isOpen, onClose, documentId, onSuc
           >
             Скасувати
           </button>
-          {!isReadOnly && (
-            <div className="flex gap-3">
+          <div className="flex gap-3">
+            {isReadOnly ? (
               <button
-                onClick={() => handleSave(false)}
+                onClick={handleUnpost}
                 disabled={loading}
-                className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-colors"
+                className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium shadow-sm transition-colors"
               >
-                <Save size={18} className="mr-2" />
-                Зберегти чернетку
+                <RotateCcw size={18} className="mr-2" />
+                Розпровести інвентаризацію
               </button>
-              <button
-                onClick={() => handleSave(true)}
-                disabled={loading}
-                className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium shadow-sm transition-colors"
-              >
-                <CheckCircle size={18} className="mr-2" />
-                Провести інвентаризацію
-              </button>
-            </div>
-          )}
+            ) : (
+              <>
+                <button
+                  onClick={() => handleSave(false)}
+                  disabled={loading}
+                  className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-colors"
+                >
+                  <Save size={18} className="mr-2" />
+                  Зберегти чернетку
+                </button>
+                <button
+                  onClick={() => handleSave(true)}
+                  disabled={loading}
+                  className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium shadow-sm transition-colors"
+                >
+                  <CheckCircle size={18} className="mr-2" />
+                  Провести інвентаризацію
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

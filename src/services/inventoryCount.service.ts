@@ -76,6 +76,11 @@ export const InventoryCountService = {
     return response.data;
   },
 
+  unpostDocument: async (id: string): Promise<{ success: boolean; message: string }> => {
+    const response = await axios.post(`${API_URL}/inventory-count/${id}/unpost`, {}, { headers: getAuthHeader() });
+    return response.data;
+  },
+
   deleteDocument: async (id: string): Promise<{ success: boolean; message: string }> => {
     const response = await axios.delete(`${API_URL}/inventory-count/${id}`, { headers: getAuthHeader() });
     return response.data;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Eye, Trash2, CheckCircle, RefreshCw, Package } from 'lucide-react';
+import { Plus, Eye, Trash2, CheckCircle, RefreshCw, Package, RotateCcw } from 'lucide-react';
 import { InventoryCountService } from '../../services/inventoryCount.service';
 import type { InventoryCountDocument } from '../../services/inventoryCount.service';
 import { OrganizationService } from '../../services/organization.service';
@@ -99,6 +99,16 @@ export default function InventoryCountList() {
       loadDocuments();
     } catch (err: any) {
       alert(err.response?.data?.message || 'Помилка проведення');
+    }
+  };
+
+  const handleUnpost = async (id: string) => {
+    if (!window.confirm('Ви впевнені, що хочете розпровести інвентаризацію? Складові коригування будуть скасовані.')) return;
+    try {
+      await InventoryCountService.unpostDocument(id);
+      loadDocuments();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Помилка розпроведення');
     }
   };
 
@@ -239,7 +249,15 @@ export default function InventoryCountList() {
                       >
                         <Eye size={18} />
                       </button>
-                      {doc.status !== 'POSTED' && (
+                      {doc.status === 'POSTED' ? (
+                        <button
+                          onClick={() => handleUnpost(doc.id!)}
+                          className="text-orange-600 hover:text-orange-800 p-1"
+                          title="Розпровести"
+                        >
+                          <RotateCcw size={18} />
+                        </button>
+                      ) : (
                         <>
                           <button
                             onClick={() => handlePost(doc.id!)}
