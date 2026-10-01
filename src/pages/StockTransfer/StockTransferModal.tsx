@@ -317,7 +317,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden print:max-w-none print:max-h-none print:shadow-none print:rounded-none">
         
         {/* Header - Screen only */}
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 print:hidden">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 print:hidden shrink-0">
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               {documentId ? `Накладна переміщення #${docNumber}` : 'Нове переміщення товарів'}
@@ -487,7 +487,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
           </div>
         ) : (
           /* Form Editor Body */
-          <div className="p-6 overflow-y-auto flex-1 space-y-6">
+          <div className="p-6 overflow-y-auto flex-1 min-h-0 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -692,7 +692,7 @@ export default function StockTransferModal({ isOpen, onClose, documentId, onSucc
         )}
 
         {/* Footer Actions - Screen only */}
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 print:hidden">
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/50 print:hidden shrink-0">
           <button
             onClick={onClose}
             className="px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 font-medium transition-colors"
