@@ -37,6 +37,7 @@ export default function ReconciliationReport() {
   const [loading, setLoading] = useState(false);
   const [groupedData, setGroupedData] = useState<GroupedReconciliation[]>([]);
   const [organization, setOrganization] = useState<Organization | null>(null);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     {},
   );
@@ -56,12 +57,26 @@ export default function ReconciliationReport() {
       CounterpartyService.getAll(),
       CounterpartyService.getGroups(),
       OrganizationService.getOrganization().catch(() => null),
-    ]).then(([cpRes, gRes, orgRes]) => {
+      OrganizationService.getAllOrganizations().catch(() => []),
+    ]).then(([cpRes, gRes, orgRes, allOrgsRes]) => {
       setCounterparties(cpRes);
       setGroups(gRes);
       setOrganization(orgRes);
+      setOrganizations(allOrgsRes);
     });
   }, []);
+
+  const getOrgForCp = (cpId: string) => {
+    const cp = counterparties.find((c) => c.id === cpId);
+    if (cp?.organizationId) {
+      const match = organizations.find((o) => o.id === cp.organizationId);
+      if (match) return match;
+    }
+    if (cp?.organizationName) {
+      return { name: cp.organizationName, fullDetails: "" };
+    }
+    return organization;
+  };
 
   const fetchReport = async () => {
     if (!filters.counterpartyId && !filters.groupId) {
@@ -140,15 +155,16 @@ export default function ReconciliationReport() {
     return row.docNumber;
   };
 
-  const orgNameText = organization?.name || "ПРИВАТНЕ ПІДПРИЄМСТВО 'СМАКОСИР'";
-  const orgDirectorText = organization?.fullDetails || "Погребицький Ю.В.";
-
   const exportToExcel = () => {
     if (groupedData.length === 0) return;
 
     const wb = XLSX.utils.book_new();
 
     groupedData.forEach(group => {
+      const cpOrg = getOrgForCp(group.counterpartyId);
+      const orgNameText = cpOrg?.name || "ПРИВАТНЕ ПІДПРИЄМСТВО 'СМАКОСИР'";
+      const orgDirectorText = cpOrg?.fullDetails || "Погребицький Ю.В.";
+
       const cpName = getCpName(group.counterpartyId);
       const dateToFmt = filters.dateTo.split('-').reverse().join('.');
       const dateFromFmt = filters.dateFrom.split('-').reverse().join('.');
@@ -401,6 +417,10 @@ export default function ReconciliationReport() {
       {/* Print Header */}
       <div className="hidden print:block mb-8">
         {groupedData.map((group, idx) => {
+          const cpOrg = getOrgForCp(group.counterpartyId);
+          const orgNameText = cpOrg?.name || "ПРИВАТНЕ ПІДПРИЄМСТВО 'СМАКОСИР'";
+          const orgDirectorText = cpOrg?.fullDetails || "Погребицький Ю.В.";
+
           const cpName = getCpName(group.counterpartyId);
           const dateToFmt = filters.dateTo.split('-').reverse().join('.');
           const dateFromFmt = filters.dateFrom.split('-').reverse().join('.');
