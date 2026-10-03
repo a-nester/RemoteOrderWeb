@@ -159,7 +159,7 @@ export default function ClientPriceDocumentEditor() {
 
     // Update discount % for a specific item
     const handleItemDiscountChange = (productId: string, valStr: string) => {
-        const val = Math.min(100, Math.max(0, parseFloat(valStr) || 0));
+        const val = valStr === '-' ? 0 : Math.min(100, parseFloat(valStr) || 0);
         setItems(prev => prev.map(item => {
             if (item.productId === productId) {
                 const finalPrice = calculateFinalPrice(item.basePrice, val, roundingMethod, roundingValue);
@@ -175,7 +175,7 @@ export default function ClientPriceDocumentEditor() {
 
     // Bulk set discount for all items
     const handleApplyBulkDiscount = () => {
-        const val = Math.min(100, Math.max(0, parseFloat(bulkDiscount) || 0));
+        const val = Math.min(100, parseFloat(bulkDiscount) || 0);
         if (isNaN(val)) return;
 
         setItems(prev => prev.map(item => {
@@ -557,7 +557,6 @@ export default function ClientPriceDocumentEditor() {
                         <input
                             type="number"
                             step="0.1"
-                            min="0"
                             max="100"
                             placeholder="%"
                             value={bulkDiscount}
@@ -626,10 +625,9 @@ export default function ClientPriceDocumentEditor() {
                                                     <input
                                                         type="number"
                                                         step="0.5"
-                                                        min="0"
                                                         max="100"
                                                         disabled={isReadOnly}
-                                                        value={item.discountPercent || ''}
+                                                        value={item.discountPercent !== undefined && item.discountPercent !== null ? item.discountPercent : ''}
                                                         onChange={(e) => handleItemDiscountChange(item.productId, e.target.value)}
                                                         className="w-24 px-2 py-1 border border-indigo-200 rounded text-center text-sm font-bold text-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-50"
                                                         placeholder="0"

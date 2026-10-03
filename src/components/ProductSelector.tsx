@@ -204,7 +204,7 @@ export default function ProductSelector({
                             }
 
                             let effectivePrice = basePrice;
-                            if (discountPercent > 0) {
+                            if (discountPercent !== 0) {
                               const discountFactor = (100 - discountPercent) / 100;
                               const raw = basePrice * discountFactor;
                               const step = Number(roundingValue || 0);
@@ -226,14 +226,14 @@ export default function ProductSelector({
                               effectivePrice = Math.round(calculatedPrice * 100) / 100;
                             }
 
-                            if (discountPercent > 0) {
+                            if (discountPercent !== 0) {
                               return (
                                 <div className="flex flex-col items-end">
-                                  <span className="font-semibold text-green-600 dark:text-green-400">
+                                  <span className={`font-semibold ${discountPercent > 0 ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}`}>
                                     {effectivePrice.toFixed(2)}
                                   </span>
                                   <span className="text-xs text-gray-400 line-through">
-                                    {basePrice.toFixed(2)} (-{discountPercent}%)
+                                    {basePrice.toFixed(2)} ({discountPercent > 0 ? `-${discountPercent}%` : `+${Math.abs(discountPercent)}%`})
                                   </span>
                                 </div>
                               );

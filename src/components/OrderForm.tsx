@@ -64,7 +64,7 @@ const getEffectiveProductPrice = (
 
   let price = basePrice;
 
-  if (!isPriceMissing && discountPercent > 0) {
+  if (!isPriceMissing && discountPercent !== 0) {
     const discountFactor = (100 - discountPercent) / 100;
     const raw = basePrice * discountFactor;
     const step = Number(roundingValue || 0);
