@@ -1,12 +1,16 @@
 import * as XLSX from 'xlsx-js-style';
 import type { Product } from '../types/product';
+import type { Counterparty } from '../types/counterparty';
+import type { ActiveClientDiscount } from '../types/clientPriceDocument';
+import { getEffectiveProductPrice } from './price.utils';
 
 export const generateExcelPriceList = (
   products: Product[],
   priceType: string,
   _priceTypeName?: string,
   allowedCategories?: string[],
-  clientName?: string
+  counterparty?: Counterparty | null,
+  activeDiscounts?: Record<string, ActiveClientDiscount | number>
 ) => {
   const wb = XLSX.utils.book_new();
   const date = new Date().toLocaleDateString('uk-UA');
@@ -78,13 +82,17 @@ export const generateExcelPriceList = (
     return a.localeCompare(b);
   });
 
+  // Determine Price Column Header based on Counterparty defaultSalesType ("з ПДВ")
+  const isVat = counterparty?.defaultSalesType?.trim().toLowerCase() === 'з пдв';
+  const priceColumnHeader = isVat ? 'Ціна,\nгрн/кг/шт\nз ПДВ' : 'Ціна,\nгрн/кг/шт\nбез ПДВ';
+
   // Create Data Array
   const sheetData: any[][] = [
     [{ v: 'Контактна інформація:', s: textStyle }],
     [{ v: 'ПП «СМАКОСИР» Рівненська обл., Дубенський р-н, с. Пасіки, вул. Берестецька, 2 б.', s: textStyle }],
     [{ v: 'Відділ продажу: моб. 097 7788277', s: { font: { bold: true, sz: 10, name: 'Arial' } } }],
     [], // Empty row
-    // Row 5: Yellow Title (without priceTypeName as per user requirement)
+    // Row 5: Yellow Title
     [
       { v: `ПРАЙС-ЛИСТ на ${date} р.`, s: titleRowStyle },
       { v: '', s: titleRowStyle },
@@ -102,7 +110,7 @@ export const generateExcelPriceList = (
       { v: 'Пакування\nодиниці', s: headerStyle },
       { v: 'Тара', s: headerStyle },
       { v: 'Вага\nнетто в\nтарі', s: headerStyle },
-      { v: 'Ціна,\nгрн/кг/шт\nбез ПДВ', s: headerStyle }
+      { v: priceColumnHeader, s: headerStyle }
     ]
   ];
 
@@ -127,8 +135,8 @@ export const generateExcelPriceList = (
 
     items.forEach((p) => {
       const inBoxText = p.inBox ? `${p.inBox} ${p.unit || 'шт'}` : '';
-      const rawPrice = p.prices?.[priceType] ?? 0;
-      const priceStr = Number(rawPrice).toFixed(2);
+      const { price } = getEffectiveProductPrice(p, priceType, activeDiscounts);
+      const priceStr = Number(price).toFixed(2);
 
       sheetData.push([
         { v: itemIndex++, s: cellStyleCenter },
@@ -167,9 +175,7 @@ export const generateExcelPriceList = (
   link.href = url;
   const fileNameDate = new Date().toISOString().split('T')[0];
   
-  // Format filename according to client selection rule:
-  // If client selected: PriceList_[ClientName]_[Date].xlsx
-  // If NO client selected: PriceList_[Date].xlsx (no client name, no price type name)
+  const clientName = counterparty?.name;
   if (clientName && clientName.trim()) {
     const sanitizedClient = clientName.trim().replace(/[\/\\?%*:|"<>]/g, '_');
     link.download = `PriceList_${sanitizedClient}_${fileNameDate}.xlsx`;

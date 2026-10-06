@@ -11,6 +11,8 @@ import { PriceTypesService } from '../services/priceTypes.service';
 import type { PriceType } from '../types/priceType';
 import type { Organization } from '../types/organization';
 import type { Product } from '../types/product';
+import type { Counterparty } from '../types/counterparty';
+import type { ActiveClientDiscount } from '../types/clientPriceDocument';
 import PriceListModal from '../components/PriceListModal';
 import { generateExcelPriceList } from '../utils/priceList.utils';
 import { BASE_URL } from '../constants/api';
@@ -124,7 +126,12 @@ function ProductsContent() {
     AuthService.updatePreferences(newPrefs).catch(console.error);
   };
 
-  const handleDownloadPriceList = (priceTypeId: string, format: 'excel' | 'pdf', clientName?: string) => {
+  const handleDownloadPriceList = (
+    priceTypeId: string,
+    format: 'excel' | 'pdf',
+    counterparty?: Counterparty | null,
+    activeDiscounts?: Record<string, ActiveClientDiscount>
+  ) => {
     const priceTypeName = priceTypeId === 'standard' 
       ? 'Standard' 
       : priceTypes.find(pt => pt.slug === priceTypeId || pt.id === priceTypeId)?.name || priceTypeId;
@@ -135,15 +142,25 @@ function ProductsContent() {
       : products;
 
     if (format === 'excel') {
-      generateExcelPriceList(productsForPriceList, priceTypeId, priceTypeName, allowedCategories, clientName);
+      generateExcelPriceList(
+        productsForPriceList,
+        priceTypeId,
+        priceTypeName,
+        allowedCategories,
+        counterparty,
+        activeDiscounts
+      );
     } else {
       const categoriesParam = selectedCategories.length > 0
         ? `&categories=${encodeURIComponent(selectedCategories.join(','))}`
         : '';
-      const clientParam = clientName && clientName.trim()
-        ? `&clientName=${encodeURIComponent(clientName.trim())}`
+      const counterpartyParam = counterparty?.id
+        ? `&counterpartyId=${encodeURIComponent(counterparty.id)}`
         : '';
-      window.open(`/products/print?priceType=${priceTypeId}${categoriesParam}${clientParam}`, '_blank');
+      const clientParam = counterparty?.name
+        ? `&clientName=${encodeURIComponent(counterparty.name.trim())}`
+        : '';
+      window.open(`/products/print?priceType=${priceTypeId}${categoriesParam}${counterpartyParam}${clientParam}`, '_blank');
     }
   };
 

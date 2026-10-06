@@ -2,15 +2,22 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, FileSpreadsheet, FileText, Download, ChevronDown } from 'lucide-react';
 import { CounterpartyService } from '../services/counterparty.service';
+import { ClientPriceDocumentsService } from '../services/clientPriceDocuments.service';
 import type { PriceType } from '../types/priceType';
 import type { Counterparty } from '../types/counterparty';
+import type { ActiveClientDiscount } from '../types/clientPriceDocument';
 
 interface PriceListModalProps {
     isOpen: boolean;
     onClose: () => void;
     priceTypes: PriceType[];
     selectedCategories?: string[];
-    onDownload: (priceTypeId: string, format: 'excel' | 'pdf', clientName?: string) => void;
+    onDownload: (
+        priceTypeId: string,
+        format: 'excel' | 'pdf',
+        counterparty?: Counterparty | null,
+        activeDiscounts?: Record<string, ActiveClientDiscount>
+    ) => void;
 }
 
 export default function PriceListModal({ isOpen, onClose, priceTypes, selectedCategories, onDownload }: PriceListModalProps) {
@@ -23,6 +30,7 @@ export default function PriceListModal({ isOpen, onClose, priceTypes, selectedCa
     const [selectedCounterparty, setSelectedCounterparty] = useState<Counterparty | null>(null);
     const [clientSearchText, setClientSearchText] = useState('');
     const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
+    const [activeDiscounts, setActiveDiscounts] = useState<Record<string, ActiveClientDiscount>>({});
 
     useEffect(() => {
         if (isOpen) {
@@ -31,6 +39,43 @@ export default function PriceListModal({ isOpen, onClose, priceTypes, selectedCa
                 .catch(console.error);
         }
     }, [isOpen]);
+
+    // When client is selected, auto-set their price type and fetch active discounts
+    useEffect(() => {
+        if (selectedCounterparty) {
+            if (selectedCounterparty.priceTypeId) {
+                const matchingPt = priceTypes.find(
+                    pt => pt.id === selectedCounterparty.priceTypeId || pt.slug === selectedCounterparty.priceTypeId
+                );
+                if (matchingPt) {
+                    setSelectedPriceType(matchingPt.slug);
+                } else {
+                    setSelectedPriceType(selectedCounterparty.priceTypeId);
+                }
+            } else {
+                setSelectedPriceType('standard');
+            }
+
+            ClientPriceDocumentsService.fetchActiveDiscounts(selectedCounterparty.id)
+                .then((discounts) => {
+                    const map: Record<string, ActiveClientDiscount> = {};
+                    (discounts || []).forEach((d) => {
+                        if (d.productId && typeof d.discountPercent === 'number') {
+                            const pIdStr = String(d.productId);
+                            map[pIdStr] = d;
+                            map[pIdStr.toLowerCase()] = d;
+                        }
+                    });
+                    setActiveDiscounts(map);
+                })
+                .catch((err) => {
+                    console.error('Failed to load active discounts for client in modal', err);
+                    setActiveDiscounts({});
+                });
+        } else {
+            setActiveDiscounts({});
+        }
+    }, [selectedCounterparty, priceTypes]);
 
     const filteredCounterparties = useMemo(() => {
         if (!clientSearchText.trim()) return counterparties;
@@ -44,7 +89,7 @@ export default function PriceListModal({ isOpen, onClose, priceTypes, selectedCa
     if (!isOpen) return null;
 
     const handleDownload = () => {
-        onDownload(selectedPriceType, format, selectedCounterparty?.name);
+        onDownload(selectedPriceType, format, selectedCounterparty, activeDiscounts);
         onClose();
     };
 
@@ -159,13 +204,23 @@ export default function PriceListModal({ isOpen, onClose, priceTypes, selectedCa
 
                     {/* Price Type Selector */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            {t('priceList.selectType', 'Select Price Type')}
-                        </label>
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {t('priceList.selectType', 'Select Price Type')}
+                            </label>
+                            {selectedCounterparty && (
+                                <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+                                    (ціну підтягнуто автоматично для клієнта)
+                                </span>
+                            )}
+                        </div>
                         <select
                             value={selectedPriceType}
                             onChange={(e) => setSelectedPriceType(e.target.value)}
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 px-3"
+                            disabled={!!selectedCounterparty}
+                            className={`w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white py-2 px-3 ${
+                                selectedCounterparty ? 'bg-gray-100 dark:bg-gray-700/60 text-gray-500 dark:text-gray-400 cursor-not-allowed border-dashed' : ''
+                            }`}
                         >
                             <option value="standard">{t('priceType.standard', 'Standard')}</option>
                             {priceTypes.map(pt => (

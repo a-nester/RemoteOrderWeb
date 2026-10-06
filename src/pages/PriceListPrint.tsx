@@ -2,34 +2,68 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useProductsStore } from '../store/products.store';
 import { OrganizationService } from '../services/organization.service';
+import { CounterpartyService } from '../services/counterparty.service';
+import { ClientPriceDocumentsService } from '../services/clientPriceDocuments.service';
 import type { Organization } from '../types/organization';
 import type { Product } from '../types/product';
+import type { Counterparty } from '../types/counterparty';
+import type { ActiveClientDiscount } from '../types/clientPriceDocument';
+import { getEffectiveProductPrice } from '../utils/price.utils';
 
 export default function PriceListPrint() {
     const [searchParams] = useSearchParams();
     const priceTypeId = searchParams.get('priceType') || 'standard';
     const clientName = searchParams.get('clientName');
+    const counterpartyId = searchParams.get('counterpartyId');
     
     const { products, loadProducts } = useProductsStore();
     const [organization, setOrganization] = useState<Organization | null>(null);
+    const [counterparty, setCounterparty] = useState<Counterparty | null>(null);
+    const [activeDiscounts, setActiveDiscounts] = useState<Record<string, ActiveClientDiscount>>({});
     const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
         const init = async () => {
-            await Promise.all([
+            const promises: Promise<any>[] = [
                 loadProducts().catch(console.error),
                 OrganizationService.getOrganization().then(setOrganization).catch(console.error)
-            ]);
+            ];
+
+            if (counterpartyId) {
+                promises.push(
+                    CounterpartyService.getAll()
+                        .then((list) => setCounterparty(list.find((c) => String(c.id) === String(counterpartyId)) || null))
+                        .catch(console.error)
+                );
+                promises.push(
+                    ClientPriceDocumentsService.fetchActiveDiscounts(counterpartyId)
+                        .then((discounts) => {
+                            const map: Record<string, ActiveClientDiscount> = {};
+                            (discounts || []).forEach((d) => {
+                                if (d.productId && typeof d.discountPercent === 'number') {
+                                    const pIdStr = String(d.productId);
+                                    map[pIdStr] = d;
+                                    map[pIdStr.toLowerCase()] = d;
+                                }
+                            });
+                            setActiveDiscounts(map);
+                        })
+                        .catch(console.error)
+                );
+            }
+
+            await Promise.all(promises);
             setLoaded(true);
         };
         init();
-    }, [loadProducts]);
+    }, [loadProducts, counterpartyId]);
 
     useEffect(() => {
         if (loaded) {
             const fileNameDate = new Date().toISOString().split('T')[0];
-            if (clientName && clientName.trim()) {
-                const sanitizedClient = clientName.trim().replace(/[\/\\?%*:|"<>]/g, '_');
+            const titleName = counterparty?.name || clientName;
+            if (titleName && titleName.trim()) {
+                const sanitizedClient = titleName.trim().replace(/[\/\\?%*:|"<>]/g, '_');
                 document.title = `PriceList_${sanitizedClient}_${fileNameDate}`;
             } else {
                 document.title = `PriceList_${fileNameDate}`;
@@ -40,7 +74,7 @@ export default function PriceListPrint() {
             }, 600);
             return () => clearTimeout(timer);
         }
-    }, [loaded, clientName]);
+    }, [loaded, clientName, counterparty]);
 
     const allowedCategories = organization?.categories;
 
@@ -89,6 +123,9 @@ export default function PriceListPrint() {
     const date = new Date().toLocaleDateString('uk-UA');
     let globalIndex = 1;
 
+    const isVat = counterparty?.defaultSalesType?.trim().toLowerCase() === 'з пдв';
+    const priceColumnHeader = isVat ? 'Ціна, грн/кг/шт з ПДВ' : 'Ціна, грн/кг/шт без ПДВ';
+
     return (
         <div className="bg-white p-6 max-w-5xl mx-auto text-black font-sans text-xs sm:text-sm">
             {/* Header Information */}
@@ -100,7 +137,7 @@ export default function PriceListPrint() {
                 <div className="font-bold mt-1 text-indigo-900">Відділ продажу: моб. 097 7788277</div>
             </div>
 
-            {/* Title Banner (without priceTypeName as per user requirement) */}
+            {/* Title Banner */}
             <div className="bg-yellow-300 border border-black p-2.5 text-center font-bold text-base uppercase mb-2 shadow-sm">
                 ПРАЙС-ЛИСТ на {date} р.
             </div>
@@ -115,7 +152,7 @@ export default function PriceListPrint() {
                         <th className="border border-black p-1.5 text-center w-24">Пакування одиниці</th>
                         <th className="border border-black p-1.5 text-center w-24">Тара</th>
                         <th className="border border-black p-1.5 text-center w-20">Вага нетто в тарі</th>
-                        <th className="border border-black p-1.5 text-center w-24">Ціна, грн/кг/шт без ПДВ</th>
+                        <th className="border border-black p-1.5 text-center w-28">{priceColumnHeader}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -130,8 +167,8 @@ export default function PriceListPrint() {
                             {/* Products in Category */}
                             {group.items.map((p) => {
                                 const inBoxText = p.inBox ? `${p.inBox} ${p.unit || 'шт'}` : '';
-                                const rawPrice = p.prices?.[priceTypeId] ?? 0;
-                                const priceStr = Number(rawPrice).toFixed(2);
+                                const { price } = getEffectiveProductPrice(p, priceTypeId, activeDiscounts);
+                                const priceStr = Number(price).toFixed(2);
                                 const isHighlighted = p.category && p.category.toLowerCase().includes('сир твердий');
 
                                 return (
