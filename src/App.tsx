@@ -22,6 +22,8 @@ import RealizationList from "./pages/Realizations";
 import RealizationDetails from "./pages/Realizations/RealizationDetails";
 import RealizationEdit from "./pages/Realizations/RealizationEdit";
 import RealizationCreate from "./pages/Realizations/RealizationCreate";
+import RouteSheetList from "./pages/RouteSheets";
+import RouteSheetPrint from "./pages/RouteSheets/RouteSheetPrint";
 import BuyerReturnList from "./pages/BuyerReturns";
 import BuyerReturnDetails from "./pages/BuyerReturns/BuyerReturnDetails";
 import BuyerReturnEdit from "./pages/BuyerReturns/BuyerReturnEdit";
@@ -406,6 +408,24 @@ function App() {
                 <Layout>
                   <RealizationEdit />
                 </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/route-sheets"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <RouteSheetList />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/route-sheets/:id/print"
+            element={
+              <ProtectedRoute>
+                <RouteSheetPrint />
               </ProtectedRoute>
             }
           />

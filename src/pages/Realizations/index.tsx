@@ -9,10 +9,12 @@ import {
   ArrowUp,
   Search,
   X,
+  Truck,
 } from "lucide-react";
 import { RealizationService } from "../../services/realization.service";
 import type { Realization } from "../../types/realization";
 import DocumentActionsDropdown from "../../components/DocumentActionsDropdown";
+import RouteSheetModal from "../../components/RouteSheetModal";
 import { useAuthStore } from "../../store/auth.store";
 import { AuthService } from "../../services/auth.service";
 
@@ -29,6 +31,7 @@ export default function RealizationList() {
   const [filterCounterparty, setFilterCounterparty] = useState(
     () => sessionStorage.getItem("realizations_counterparty") || "",
   );
+  const [isRouteSheetModalOpen, setIsRouteSheetModalOpen] = useState(false);
 
   const { user, setPreferences } = useAuthStore();
   const defaultSort = user?.preferences?.realizationSort || "desc";
@@ -409,8 +412,16 @@ export default function RealizationList() {
           </div>
 
           <button
+            onClick={() => setIsRouteSheetModalOpen(true)}
+            className="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors h-[42px] text-sm font-semibold whitespace-nowrap w-full sm:w-auto shadow-xs"
+          >
+            <Truck className="mr-2" size={18} />
+            Маршрутний лист
+          </button>
+
+          <button
             onClick={() => navigate("/realizations/create")}
-            className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors h-[42px] text-sm font-semibold whitespace-nowrap w-full sm:w-auto"
+            className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors h-[42px] text-sm font-semibold whitespace-nowrap w-full sm:w-auto shadow-xs"
           >
             <Plus className="mr-2" size={18} />
             {t("action.create", "Create")}
@@ -604,6 +615,11 @@ export default function RealizationList() {
           </div>
         )}
       </div>
+
+      <RouteSheetModal
+        isOpen={isRouteSheetModalOpen}
+        onClose={() => setIsRouteSheetModalOpen(false)}
+      />
     </div>
   );
 }

@@ -460,6 +460,23 @@ export default function Layout({ children, title }: LayoutProps) {
                     </NavLink>
                   )}
 
+                  {(hasAccess("documents", "routeSheets") || hasAccess("documents", "realizations")) && (
+                    <NavLink
+                      to="/route-sheets"
+                      className={({ isActive }) =>
+                        clsx(
+                          "flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors",
+                          isActive
+                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white",
+                        )
+                      }
+                    >
+                      <span className="w-5 mr-3"></span>
+                      Маршрутні листи
+                    </NavLink>
+                  )}
+
                   {hasAccess("documents", "goodsReceipts") && (
                     <NavLink
                       to="/goods-receipt"

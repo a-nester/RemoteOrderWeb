@@ -37,6 +37,9 @@ export interface Realization {
 
     // Enriched
     counterpartyName?: string;
+    counterpartyAddress?: string;
+    counterpartyPhone?: string;
+    counterpartyGroupName?: string;
     warehouseName?: string;
     organizationName?: string;
     organizationRequisites?: OrganizationRequisites;

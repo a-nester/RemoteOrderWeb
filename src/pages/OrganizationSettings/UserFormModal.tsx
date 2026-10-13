@@ -22,7 +22,7 @@ const defaultPermissions = {
   priceEditor: { priceSettings: false, priceTypes: false },
   reports: { stockBalances: false, inventory: false, sales: false, reconciliation: false, cashflow: false },
   finance: { transactions: false, cashboxes: false },
-  documents: { orders: true, realizations: true, goodsReceipts: false, buyerReturns: false, supplierReturns: false }
+  documents: { orders: true, realizations: true, routeSheets: true, goodsReceipts: false, buyerReturns: false, supplierReturns: false }
 };
 
 export default function UserFormModal({
@@ -393,6 +393,7 @@ export default function UserFormModal({
                     {Object.entries({
                       orders: "Замовлення",
                       realizations: "Реалізації",
+                      routeSheets: "Маршрутні листи",
                       goodsReceipts: "Поступлення",
                       buyerReturns: "Повернення від покупця",
                       supplierReturns: "Повернення постачальнику"
