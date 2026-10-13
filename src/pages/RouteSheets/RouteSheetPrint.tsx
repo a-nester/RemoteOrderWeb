@@ -69,6 +69,14 @@ export default function RouteSheetPrint() {
         }));
     }, [routeSheet]);
 
+    // Total previous debt for the route sheet
+    const totalPreviousDebt = useMemo(() => {
+        if (routeSheet?.totalPreviousDebt !== undefined) {
+            return Number(routeSheet.totalPreviousDebt);
+        }
+        return (routeSheet?.items || []).reduce((sum, item) => sum + Number(item.previousDebt || 0), 0);
+    }, [routeSheet]);
+
     if (loading) {
         return (
             <div className="p-10 text-center text-gray-500 font-medium">
@@ -172,9 +180,9 @@ export default function RouteSheetPrint() {
                             </span>
                         </div>
                         <div>
-                            <span className="text-gray-600 block text-xs">Оплата клієнтів (разом)</span>
+                            <span className="text-gray-600 block text-xs">Попередня заборгованість (разом)</span>
                             <span className="font-bold text-base text-gray-900">
-                                {Number(routeSheet.totalPayment || 0).toFixed(2)} ₴
+                                {Number(totalPreviousDebt).toFixed(2)} ₴
                             </span>
                         </div>
                     </div>
@@ -188,14 +196,14 @@ export default function RouteSheetPrint() {
                                 <th className="border border-black p-1 text-left">Клієнт (Одержувач)</th>
                                 <th className="border border-black p-1 text-left">Адреса / Телефон</th>
                                 <th className="border border-black p-1 text-right w-24">Сума, грн</th>
-                                <th className="border border-black p-1 text-right w-24 bg-yellow-50">Оплата клієнта</th>
+                                <th className="border border-black p-1 text-right w-28 bg-yellow-50">Попередня заборгованість</th>
                                 <th className="border border-black p-1 text-center w-28">Підпис / Відмітка</th>
                             </tr>
                         </thead>
                         <tbody>
                             {groupedItems.map((group) => {
                                 const groupSum = group.items.reduce((s, it) => s + Number(it.realizationAmount || 0), 0);
-                                const groupPay = group.items.reduce((s, it) => s + Number(it.clientPayment || 0), 0);
+                                const groupDebt = group.items.reduce((s, it) => s + Number(it.previousDebt || 0), 0);
 
                                 return (
                                     <React.Fragment key={group.groupName}>
@@ -231,7 +239,7 @@ export default function RouteSheetPrint() {
                                                     {Number(item.realizationAmount || 0).toFixed(2)}
                                                 </td>
                                                 <td className="border border-black p-1 text-right font-bold whitespace-nowrap bg-yellow-50/50">
-                                                    {Number(item.clientPayment || 0).toFixed(2)}
+                                                    {Number(item.previousDebt || 0).toFixed(2)}
                                                 </td>
                                                 <td className="border border-black p-1 text-center">
                                                     <div className="border-b border-dotted border-gray-400 h-5 mt-2"></div>
@@ -248,7 +256,7 @@ export default function RouteSheetPrint() {
                                                 {groupSum.toFixed(2)}
                                             </td>
                                             <td className="border border-black p-1 text-right font-bold bg-yellow-50/50">
-                                                {groupPay.toFixed(2)}
+                                                {groupDebt.toFixed(2)}
                                             </td>
                                             <td className="border border-black p-1"></td>
                                         </tr>
@@ -265,7 +273,7 @@ export default function RouteSheetPrint() {
                                     {Number(routeSheet.totalAmount || 0).toFixed(2)} ₴
                                 </td>
                                 <td className="border border-black p-1.5 text-right font-bold whitespace-nowrap bg-yellow-100">
-                                    {Number(routeSheet.totalPayment || 0).toFixed(2)} ₴
+                                    {Number(totalPreviousDebt).toFixed(2)} ₴
                                 </td>
                                 <td className="border border-black p-1.5"></td>
                             </tr>
@@ -275,9 +283,19 @@ export default function RouteSheetPrint() {
                     {/* Total in words */}
                     <div className="mb-6 text-xs sm:text-sm space-y-1">
                         <div>
-                            <span>Всього до сплати за маршрутом: </span>
-                            <span className="font-bold">{numberToWordsUk(Number(routeSheet.totalPayment || 0))}</span>
+                            <span>Всього за накладними: </span>
+                            <span className="font-bold">{numberToWordsUk(Number(routeSheet.totalAmount || 0))}</span>
                         </div>
+                        {totalPreviousDebt !== 0 && (
+                            <div>
+                                <span>Загальна попередня заборгованість: </span>
+                                <span className="font-bold">
+                                    {totalPreviousDebt < 0
+                                        ? `мінус ${numberToWordsUk(Math.abs(totalPreviousDebt))}`
+                                        : numberToWordsUk(totalPreviousDebt)}
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Signatures */}

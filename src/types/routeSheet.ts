@@ -33,6 +33,7 @@ export interface RouteSheetItem {
     counterpartyPhone?: string;
     counterpartyGroupId?: string;
     counterpartyGroupName?: string;
+    previousDebt?: number;
     realizationItems?: RouteSheetRealizationItem[];
 }
 
@@ -45,6 +46,7 @@ export interface RouteSheet {
     comment?: string;
     totalAmount: number;
     totalPayment: number;
+    totalPreviousDebt?: number;
     itemCount?: number;
     creatorEmail?: string;
     createdBy?: number;
