@@ -69,12 +69,28 @@ export default function RouteSheetPrint() {
         }));
     }, [routeSheet]);
 
-    // Total previous debt for the route sheet
-    const totalPreviousDebt = useMemo(() => {
-        if (routeSheet?.totalPreviousDebt !== undefined) {
-            return Number(routeSheet.totalPreviousDebt);
+    // Helper to get realization weight
+    const getItemWeight = (item: RouteSheetItem): number => {
+        if (item.realizationWeight !== undefined) {
+            return Number(item.realizationWeight || 0);
         }
-        return (routeSheet?.items || []).reduce((sum, item) => sum + Number(item.previousDebt || 0), 0);
+        if (item.realizationItems && item.realizationItems.length > 0) {
+            return item.realizationItems.reduce((sum, ri: any) => {
+                const qty = Number(ri.quantity || 0);
+                const pWeight = Number(ri.weight || 0);
+                const w = (ri.unit === 'кг') ? qty : (pWeight > 0 ? qty * pWeight : 0);
+                return sum + w;
+            }, 0);
+        }
+        return 0;
+    };
+
+    // Total weight for the route sheet
+    const totalWeight = useMemo(() => {
+        if (routeSheet?.totalWeight !== undefined) {
+            return Number(routeSheet.totalWeight || 0);
+        }
+        return (routeSheet?.items || []).reduce((sum, item) => sum + getItemWeight(item), 0);
     }, [routeSheet]);
 
     if (loading) {
@@ -174,15 +190,15 @@ export default function RouteSheetPrint() {
                             <span className="font-bold text-base">{routeSheet.items?.length || 0} шт.</span>
                         </div>
                         <div>
-                            <span className="text-gray-600 block text-xs">Сума накладних</span>
+                            <span className="text-gray-600 block text-xs">Загальна вага</span>
                             <span className="font-bold text-base text-gray-900">
-                                {Number(routeSheet.totalAmount || 0).toFixed(2)} ₴
+                                {totalWeight.toFixed(2)} кг
                             </span>
                         </div>
                         <div>
-                            <span className="text-gray-600 block text-xs">Попередня заборгованість (разом)</span>
+                            <span className="text-gray-600 block text-xs">Сума накладних</span>
                             <span className="font-bold text-base text-gray-900">
-                                {Number(totalPreviousDebt).toFixed(2)} ₴
+                                {Number(routeSheet.totalAmount || 0).toFixed(2)} ₴
                             </span>
                         </div>
                     </div>
@@ -195,15 +211,14 @@ export default function RouteSheetPrint() {
                                 <th className="border border-black p-1 text-center w-28">Накладна</th>
                                 <th className="border border-black p-1 text-left">Клієнт (Одержувач)</th>
                                 <th className="border border-black p-1 text-left">Адреса / Телефон</th>
-                                <th className="border border-black p-1 text-right w-24">Сума, грн</th>
-                                <th className="border border-black p-1 text-right w-28 bg-yellow-50">Попередня заборгованість</th>
+                                <th className="border border-black p-1 text-right w-24">Вага, кг</th>
+                                <th className="border border-black p-1 text-right w-28 bg-yellow-50">Оплата клієнта</th>
                                 <th className="border border-black p-1 text-center w-28">Підпис / Відмітка</th>
                             </tr>
                         </thead>
                         <tbody>
                             {groupedItems.map((group) => {
-                                const groupSum = group.items.reduce((s, it) => s + Number(it.realizationAmount || 0), 0);
-                                const groupDebt = group.items.reduce((s, it) => s + Number(it.previousDebt || 0), 0);
+                                const groupWeight = group.items.reduce((s, it) => s + getItemWeight(it), 0);
 
                                 return (
                                     <React.Fragment key={group.groupName}>
@@ -215,37 +230,40 @@ export default function RouteSheetPrint() {
                                         </tr>
 
                                         {/* Invoices inside folder */}
-                                        {group.items.map((item) => (
-                                            <tr key={item.realizationId} className="hover:bg-gray-50">
-                                                <td className="border border-black p-1 text-center font-medium">
-                                                    {globalInvoiceIndex++}
-                                                </td>
-                                                <td className="border border-black p-1 text-center whitespace-nowrap">
-                                                    <span className="font-bold">№ {item.realizationNumber}</span>
-                                                    <div className="text-[10px] text-gray-600">
-                                                        {item.realizationDate ? new Date(item.realizationDate).toLocaleDateString('uk-UA') : ''}
-                                                    </div>
-                                                </td>
-                                                <td className="border border-black p-1 text-left font-semibold">
-                                                    {item.counterpartyName}
-                                                </td>
-                                                <td className="border border-black p-1 text-left text-xs">
-                                                    {item.counterpartyAddress || '—'}
-                                                    {item.counterpartyPhone && (
-                                                        <div className="text-[10px] text-gray-600">{item.counterpartyPhone}</div>
-                                                    )}
-                                                </td>
-                                                <td className="border border-black p-1 text-right font-medium whitespace-nowrap">
-                                                    {Number(item.realizationAmount || 0).toFixed(2)}
-                                                </td>
-                                                <td className="border border-black p-1 text-right font-bold whitespace-nowrap bg-yellow-50/50">
-                                                    {Number(item.previousDebt || 0).toFixed(2)}
-                                                </td>
-                                                <td className="border border-black p-1 text-center">
-                                                    <div className="border-b border-dotted border-gray-400 h-5 mt-2"></div>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {group.items.map((item) => {
+                                            const itemWeight = getItemWeight(item);
+                                            return (
+                                                <tr key={item.realizationId} className="hover:bg-gray-50">
+                                                    <td className="border border-black p-1 text-center font-medium">
+                                                        {globalInvoiceIndex++}
+                                                    </td>
+                                                    <td className="border border-black p-1 text-center whitespace-nowrap">
+                                                        <span className="font-bold">№ {item.realizationNumber}</span>
+                                                        <div className="text-[10px] text-gray-600">
+                                                            {item.realizationDate ? new Date(item.realizationDate).toLocaleDateString('uk-UA') : ''}
+                                                        </div>
+                                                    </td>
+                                                    <td className="border border-black p-1 text-left font-semibold">
+                                                        {item.counterpartyName}
+                                                    </td>
+                                                    <td className="border border-black p-1 text-left text-xs">
+                                                        {item.counterpartyAddress || '—'}
+                                                        {item.counterpartyPhone && (
+                                                            <div className="text-[10px] text-gray-600">{item.counterpartyPhone}</div>
+                                                        )}
+                                                    </td>
+                                                    <td className="border border-black p-1 text-right font-medium whitespace-nowrap">
+                                                        {itemWeight.toFixed(2)}
+                                                    </td>
+                                                    <td className="border border-black p-1 text-right font-bold whitespace-nowrap bg-yellow-50/50">
+                                                        {/* Пуста ячейка для внесення оплати клієнта водієм від руки */}
+                                                    </td>
+                                                    <td className="border border-black p-1 text-center">
+                                                        <div className="border-b border-dotted border-gray-400 h-5 mt-2"></div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
 
                                         {/* Subtotal row per folder */}
                                         <tr className="bg-gray-50 font-semibold text-xs italic">
@@ -253,11 +271,9 @@ export default function RouteSheetPrint() {
                                                 Разом по папці «{group.groupName}»:
                                             </td>
                                             <td className="border border-black p-1 text-right font-bold">
-                                                {groupSum.toFixed(2)}
+                                                {groupWeight.toFixed(2)}
                                             </td>
-                                            <td className="border border-black p-1 text-right font-bold bg-yellow-50/50">
-                                                {groupDebt.toFixed(2)}
-                                            </td>
+                                            <td className="border border-black p-1 text-right font-bold bg-yellow-50/50"></td>
                                             <td className="border border-black p-1"></td>
                                         </tr>
                                     </React.Fragment>
@@ -270,11 +286,9 @@ export default function RouteSheetPrint() {
                                     ВСЬОГО ПО МАРШРУТУ:
                                 </td>
                                 <td className="border border-black p-1.5 text-right font-bold whitespace-nowrap">
-                                    {Number(routeSheet.totalAmount || 0).toFixed(2)} ₴
+                                    {totalWeight.toFixed(2)} кг
                                 </td>
-                                <td className="border border-black p-1.5 text-right font-bold whitespace-nowrap bg-yellow-100">
-                                    {Number(totalPreviousDebt).toFixed(2)} ₴
-                                </td>
+                                <td className="border border-black p-1.5 text-right font-bold whitespace-nowrap bg-yellow-100"></td>
                                 <td className="border border-black p-1.5"></td>
                             </tr>
                         </tbody>
@@ -283,19 +297,13 @@ export default function RouteSheetPrint() {
                     {/* Total in words */}
                     <div className="mb-6 text-xs sm:text-sm space-y-1">
                         <div>
+                            <span>Загальна вага за маршрутом: </span>
+                            <span className="font-bold">{totalWeight.toFixed(2)} кг</span>
+                        </div>
+                        <div>
                             <span>Всього за накладними: </span>
                             <span className="font-bold">{numberToWordsUk(Number(routeSheet.totalAmount || 0))}</span>
                         </div>
-                        {totalPreviousDebt !== 0 && (
-                            <div>
-                                <span>Загальна попередня заборгованість: </span>
-                                <span className="font-bold">
-                                    {totalPreviousDebt < 0
-                                        ? `мінус ${numberToWordsUk(Math.abs(totalPreviousDebt))}`
-                                        : numberToWordsUk(totalPreviousDebt)}
-                                </span>
-                            </div>
-                        )}
                     </div>
 
                     {/* Signatures */}
