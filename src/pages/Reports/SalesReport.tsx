@@ -1056,8 +1056,14 @@ export default function SalesReport() {
     try {
       if (activeTab === "general" || activeTab === "chart") {
         const [realizations, returns] = await Promise.all([
-          RealizationService.getAll(),
-          buyerReturnService.getAll()
+          RealizationService.getAll({
+            dateFrom: effectiveDateFrom || undefined,
+            dateTo: effectiveDateTo || undefined,
+          }),
+          buyerReturnService.getAll({
+            startDate: effectiveDateFrom || undefined,
+            endDate: effectiveDateTo || undefined,
+          })
         ]);
 
         let combined = [

@@ -11,9 +11,11 @@ const getAuthHeader = () => {
 };
 
 export const RealizationService = {
-    getAll: async (filter?: { includeDeleted?: boolean }): Promise<Realization[]> => {
+    getAll: async (filter?: { includeDeleted?: boolean; dateFrom?: string; dateTo?: string }): Promise<Realization[]> => {
         const params: any = {};
         if (filter?.includeDeleted) params.includeDeleted = 'true';
+        if (filter?.dateFrom) params.dateFrom = filter.dateFrom;
+        if (filter?.dateTo) params.dateTo = filter.dateTo;
         
         const response = await axios.get(BASE_URL, { 
             params,
