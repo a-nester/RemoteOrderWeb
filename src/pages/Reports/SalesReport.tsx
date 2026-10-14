@@ -1,12 +1,10 @@
 import { useState, useEffect, useMemo, Fragment } from "react";
-import { RealizationService } from "../../services/realization.service";
 import {
   ReportsService,
   type SalesByClient,
   type SalesByProduct,
   type SalesByClientDetail,
 } from "../../services/reports.service";
-import { buyerReturnService } from "../../services/buyerReturnService";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/auth.store";
 import { AuthService } from "../../services/auth.service";
@@ -1053,207 +1051,115 @@ export default function SalesReport() {
       salesSelectedProductIds: selectedProductIds,
     });
 
+    let filterCounterparty: string | undefined = undefined;
+    let filterGroupIds: string | undefined = undefined;
+    let filterCounterpartyIds: string | undefined = undefined;
+
+    if (groupMode === "none") {
+      filterCounterparty = counterparty || undefined;
+    } else if (groupMode === "group") {
+      if (selectedGroupIds.length > 0) {
+        filterGroupIds = selectedGroupIds.join(",");
+      }
+    } else if (groupMode === "group_from_list") {
+      if (selectedCounterpartyIds.length > 0) {
+        filterCounterpartyIds = selectedCounterpartyIds.join(",");
+      }
+    }
+
+    let filterProduct: string | undefined = undefined;
+    let filterProductCategories: string | undefined = undefined;
+    let filterProductIds: string | undefined = undefined;
+
+    if (groupMode === "none") {
+      filterProduct = productFilter || undefined;
+    } else if (groupMode === "group") {
+      if (selectedProductCategories.length > 0) {
+        filterProductCategories = selectedProductCategories.join(",");
+      }
+    } else if (groupMode === "group_from_list") {
+      if (selectedProductIds.length > 0) {
+        filterProductIds = selectedProductIds.join(",");
+      }
+    }
+
+    const salesTypeParam = selectedSalesTypes.length > 0 ? selectedSalesTypes.join(",") : undefined;
+
     try {
       if (activeTab === "general" || activeTab === "chart") {
-        const [realizations, returns] = await Promise.all([
-          RealizationService.getAll({
-            dateFrom: effectiveDateFrom || undefined,
-            dateTo: effectiveDateTo || undefined,
-          }),
-          buyerReturnService.getAll({
-            startDate: effectiveDateFrom || undefined,
-            endDate: effectiveDateTo || undefined,
-          })
-        ]);
+        const rawGeneral = await ReportsService.getSalesGeneral(
+          effectiveDateFrom,
+          effectiveDateTo,
+          filterCounterparty,
+          salesTypeParam,
+          includeReturns,
+          filterGroupIds,
+          filterCounterpartyIds,
+          filterProduct,
+          filterProductCategories,
+          filterProductIds
+        );
 
-        let combined = [
-          ...realizations.map(r => ({ ...r, type: 'REALIZATION' as const })),
-          ...returns.map(r => ({ ...r, type: 'RETURN' as const, amount: r.totalAmount, currency: 'UAH' }))
-        ];
+        let mapped: SaleItem[] = rawGeneral.map((r: any) => ({
+          id: r.id,
+          number: r.number,
+          date: r.date,
+          counterpartyId: r.counterpartyId,
+          counterpartyName: r.counterpartyName ?? "",
+          warehouseName: r.warehouseName ?? "",
+          amount: Number(r.amount || 0),
+          cleanCost: Number(r.cleanCost || 0),
+          costWithVat: Number(r.costWithVat || 0),
+          currency: r.currency || "UAH",
+          status: r.status,
+          profit: Number(r.profit || 0),
+          salesType: r.salesType || "-",
+        }));
 
-        if (effectiveDateFrom)
-          combined = combined.filter((d) => {
-            const itemDate = formatLocalDate(d.date);
-            return itemDate >= effectiveDateFrom;
-          });
-        if (effectiveDateTo)
-          combined = combined.filter((d) => {
-            const itemDate = formatLocalDate(d.date);
-            return itemDate <= effectiveDateTo;
-          });
-
-        // Group mode filters for general & chart tab
-        if (groupMode === "none") {
-          if (counterparty)
-            combined = combined.filter((d) =>
-              (d.counterpartyName ?? "")
-                .toLowerCase()
-                .includes(counterparty.toLowerCase())
-            );
-        } else if (groupMode === "group") {
-          if (selectedGroupIds.length > 0) {
-            const cpGroupMap = new Map(counterpartiesList.map((cp) => [cp.id, cp.groupId]));
-            const cpNameGroupMap = new Map(counterpartiesList.map((cp) => [cp.name.toLowerCase(), cp.groupId]));
-            combined = combined.filter((d) => {
-              const cpId = (d as any).counterpartyId;
-              const gId = cpId ? cpGroupMap.get(cpId) : cpNameGroupMap.get((d.counterpartyName || "").toLowerCase());
-              return gId && selectedGroupIds.includes(gId);
-            });
-          }
-        } else if (groupMode === "group_from_list") {
-          if (selectedCounterpartyIds.length > 0) {
-            const selectedNames = new Set(
-              counterpartiesList
-                .filter((cp) => selectedCounterpartyIds.includes(cp.id))
-                .map((cp) => cp.name.toLowerCase())
-            );
-            combined = combined.filter((d) => {
-              const cpId = (d as any).counterpartyId;
-              if (cpId && selectedCounterpartyIds.includes(cpId)) return true;
-              return selectedNames.has((d.counterpartyName || "").toLowerCase());
-            });
-          }
-        }
-
-        // Product filters for general & chart tab
-        if (groupMode === "none") {
-          if (productFilter.trim()) {
-            const term = productFilter.trim().toLowerCase();
-            combined = combined.filter((d: any) => {
-              const items = Array.isArray(d.items) ? d.items : [];
-              return items.some((it: any) => (it.productName || "").toLowerCase().includes(term));
-            });
-          }
-        } else if (groupMode === "group") {
-          if (selectedProductCategories.length > 0) {
-            combined = combined.filter((d: any) => {
-              const items = Array.isArray(d.items) ? d.items : [];
-              return items.some((it: any) => {
-                const cat = it.category ? it.category.trim() : "Без категорії";
-                return selectedProductCategories.includes(cat);
-              });
-            });
-          }
-        } else if (groupMode === "group_from_list") {
-          if (selectedProductIds.length > 0) {
-            combined = combined.filter((d: any) => {
-              const items = Array.isArray(d.items) ? d.items : [];
-              return items.some((it: any) => selectedProductIds.includes(String(it.productId)));
-            });
-          }
-        }
-
-        if (selectedSalesTypes.length > 0)
-          combined = combined.filter(
-            (d) => d.type === "REALIZATION" && selectedSalesTypes.includes((d as any).salesType || "")
-          );
-
-        // Sort by date DESC
-        combined.sort((a, b) => {
-          if (groupBySalesType) {
-            const stA = (a as any).salesType || "";
-            const stB = (b as any).salesType || "";
+        if (groupBySalesType) {
+          mapped.sort((a, b) => {
+            const stA = a.salesType || "";
+            const stB = b.salesType || "";
             if (stA !== stB) {
               if (!stA) return 1;
               if (!stB) return -1;
               return stA.localeCompare(stB);
             }
-          }
-          return new Date(b.date).getTime() - new Date(a.date).getTime();
-        });
+            return new Date(b.date).getTime() - new Date(a.date).getTime();
+          });
+        }
 
-        const mapped: SaleItem[] = combined.map((r) => {
-          const isReturn = r.type === 'RETURN';
-          const sign = isReturn && r.status === 'POSTED' ? -1 : 1;
-          const amt = Number(r.amount) * sign;
-          const prf = Number(r.profit ?? 0);
-          const st = (r as any).salesType || "-";
-          const isVat = st === 'з ПДВ';
-          const costWithVat = (r as any).costWithVat !== undefined ? Number((r as any).costWithVat) : (amt - prf);
-          const cleanCost = (r as any).cleanCost !== undefined ? Number((r as any).cleanCost) : (isVat && vatCoeff > 1 ? costWithVat / vatCoeff : costWithVat);
-          return {
-            id: r.id,
-            number: isReturn ? `Пов. #${r.number}` : r.number,
-            date: r.date,
-            counterpartyId: (r as any).counterpartyId,
-            counterpartyName: r.counterpartyName ?? "",
-            warehouseName: r.warehouseName ?? "",
-            amount: amt,
-            cleanCost: cleanCost,
-            costWithVat: costWithVat,
-            currency: r.currency,
-            status: r.status,
-            profit: prf,
-            salesType: st,
-          };
-        });
         setSales(mapped);
-      } else {
-        let filterCounterparty: string | undefined = undefined;
-        let filterGroupIds: string | undefined = undefined;
-        let filterCounterpartyIds: string | undefined = undefined;
-
-        if (groupMode === "none") {
-          filterCounterparty = counterparty || undefined;
-        } else if (groupMode === "group") {
-          if (selectedGroupIds.length > 0) {
-            filterGroupIds = selectedGroupIds.join(",");
-          }
-        } else if (groupMode === "group_from_list") {
-          if (selectedCounterpartyIds.length > 0) {
-            filterCounterpartyIds = selectedCounterpartyIds.join(",");
-          }
-        }
-
-        let filterProduct: string | undefined = undefined;
-        let filterProductCategories: string | undefined = undefined;
-        let filterProductIds: string | undefined = undefined;
-
-        if (groupMode === "none") {
-          filterProduct = productFilter || undefined;
-        } else if (groupMode === "group") {
-          if (selectedProductCategories.length > 0) {
-            filterProductCategories = selectedProductCategories.join(",");
-          }
-        } else if (groupMode === "group_from_list") {
-          if (selectedProductIds.length > 0) {
-            filterProductIds = selectedProductIds.join(",");
-          }
-        }
-
-        const salesTypeParam = selectedSalesTypes.length > 0 ? selectedSalesTypes.join(",") : undefined;
-
-        if (activeTab === "byClient") {
-          const data = await ReportsService.getSalesByClient(
-            effectiveDateFrom,
-            effectiveDateTo,
-            filterCounterparty,
-            groupBySalesType,
-            salesTypeParam,
-            includeReturns,
-            filterGroupIds,
-            filterCounterpartyIds,
-            filterProduct,
-            filterProductCategories,
-            filterProductIds
-          );
-          setSalesByClient(data);
-        } else if (activeTab === "byProduct") {
-          const data = await ReportsService.getSalesByProduct(
-            effectiveDateFrom,
-            effectiveDateTo,
-            filterCounterparty,
-            groupBySalesType,
-            salesTypeParam,
-            includeReturns,
-            filterGroupIds,
-            filterCounterpartyIds,
-            filterProduct,
-            filterProductCategories,
-            filterProductIds
-          );
-          setSalesByProduct(data);
-        }
+      } else if (activeTab === "byClient") {
+        const data = await ReportsService.getSalesByClient(
+          effectiveDateFrom,
+          effectiveDateTo,
+          filterCounterparty,
+          groupBySalesType,
+          salesTypeParam,
+          includeReturns,
+          filterGroupIds,
+          filterCounterpartyIds,
+          filterProduct,
+          filterProductCategories,
+          filterProductIds
+        );
+        setSalesByClient(data);
+      } else if (activeTab === "byProduct") {
+        const data = await ReportsService.getSalesByProduct(
+          effectiveDateFrom,
+          effectiveDateTo,
+          filterCounterparty,
+          groupBySalesType,
+          salesTypeParam,
+          includeReturns,
+          filterGroupIds,
+          filterCounterpartyIds,
+          filterProduct,
+          filterProductCategories,
+          filterProductIds
+        );
+        setSalesByProduct(data);
       }
     } catch (err: any) {
       console.error(err);

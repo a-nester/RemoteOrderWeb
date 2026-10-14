@@ -81,6 +81,25 @@ export const ReportsService = {
     return response.data;
   },
 
+  getSalesGeneral: async (
+    dateFrom?: string, 
+    dateTo?: string, 
+    counterparty?: string, 
+    salesType?: string, 
+    includeReturns?: boolean,
+    groupIds?: string,
+    counterpartyIds?: string,
+    product?: string,
+    productCategories?: string,
+    productIds?: string
+  ): Promise<any[]> => {
+      const response = await axios.get(`${API_URL}/reports/sales/general`, {
+          params: { dateFrom, dateTo, counterparty, salesType, includeReturns, groupIds, counterpartyIds, product, productCategories, productIds },
+          headers: getAuthHeader()
+      });
+      return response.data;
+  },
+
   getSalesByClient: async (
     dateFrom?: string, 
     dateTo?: string, 
