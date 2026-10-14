@@ -736,6 +736,64 @@ function MultiSelectDropdown<T>({
   );
 }
 
+export type SalesDatePreset = 'today' | 'week' | 'month' | 'quarter' | 'year' | '';
+
+export const formatLocalDate = (d: Date | string): string => {
+  const dt = typeof d === 'string' ? new Date(d) : d;
+  if (isNaN(dt.getTime())) return '';
+  const year = dt.getFullYear();
+  const month = String(dt.getMonth() + 1).padStart(2, '0');
+  const day = String(dt.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const getSalesPresetDateRange = (preset: SalesDatePreset): { start: string; end: string } | null => {
+  const now = new Date();
+  if (preset === 'today') {
+    const todayStr = formatLocalDate(now);
+    return { start: todayStr, end: todayStr };
+  }
+  if (preset === 'week') {
+    // Поточний тиждень: з понеділка по неділю
+    const dayOfWeek = now.getDay();
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday);
+    const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+    return { start: formatLocalDate(monday), end: formatLocalDate(sunday) };
+  }
+  if (preset === 'month') {
+    // Поточний місяць: з 1-го числа по останній день місяця
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return { start: formatLocalDate(startOfMonth), end: formatLocalDate(endOfMonth) };
+  }
+  if (preset === 'quarter') {
+    // Поточний квартал: початок та кінець кварталу
+    const q = Math.floor(now.getMonth() / 3);
+    const startOfQuarter = new Date(now.getFullYear(), q * 3, 1);
+    const endOfQuarter = new Date(now.getFullYear(), (q + 1) * 3, 0);
+    return { start: formatLocalDate(startOfQuarter), end: formatLocalDate(endOfQuarter) };
+  }
+  if (preset === 'year') {
+    // Поточний рік: з 1 січня по 31 грудня
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const endOfYear = new Date(now.getFullYear(), 11, 31);
+    return { start: formatLocalDate(startOfYear), end: formatLocalDate(endOfYear) };
+  }
+  return null;
+};
+
+export const checkMatchingPreset = (start: string, end: string): SalesDatePreset => {
+  const presets: SalesDatePreset[] = ['today', 'week', 'month', 'quarter', 'year'];
+  for (const p of presets) {
+    const range = getSalesPresetDateRange(p);
+    if (range && range.start === start && range.end === end) {
+      return p;
+    }
+  }
+  return '';
+};
+
 export default function SalesReport() {
   const { t } = useTranslation();
   const { user, setPreferences } = useAuthStore();
@@ -780,9 +838,26 @@ export default function SalesReport() {
   };
 
   // Filters with User Preferences & localStorage memory
-  const [dateFrom, setDateFrom] = useState<string>(() => user?.preferences?.salesDateFrom || "");
+  const [datePreset, setDatePreset] = useState<SalesDatePreset>(() => {
+    return (user?.preferences?.salesDatePreset || localStorage.getItem("sales_datePreset") || "") as SalesDatePreset;
+  });
+  const [dateFrom, setDateFrom] = useState<string>(() => {
+    const savedPreset = (user?.preferences?.salesDatePreset || localStorage.getItem("sales_datePreset") || "") as SalesDatePreset;
+    if (savedPreset) {
+      const range = getSalesPresetDateRange(savedPreset);
+      if (range) return range.start;
+    }
+    return user?.preferences?.salesDateFrom || localStorage.getItem("sales_dateFrom") || "";
+  });
   const [dateTo, setDateTo] = useState<string>(() => {
-    if (user?.preferences?.salesDateTo) return user?.preferences?.salesDateTo;
+    const savedPreset = (user?.preferences?.salesDatePreset || localStorage.getItem("sales_datePreset") || "") as SalesDatePreset;
+    if (savedPreset) {
+      const range = getSalesPresetDateRange(savedPreset);
+      if (range) return range.end;
+    }
+    if (user?.preferences?.salesDateTo) return user.preferences.salesDateTo;
+    const local = localStorage.getItem("sales_dateTo");
+    if (local) return local;
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split("T")[0];
   });
@@ -830,6 +905,7 @@ export default function SalesReport() {
     const prefs = {
       ...user?.preferences,
       salesActiveTab: activeTab,
+      salesDatePreset: datePreset,
       salesDateFrom: dateFrom,
       salesDateTo: dateTo,
       salesCounterparty: counterparty,
@@ -848,6 +924,9 @@ export default function SalesReport() {
     };
 
     localStorage.setItem("sales_activeTab", prefs.salesActiveTab);
+    localStorage.setItem("sales_datePreset", prefs.salesDatePreset || "");
+    localStorage.setItem("sales_dateFrom", prefs.salesDateFrom || "");
+    localStorage.setItem("sales_dateTo", prefs.salesDateTo || "");
     localStorage.setItem("sales_chartType", prefs.salesChartType);
     localStorage.setItem("sales_chartPeriod", prefs.salesChartPeriod);
     localStorage.setItem("sales_showSales", String(prefs.salesShowSales));
@@ -902,12 +981,20 @@ export default function SalesReport() {
       .catch((err) => console.error("Failed to load report dependencies", err));
   }, []);
 
-  const fetchSales = async () => {
+  const fetchSales = async (overrideDateFrom?: string, overrideDateTo?: string) => {
     setLoading(true);
     setError(null);
+    setExpandedClients({});
+    setClientDetails({});
+
+    const effectiveDateFrom = typeof overrideDateFrom === "string" ? overrideDateFrom : dateFrom;
+    const effectiveDateTo = typeof overrideDateTo === "string" ? overrideDateTo : dateTo;
 
     // Save active filter preferences
-    saveAllPreferences();
+    saveAllPreferences({
+      salesDateFrom: effectiveDateFrom,
+      salesDateTo: effectiveDateTo,
+    });
 
     try {
       if (activeTab === "general" || activeTab === "chart") {
@@ -921,10 +1008,16 @@ export default function SalesReport() {
           ...returns.map(r => ({ ...r, type: 'RETURN' as const, amount: r.totalAmount, currency: 'UAH' }))
         ];
 
-        if (dateFrom)
-          combined = combined.filter((d) => new Date(d.date) >= new Date(dateFrom));
-        if (dateTo)
-          combined = combined.filter((d) => new Date(d.date) <= new Date(dateTo));
+        if (effectiveDateFrom)
+          combined = combined.filter((d) => {
+            const itemDate = formatLocalDate(d.date);
+            return itemDate >= effectiveDateFrom;
+          });
+        if (effectiveDateTo)
+          combined = combined.filter((d) => {
+            const itemDate = formatLocalDate(d.date);
+            return itemDate <= effectiveDateTo;
+          });
 
         // Group mode filters for general & chart tab
         if (groupMode === "none") {
@@ -1025,8 +1118,8 @@ export default function SalesReport() {
 
         if (activeTab === "byClient") {
           const data = await ReportsService.getSalesByClient(
-            dateFrom,
-            dateTo,
+            effectiveDateFrom,
+            effectiveDateTo,
             filterCounterparty,
             groupBySalesType,
             salesTypeParam,
@@ -1037,8 +1130,8 @@ export default function SalesReport() {
           setSalesByClient(data);
         } else if (activeTab === "byProduct") {
           const data = await ReportsService.getSalesByProduct(
-            dateFrom,
-            dateTo,
+            effectiveDateFrom,
+            effectiveDateTo,
             filterCounterparty,
             groupBySalesType,
             salesTypeParam,
@@ -1061,6 +1154,35 @@ export default function SalesReport() {
     fetchSales();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, groupBySalesType, includeReturns, selectedSalesTypes]);
+
+  // Quick date preset handlers
+  const handleApplyPreset = (preset: SalesDatePreset) => {
+    const range = getSalesPresetDateRange(preset);
+    if (!range) return;
+    setDatePreset(preset);
+    setDateFrom(range.start);
+    setDateTo(range.end);
+    saveAllPreferences({
+      salesDatePreset: preset,
+      salesDateFrom: range.start,
+      salesDateTo: range.end,
+    });
+    fetchSales(range.start, range.end);
+  };
+
+  const handleDateFromChange = (val: string) => {
+    setDateFrom(val);
+    const matched = checkMatchingPreset(val, dateTo);
+    setDatePreset(matched);
+    saveAllPreferences({ salesDateFrom: val, salesDatePreset: matched });
+  };
+
+  const handleDateToChange = (val: string) => {
+    setDateTo(val);
+    const matched = checkMatchingPreset(dateFrom, val);
+    setDatePreset(matched);
+    saveAllPreferences({ salesDateTo: val, salesDatePreset: matched });
+  };
 
   const formatNum = (num: any) => Number(num || 0).toFixed(2);
 
@@ -1257,13 +1379,75 @@ export default function SalesReport() {
       <div className="flex gap-4 mb-4 flex-wrap items-end border-b pb-4 border-gray-200 shadow-sm rounded-lg p-4 bg-white print:hidden">
         <div>
           <label className="block text-sm mb-1 text-gray-600 font-medium">
+            Період
+          </label>
+          <div className="inline-flex rounded-md shadow-sm border border-gray-300 dark:border-gray-600 overflow-hidden h-[38px]">
+            <button
+              type="button"
+              onClick={() => handleApplyPreset("today")}
+              className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+                datePreset === "today"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Сьогодні
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyPreset("week")}
+              className={`px-3 py-1.5 text-xs font-semibold border-l border-gray-300 dark:border-gray-600 transition-colors ${
+                datePreset === "week"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Тиждень
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyPreset("month")}
+              className={`px-3 py-1.5 text-xs font-semibold border-l border-gray-300 dark:border-gray-600 transition-colors ${
+                datePreset === "month"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Місяць
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyPreset("quarter")}
+              className={`px-3 py-1.5 text-xs font-semibold border-l border-gray-300 dark:border-gray-600 transition-colors ${
+                datePreset === "quarter"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Квартал
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyPreset("year")}
+              className={`px-3 py-1.5 text-xs font-semibold border-l border-gray-300 dark:border-gray-600 transition-colors ${
+                datePreset === "year"
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Рік
+            </button>
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm mb-1 text-gray-600 font-medium">
             {t("common.dateFrom", "Date From")}
           </label>
           <input
             type="date"
             value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="border border-gray-300 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => handleDateFromChange(e.target.value)}
+            className="border border-gray-300 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
           />
         </div>
         <div>
@@ -1273,8 +1457,8 @@ export default function SalesReport() {
           <input
             type="date"
             value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="border border-gray-300 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => handleDateToChange(e.target.value)}
+            className="border border-gray-300 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
           />
         </div>
 
@@ -1389,7 +1573,7 @@ export default function SalesReport() {
           </label>
         </div>
         <button
-          onClick={fetchSales}
+          onClick={() => fetchSales()}
           className="bg-blue-600 hover:bg-blue-700 transition-colors text-white px-6 py-1.5 rounded-md font-medium shadow-sm mb-1"
         >
           {t("common.filter", "Filter")}
