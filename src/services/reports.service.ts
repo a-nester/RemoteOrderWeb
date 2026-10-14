@@ -89,18 +89,29 @@ export const ReportsService = {
     salesType?: string, 
     includeReturns?: boolean,
     groupIds?: string,
-    counterpartyIds?: string
+    counterpartyIds?: string,
+    product?: string,
+    productCategories?: string,
+    productIds?: string
   ): Promise<SalesByClient[]> => {
       const response = await axios.get(`${API_URL}/reports/sales/by-client`, {
-          params: { dateFrom, dateTo, counterparty, groupBySalesType, salesType, includeReturns, groupIds, counterpartyIds },
+          params: { dateFrom, dateTo, counterparty, groupBySalesType, salesType, includeReturns, groupIds, counterpartyIds, product, productCategories, productIds },
           headers: getAuthHeader()
       });
       return response.data;
   },
 
-  getSalesByClientDetails: async (clientId: string, dateFrom?: string, dateTo?: string, salesType?: string): Promise<SalesByClientDetail[]> => {
+  getSalesByClientDetails: async (
+    clientId: string, 
+    dateFrom?: string, 
+    dateTo?: string, 
+    salesType?: string,
+    product?: string,
+    productCategories?: string,
+    productIds?: string
+  ): Promise<SalesByClientDetail[]> => {
       const response = await axios.get(`${API_URL}/reports/sales/by-client/details`, {
-          params: { clientId, dateFrom, dateTo, salesType },
+          params: { clientId, dateFrom, dateTo, salesType, product, productCategories, productIds },
           headers: getAuthHeader()
       });
       return response.data;
@@ -114,10 +125,13 @@ export const ReportsService = {
     salesType?: string, 
     includeReturns?: boolean,
     groupIds?: string,
-    counterpartyIds?: string
+    counterpartyIds?: string,
+    product?: string,
+    productCategories?: string,
+    productIds?: string
   ): Promise<SalesByProduct[]> => {
       const response = await axios.get(`${API_URL}/reports/sales/by-product`, {
-          params: { dateFrom, dateTo, counterparty, groupBySalesType, salesType, includeReturns, groupIds, counterpartyIds },
+          params: { dateFrom, dateTo, counterparty, groupBySalesType, salesType, includeReturns, groupIds, counterpartyIds, product, productCategories, productIds },
           headers: getAuthHeader()
       });
       return response.data;

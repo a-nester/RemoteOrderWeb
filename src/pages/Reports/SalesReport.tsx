@@ -11,8 +11,10 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/auth.store";
 import { AuthService } from "../../services/auth.service";
 import { CounterpartyService } from "../../services/counterparty.service";
+import { ProductsService } from "../../services/products.service";
 import { OrganizationService } from "../../services/organization.service";
 import type { Counterparty, CounterpartyGroup } from "../../types/counterparty";
+import type { Product } from "../../types/product";
 import * as XLSX from "xlsx-js-style";
 import { Download, Printer, ChevronDown, ChevronRight, BarChart2 } from "lucide-react";
 
@@ -825,8 +827,30 @@ export default function SalesReport() {
     if (!isExpanded && !clientDetails[key]) {
         setLoadingDetails(prev => ({ ...prev, [key]: true }));
         try {
+            let filterProduct: string | undefined = undefined;
+            let filterProductCategories: string | undefined = undefined;
+            let filterProductIds: string | undefined = undefined;
+
+            if (groupMode === "none") {
+              filterProduct = productFilter || undefined;
+            } else if (groupMode === "group") {
+              if (selectedProductCategories.length > 0) {
+                filterProductCategories = selectedProductCategories.join(",");
+              }
+            } else if (groupMode === "group_from_list") {
+              if (selectedProductIds.length > 0) {
+                filterProductIds = selectedProductIds.join(",");
+              }
+            }
+
             const data = await ReportsService.getSalesByClientDetails(
-                clientRow.clientId, dateFrom || undefined, dateTo || undefined, clientRow.salesType || (selectedSalesTypes.length > 0 ? selectedSalesTypes.join(",") : undefined)
+                clientRow.clientId, 
+                dateFrom || undefined, 
+                dateTo || undefined, 
+                clientRow.salesType || (selectedSalesTypes.length > 0 ? selectedSalesTypes.join(",") : undefined),
+                filterProduct,
+                filterProductCategories,
+                filterProductIds
             );
             setClientDetails(prev => ({ ...prev, [key]: data }));
         } catch (e) {
@@ -868,6 +892,13 @@ export default function SalesReport() {
 
   const [groupsList, setGroupsList] = useState<CounterpartyGroup[]>([]);
   const [counterpartiesList, setCounterpartiesList] = useState<Counterparty[]>([]);
+
+  const [productFilter, setProductFilter] = useState<string>(() => user?.preferences?.salesProduct || localStorage.getItem("sales_product") || "");
+  const [selectedProductCategories, setSelectedProductCategories] = useState<string[]>(() => user?.preferences?.salesSelectedProductCategories || []);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>(() => user?.preferences?.salesSelectedProductIds || []);
+
+  const [productsList, setProductsList] = useState<Product[]>([]);
+  const [productCategoriesList, setProductCategoriesList] = useState<{ id: string; name: string }[]>([]);
 
   const [groupBySalesType, setGroupBySalesType] = useState<boolean>(() => user?.preferences?.salesGroupBySalesType || false);
   const [includeReturns, setIncludeReturns] = useState<boolean>(() => user?.preferences?.salesIncludeReturns || false);
@@ -912,6 +943,9 @@ export default function SalesReport() {
       salesGroupMode: groupMode,
       salesSelectedGroupIds: selectedGroupIds,
       salesSelectedCounterpartyIds: selectedCounterpartyIds,
+      salesProduct: productFilter,
+      salesSelectedProductCategories: selectedProductCategories,
+      salesSelectedProductIds: selectedProductIds,
       salesGroupBySalesType: groupBySalesType,
       salesIncludeReturns: includeReturns,
       salesSelectedSalesTypes: selectedSalesTypes,
@@ -927,6 +961,7 @@ export default function SalesReport() {
     localStorage.setItem("sales_datePreset", prefs.salesDatePreset || "");
     localStorage.setItem("sales_dateFrom", prefs.salesDateFrom || "");
     localStorage.setItem("sales_dateTo", prefs.salesDateTo || "");
+    localStorage.setItem("sales_product", prefs.salesProduct || "");
     localStorage.setItem("sales_chartType", prefs.salesChartType);
     localStorage.setItem("sales_chartPeriod", prefs.salesChartPeriod);
     localStorage.setItem("sales_showSales", String(prefs.salesShowSales));
@@ -968,12 +1003,31 @@ export default function SalesReport() {
     Promise.all([
       CounterpartyService.getGroups(),
       CounterpartyService.getAll(),
+      ProductsService.fetchProducts().catch(() => ({ products: [] })),
       OrganizationService.getOrganization().catch(() => null),
     ])
-      .then(([groupsData, cpData, orgData]) => {
+      .then(([groupsData, cpData, prodsData, orgData]) => {
         setSalesTypesList(["Готівковий", "р/р ФОП", "з ПДВ"]);
         setGroupsList(groupsData || []);
         setCounterpartiesList(cpData || []);
+
+        const prods = (prodsData && prodsData.products) || [];
+        setProductsList(prods);
+
+        const catSet = new Set<string>();
+        let hasEmpty = false;
+        prods.forEach((p) => {
+          const c = p.category ? p.category.trim() : "";
+          if (c) catSet.add(c);
+          else hasEmpty = true;
+        });
+        const sortedCats = Array.from(catSet).sort((a, b) => a.localeCompare(b));
+        const cats: { id: string; name: string }[] = sortedCats.map((c) => ({ id: c, name: c }));
+        if (hasEmpty) {
+          cats.push({ id: "Без категорії", name: "Без категорії" });
+        }
+        setProductCategoriesList(cats);
+
         if (orgData && orgData.vatCostCoefficient) {
           setVatCoeff(Number(orgData.vatCostCoefficient));
         }
@@ -994,6 +1048,9 @@ export default function SalesReport() {
     saveAllPreferences({
       salesDateFrom: effectiveDateFrom,
       salesDateTo: effectiveDateTo,
+      salesProduct: productFilter,
+      salesSelectedProductCategories: selectedProductCategories,
+      salesSelectedProductIds: selectedProductIds,
     });
 
     try {
@@ -1048,6 +1105,34 @@ export default function SalesReport() {
               const cpId = (d as any).counterpartyId;
               if (cpId && selectedCounterpartyIds.includes(cpId)) return true;
               return selectedNames.has((d.counterpartyName || "").toLowerCase());
+            });
+          }
+        }
+
+        // Product filters for general & chart tab
+        if (groupMode === "none") {
+          if (productFilter.trim()) {
+            const term = productFilter.trim().toLowerCase();
+            combined = combined.filter((d: any) => {
+              const items = Array.isArray(d.items) ? d.items : [];
+              return items.some((it: any) => (it.productName || "").toLowerCase().includes(term));
+            });
+          }
+        } else if (groupMode === "group") {
+          if (selectedProductCategories.length > 0) {
+            combined = combined.filter((d: any) => {
+              const items = Array.isArray(d.items) ? d.items : [];
+              return items.some((it: any) => {
+                const cat = it.category ? it.category.trim() : "Без категорії";
+                return selectedProductCategories.includes(cat);
+              });
+            });
+          }
+        } else if (groupMode === "group_from_list") {
+          if (selectedProductIds.length > 0) {
+            combined = combined.filter((d: any) => {
+              const items = Array.isArray(d.items) ? d.items : [];
+              return items.some((it: any) => selectedProductIds.includes(String(it.productId)));
             });
           }
         }
@@ -1114,6 +1199,22 @@ export default function SalesReport() {
           }
         }
 
+        let filterProduct: string | undefined = undefined;
+        let filterProductCategories: string | undefined = undefined;
+        let filterProductIds: string | undefined = undefined;
+
+        if (groupMode === "none") {
+          filterProduct = productFilter || undefined;
+        } else if (groupMode === "group") {
+          if (selectedProductCategories.length > 0) {
+            filterProductCategories = selectedProductCategories.join(",");
+          }
+        } else if (groupMode === "group_from_list") {
+          if (selectedProductIds.length > 0) {
+            filterProductIds = selectedProductIds.join(",");
+          }
+        }
+
         const salesTypeParam = selectedSalesTypes.length > 0 ? selectedSalesTypes.join(",") : undefined;
 
         if (activeTab === "byClient") {
@@ -1125,7 +1226,10 @@ export default function SalesReport() {
             salesTypeParam,
             includeReturns,
             filterGroupIds,
-            filterCounterpartyIds
+            filterCounterpartyIds,
+            filterProduct,
+            filterProductCategories,
+            filterProductIds
           );
           setSalesByClient(data);
         } else if (activeTab === "byProduct") {
@@ -1137,7 +1241,10 @@ export default function SalesReport() {
             salesTypeParam,
             includeReturns,
             filterGroupIds,
-            filterCounterpartyIds
+            filterCounterpartyIds,
+            filterProduct,
+            filterProductCategories,
+            filterProductIds
           );
           setSalesByProduct(data);
         }
@@ -1472,6 +1579,9 @@ export default function SalesReport() {
               type="text"
               value={counterparty}
               onChange={(e) => setCounterparty(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") fetchSales();
+              }}
               placeholder={t("common.customer", "Клієнт")}
               className="border border-gray-300 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[220px]"
             />
@@ -1481,12 +1591,15 @@ export default function SalesReport() {
         {groupMode === "group" && (
           <div>
             <label className="block text-sm mb-1 text-gray-600 font-medium">
-              Група
+              Група (Контрагенти)
             </label>
             <MultiSelectDropdown
               items={groupsList}
               selectedIds={selectedGroupIds}
-              onChange={setSelectedGroupIds}
+              onChange={(ids) => {
+                setSelectedGroupIds(ids);
+                saveAllPreferences({ salesSelectedGroupIds: ids });
+              }}
               getId={(g) => g.id}
               getName={(g) => g.name}
               placeholder="Всі групи"
@@ -1497,12 +1610,15 @@ export default function SalesReport() {
         {groupMode === "group_from_list" && (
           <div>
             <label className="block text-sm mb-1 text-gray-600 font-medium">
-              Група зі списку
+              Контрагенти зі списку
             </label>
             <MultiSelectDropdown
               items={counterpartiesList}
               selectedIds={selectedCounterpartyIds}
-              onChange={setSelectedCounterpartyIds}
+              onChange={(ids) => {
+                setSelectedCounterpartyIds(ids);
+                saveAllPreferences({ salesSelectedCounterpartyIds: ids });
+              }}
               getId={(c) => c.id}
               getName={(c) => c.name}
               placeholder="Всі контрагенти"
@@ -1510,7 +1626,64 @@ export default function SalesReport() {
           </div>
         )}
 
-        {/* Grouping Select Dropdown (Placed right after Client filter) */}
+        {/* Dynamic Filter Field (Product / Group / Group from list) */}
+        {groupMode === "none" && (
+          <div>
+            <label className="block text-sm mb-1 text-gray-600 font-medium">
+              {t("common.product", "Товар")}
+            </label>
+            <input
+              type="text"
+              value={productFilter}
+              onChange={(e) => setProductFilter(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") fetchSales();
+              }}
+              placeholder={t("common.product", "Товар")}
+              className="border border-gray-300 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[220px]"
+            />
+          </div>
+        )}
+
+        {groupMode === "group" && (
+          <div>
+            <label className="block text-sm mb-1 text-gray-600 font-medium">
+              Група товарів
+            </label>
+            <MultiSelectDropdown
+              items={productCategoriesList}
+              selectedIds={selectedProductCategories}
+              onChange={(ids) => {
+                setSelectedProductCategories(ids);
+                saveAllPreferences({ salesSelectedProductCategories: ids });
+              }}
+              getId={(c) => c.id}
+              getName={(c) => c.name}
+              placeholder="Всі групи товарів"
+            />
+          </div>
+        )}
+
+        {groupMode === "group_from_list" && (
+          <div>
+            <label className="block text-sm mb-1 text-gray-600 font-medium">
+              Товари зі списку
+            </label>
+            <MultiSelectDropdown
+              items={productsList}
+              selectedIds={selectedProductIds}
+              onChange={(ids) => {
+                setSelectedProductIds(ids);
+                saveAllPreferences({ salesSelectedProductIds: ids });
+              }}
+              getId={(p) => p.id}
+              getName={(p) => p.name}
+              placeholder="Всі товари"
+            />
+          </div>
+        )}
+
+        {/* Grouping Select Dropdown (Controls both Counterparty and Product grouping) */}
         <div>
           <label className="block text-sm mb-1 text-gray-600 font-medium">
             Групування
@@ -1518,9 +1691,19 @@ export default function SalesReport() {
           <select
             value={groupMode}
             onChange={(e) => {
-              setGroupMode(e.target.value as GroupMode);
+              const newMode = e.target.value as GroupMode;
+              setGroupMode(newMode);
               setSelectedGroupIds([]);
               setSelectedCounterpartyIds([]);
+              setSelectedProductCategories([]);
+              setSelectedProductIds([]);
+              saveAllPreferences({
+                salesGroupMode: newMode,
+                salesSelectedGroupIds: [],
+                salesSelectedCounterpartyIds: [],
+                salesSelectedProductCategories: [],
+                salesSelectedProductIds: [],
+              });
             }}
             className="border border-gray-300 px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white min-w-[170px]"
           >
