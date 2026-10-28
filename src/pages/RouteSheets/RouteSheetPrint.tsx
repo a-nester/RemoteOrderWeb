@@ -69,6 +69,11 @@ export default function RouteSheetPrint() {
         }));
     }, [routeSheet]);
 
+    // Flatten items in the exact order they appear in the route sheet table
+    const orderedItems = useMemo(() => {
+        return groupedItems.flatMap(group => group.items);
+    }, [groupedItems]);
+
     // Helper to get realization weight
     const getItemWeight = (item: RouteSheetItem): number => {
         if (item.realizationWeight !== undefined) {
@@ -117,8 +122,6 @@ export default function RouteSheetPrint() {
         );
     }
 
-    let globalInvoiceIndex = 1;
-
     return (
         <div className="bg-white text-black min-h-screen">
             {/* Print toolbar (hidden during print) */}
@@ -145,9 +148,55 @@ export default function RouteSheetPrint() {
             {/* Print Container */}
             <div className="p-4 sm:p-8 max-w-5xl mx-auto print:p-0 print:m-0 print:max-w-none">
                 {/* ======================================================== */}
-                {/* 1. Сам Маршрутний лист (Page 1) */}
+                {/* 1. По два екземпляра накладних кожного клієнта (перші в черзі друку) */}
                 {/* ======================================================== */}
-                <div className="print-page-break-after pb-6" style={{ fontFamily: "'Times New Roman', Times, serif, Arial" }}>
+                {orderedItems.map((item, idx) => {
+                    const printData = {
+                        id: item.realizationId,
+                        number: item.realizationNumber || String(idx + 1),
+                        date: item.realizationDate || routeSheet.date,
+                        amount: Number(item.realizationAmount || 0),
+                        currency: item.realizationCurrency || 'UAH',
+                        salesType: item.realizationSalesType,
+                        comment: item.realizationComment,
+                        counterpartyName: item.counterpartyName,
+                        items: (item.realizationItems || []).map(ri => ({
+                            productName: ri.productName,
+                            productId: ri.productId,
+                            unit: ri.unit,
+                            quantity: Number(ri.quantity || 0),
+                            price: Number(ri.price || 0),
+                            total: Number(ri.total || 0)
+                        }))
+                    };
+
+                    return (
+                        <React.Fragment key={item.realizationId}>
+                            {/* Copy 1 */}
+                            <div className="print-page-break-after py-4">
+                                <RealizationInvoicePrint
+                                    realization={printData}
+                                    organization={organization}
+                                    copyLabel="Екземпляр 1 (Покупець)"
+                                />
+                            </div>
+
+                            {/* Copy 2 */}
+                            <div className="print-page-break-after py-4">
+                                <RealizationInvoicePrint
+                                    realization={printData}
+                                    organization={organization}
+                                    copyLabel="Екземпляр 2 (Постачальник)"
+                                />
+                            </div>
+                        </React.Fragment>
+                    );
+                })}
+
+                {/* ======================================================== */}
+                {/* 2. Сам Маршрутний лист (останній в черзі друку) */}
+                {/* ======================================================== */}
+                <div className="pb-6" style={{ fontFamily: "'Times New Roman', Times, serif, Arial" }}>
                     {/* Header */}
                     <div className="border-b-2 border-black pb-3 mb-4">
                         <div className="flex justify-between items-start">
@@ -217,68 +266,71 @@ export default function RouteSheetPrint() {
                             </tr>
                         </thead>
                         <tbody>
-                            {groupedItems.map((group) => {
-                                const groupWeight = group.items.reduce((s, it) => s + getItemWeight(it), 0);
+                            {(() => {
+                                let globalInvoiceIndex = 1;
+                                return groupedItems.map((group) => {
+                                    const groupWeight = group.items.reduce((s, it) => s + getItemWeight(it), 0);
 
-                                return (
-                                    <React.Fragment key={group.groupName}>
-                                        {/* Folder / Group Header Row */}
-                                        <tr className="bg-gray-100 font-bold">
-                                            <td colSpan={7} className="border border-black px-2 py-1 text-xs uppercase bg-gray-100 text-gray-900">
-                                                📁 Папка / Район: <span className="underline">{group.groupName}</span> ({group.items.length} накладних)
-                                            </td>
-                                        </tr>
+                                    return (
+                                        <React.Fragment key={group.groupName}>
+                                            {/* Folder / Group Header Row */}
+                                            <tr className="bg-gray-100 font-bold">
+                                                <td colSpan={7} className="border border-black px-2 py-1 text-xs uppercase bg-gray-100 text-gray-900">
+                                                    📁 Папка / Район: <span className="underline">{group.groupName}</span> ({group.items.length} накладних)
+                                                </td>
+                                            </tr>
 
-                                        {/* Invoices inside folder */}
-                                        {group.items.map((item) => {
-                                            const itemWeight = getItemWeight(item);
-                                            return (
-                                                <tr key={item.realizationId} className="hover:bg-gray-50">
-                                                    <td className="border border-black p-1 text-center font-medium">
-                                                        {globalInvoiceIndex++}
-                                                    </td>
-                                                    <td className="border border-black p-1 text-center whitespace-nowrap">
-                                                        <span className="font-bold">№ {item.realizationNumber}</span>
-                                                        <div className="text-[10px] text-gray-600">
-                                                            {item.realizationDate ? new Date(item.realizationDate).toLocaleDateString('uk-UA') : ''}
-                                                        </div>
-                                                    </td>
-                                                    <td className="border border-black p-1 text-left font-semibold">
-                                                        {item.counterpartyName}
-                                                    </td>
-                                                    <td className="border border-black p-1 text-left text-xs">
-                                                        {item.counterpartyAddress || '—'}
-                                                        {item.counterpartyPhone && (
-                                                            <div className="text-[10px] text-gray-600">{item.counterpartyPhone}</div>
-                                                        )}
-                                                    </td>
-                                                    <td className="border border-black p-1 text-right font-medium whitespace-nowrap">
-                                                        {itemWeight.toFixed(2)}
-                                                    </td>
-                                                    <td className="border border-black p-1 text-right font-bold whitespace-nowrap bg-yellow-50/50">
-                                                        {/* Пуста ячейка для внесення оплати клієнта водієм від руки */}
-                                                    </td>
-                                                    <td className="border border-black p-1 text-center">
-                                                        <div className="border-b border-dotted border-gray-400 h-5 mt-2"></div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
+                                            {/* Invoices inside folder */}
+                                            {group.items.map((item) => {
+                                                const itemWeight = getItemWeight(item);
+                                                return (
+                                                    <tr key={item.realizationId} className="hover:bg-gray-50">
+                                                        <td className="border border-black p-1 text-center font-medium">
+                                                            {globalInvoiceIndex++}
+                                                        </td>
+                                                        <td className="border border-black p-1 text-center whitespace-nowrap">
+                                                            <span className="font-bold">№ {item.realizationNumber}</span>
+                                                            <div className="text-[10px] text-gray-600">
+                                                                {item.realizationDate ? new Date(item.realizationDate).toLocaleDateString('uk-UA') : ''}
+                                                            </div>
+                                                        </td>
+                                                        <td className="border border-black p-1 text-left font-semibold">
+                                                            {item.counterpartyName}
+                                                        </td>
+                                                        <td className="border border-black p-1 text-left text-xs">
+                                                            {item.counterpartyAddress || '—'}
+                                                            {item.counterpartyPhone && (
+                                                                <div className="text-[10px] text-gray-600">{item.counterpartyPhone}</div>
+                                                            )}
+                                                        </td>
+                                                        <td className="border border-black p-1 text-right font-medium whitespace-nowrap">
+                                                            {itemWeight.toFixed(2)}
+                                                        </td>
+                                                        <td className="border border-black p-1 text-right font-bold whitespace-nowrap bg-yellow-50/50">
+                                                            {/* Пуста ячейка для внесення оплати клієнта водієм від руки */}
+                                                        </td>
+                                                        <td className="border border-black p-1 text-center">
+                                                            <div className="border-b border-dotted border-gray-400 h-5 mt-2"></div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
 
-                                        {/* Subtotal row per folder */}
-                                        <tr className="bg-gray-50 font-semibold text-xs italic">
-                                            <td colSpan={4} className="border border-black p-1 text-right">
-                                                Разом по папці «{group.groupName}»:
-                                            </td>
-                                            <td className="border border-black p-1 text-right font-bold">
-                                                {groupWeight.toFixed(2)}
-                                            </td>
-                                            <td className="border border-black p-1 text-right font-bold bg-yellow-50/50"></td>
-                                            <td className="border border-black p-1"></td>
-                                        </tr>
-                                    </React.Fragment>
-                                );
-                            })}
+                                            {/* Subtotal row per folder */}
+                                            <tr className="bg-gray-50 font-semibold text-xs italic">
+                                                <td colSpan={4} className="border border-black p-1 text-right">
+                                                    Разом по папці «{group.groupName}»:
+                                                </td>
+                                                <td className="border border-black p-1 text-right font-bold">
+                                                    {groupWeight.toFixed(2)}
+                                                </td>
+                                                <td className="border border-black p-1 text-right font-bold bg-yellow-50/50"></td>
+                                                <td className="border border-black p-1"></td>
+                                            </tr>
+                                        </React.Fragment>
+                                    );
+                                });
+                            })()}
 
                             {/* Grand Totals */}
                             <tr className="bg-gray-200 font-bold text-sm">
@@ -320,52 +372,6 @@ export default function RouteSheetPrint() {
                         </div>
                     </div>
                 </div>
-
-                {/* ======================================================== */}
-                {/* 2. По два екземпляра накладних кожного клієнта */}
-                {/* ======================================================== */}
-                {(routeSheet.items || []).map((item, idx) => {
-                    const printData = {
-                        id: item.realizationId,
-                        number: item.realizationNumber || String(idx + 1),
-                        date: item.realizationDate || routeSheet.date,
-                        amount: Number(item.realizationAmount || 0),
-                        currency: item.realizationCurrency || 'UAH',
-                        salesType: item.realizationSalesType,
-                        comment: item.realizationComment,
-                        counterpartyName: item.counterpartyName,
-                        items: (item.realizationItems || []).map(ri => ({
-                            productName: ri.productName,
-                            productId: ri.productId,
-                            unit: ri.unit,
-                            quantity: Number(ri.quantity || 0),
-                            price: Number(ri.price || 0),
-                            total: Number(ri.total || 0)
-                        }))
-                    };
-
-                    return (
-                        <React.Fragment key={item.realizationId}>
-                            {/* Copy 1 */}
-                            <div className="print-page-break-after py-4">
-                                <RealizationInvoicePrint
-                                    realization={printData}
-                                    organization={organization}
-                                    copyLabel="Екземпляр 1 (Покупець)"
-                                />
-                            </div>
-
-                            {/* Copy 2 */}
-                            <div className="print-page-break-after py-4">
-                                <RealizationInvoicePrint
-                                    realization={printData}
-                                    organization={organization}
-                                    copyLabel="Екземпляр 2 (Постачальник)"
-                                />
-                            </div>
-                        </React.Fragment>
-                    );
-                })}
             </div>
 
             {/* Custom print styling to guarantee clean page breaks */}
